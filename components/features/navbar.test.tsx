@@ -75,7 +75,10 @@ describe("Navbar", () => {
     render(<Navbar />);
 
     const trigger = screen.getByRole("button", { name: "Skin Problem" });
-    expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+    // A plain focusable link list, not an ARIA `menu` widget (which would
+    // imply arrow-key/Home/End navigation this component doesn't provide),
+    // so no `aria-haspopup` here — just expand/collapse state.
+    expect(trigger).not.toHaveAttribute("aria-haspopup");
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -84,5 +87,65 @@ describe("Navbar", () => {
 
     const cta = screen.getAllByRole("link", { name: /analyse your skin/i })[0];
     expect(cta).toHaveAttribute("href", "/pigmentation");
+  });
+
+  it("uses the logo's intrinsic dimensions for the rendered image", () => {
+    render(<Navbar />);
+
+    const logo = screen.getByRole("img", { name: /skinwise logo/i });
+    expect(logo).toHaveAttribute("width", "313");
+    expect(logo).toHaveAttribute("height", "177");
+  });
+
+  it("opens the desktop dropdown on click and closes it on outside click", async () => {
+    const user = userEvent.setup();
+    render(<Navbar />);
+
+    const trigger = screen.getByRole("button", { name: "Skin Problem" });
+    await user.click(trigger);
+
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("link", { name: "Hyperpigmentation" })).toBeInTheDocument();
+
+    await user.click(document.body);
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: "Hyperpigmentation" })).not.toBeInTheDocument();
+  });
+
+  it("closes the desktop dropdown on Escape", async () => {
+    const user = userEvent.setup();
+    render(<Navbar />);
+
+    const trigger = screen.getByRole("button", { name: "Skin Problem" });
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    await user.keyboard("{Escape}");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: "Hyperpigmentation" })).not.toBeInTheDocument();
+  });
+
+  it("marks the header's background content inert and hidden from assistive tech while the drawer is open, and restores it (plus focus) on close", async () => {
+    const user = userEvent.setup();
+    render(<Navbar />);
+
+    const hamburger = screen.getByRole("button", { name: /open menu/i });
+    const primaryNav = screen.getByRole("navigation", { name: "Primary" });
+    const headerContent = primaryNav.parentElement as HTMLElement;
+
+    expect(headerContent).not.toHaveAttribute("aria-hidden");
+    expect(headerContent).not.toHaveAttribute("inert");
+
+    await user.click(hamburger);
+
+    expect(headerContent).toHaveAttribute("aria-hidden", "true");
+    expect(headerContent).toHaveAttribute("inert");
+
+    await user.keyboard("{Escape}");
+
+    expect(headerContent).not.toHaveAttribute("aria-hidden");
+    expect(headerContent).not.toHaveAttribute("inert");
+    expect(hamburger).toHaveFocus();
   });
 });

@@ -36,6 +36,19 @@ function NavDropdown({ label, children }: { label: string; children: { label: st
     }
   };
 
+  // Close on outside click/tap: `onBlur` alone doesn't cover clicking on a
+  // non-focusable element outside the group (e.g. the page background).
+  React.useEffect(() => {
+    if (!open) return;
+    const onDocumentMouseDown = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node | null)) {
+        close();
+      }
+    };
+    document.addEventListener("mousedown", onDocumentMouseDown);
+    return () => document.removeEventListener("mousedown", onDocumentMouseDown);
+  }, [open, close]);
+
   return (
     <div
       ref={containerRef}
@@ -47,19 +60,29 @@ function NavDropdown({ label, children }: { label: string; children: { label: st
     >
       <button
         type="button"
-        aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
-        onClick={() => setOpen((prev) => !prev)}
+        // Ensure-open rather than toggle: a real mouse click is always
+        // preceded by a `mouseenter` on this trigger, which already opens
+        // the panel via hover — toggling here would immediately close what
+        // hover just opened. Closing is handled separately (Escape,
+        // outside click, blur out of the group).
+        onClick={() => setOpen(true)}
         onFocus={() => setOpen(true)}
         className="inline-flex items-center gap-1 font-medium text-ink transition hover:text-accent-ink"
       >
         {label}
         <ChevronDown aria-hidden="true" className={cn("size-4 transition-transform", open && "rotate-180")} />
       </button>
-      <div
+      {/*
+        Plain list of links, not an ARIA `menu`/`menuitem` widget: those
+        roles imply full arrow-key/Home/End menu navigation, which this
+        component doesn't implement — a half-implemented menu widget is
+        worse for screen-reader users than a plain, natively-focusable
+        link list.
+      */}
+      <ul
         id={menuId}
-        role="menu"
         aria-label={label}
         aria-hidden={!open}
         inert={!open}
@@ -69,16 +92,16 @@ function NavDropdown({ label, children }: { label: string; children: { label: st
         )}
       >
         {children.map((child) => (
-          <Link
-            key={child.href}
-            href={child.href}
-            role="menuitem"
-            className="block px-4 py-2 text-sm text-ink transition hover:bg-canvas hover:text-accent-ink"
-          >
-            {child.label}
-          </Link>
+          <li key={child.href}>
+            <Link
+              href={child.href}
+              className="block px-4 py-2 text-sm text-ink transition hover:bg-canvas hover:text-accent-ink"
+            >
+              {child.label}
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -222,9 +245,28 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-ink/10 bg-surface">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6">
+      {/*
+        Hidden from assistive tech (and non-interactive via `inert`) while
+        the mobile drawer's dialog is open, so a screen-reader's browse
+        cursor / Tab order can't reach the logo, desktop nav or hamburger
+        underneath the modal. `drawerOpen` flips back to false in the same
+        commit the drawer unmounts in, so this is no longer inert by the
+        time `MobileDrawer`'s cleanup effect focuses the hamburger back.
+      */}
+      <div
+        aria-hidden={drawerOpen || undefined}
+        inert={drawerOpen}
+        className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6"
+      >
         <Link href="/" className="shrink-0">
-          <Image src={IMAGES.logo.src} alt={IMAGES.logo.alt} width={56} height={32} priority />
+          <Image
+            src={IMAGES.logo.src}
+            alt={IMAGES.logo.alt}
+            width={IMAGES.logo.width}
+            height={IMAGES.logo.height}
+            priority
+            className="h-8 w-auto"
+          />
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-6 md:flex">
