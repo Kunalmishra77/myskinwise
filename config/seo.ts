@@ -14,11 +14,13 @@ const defaultImage = IMAGES.logo;
 /**
  * Builds page-level `Metadata` (title, description, canonical, OpenGraph,
  * Twitter) so every route shares the same shape and always points back to
- * the canonical `SITE.url`. Canonical/OG url is simply `SITE.url + path`,
- * so callers must pass a path that already starts with "/".
+ * the canonical `SITE.url`. Canonical/OG url is `SITE.url + path`, except
+ * for the home path ("/"), which normalizes to `SITE.url` with no trailing
+ * slash — matching the root entry emitted by `app/sitemap.ts` so the two
+ * never disagree. Callers must pass a path that already starts with "/".
  */
 export function buildMetadata({ title, description, path, image }: BuildMetadataInput): Metadata {
-  const url = `${SITE.url}${path}`;
+  const url = path === "/" ? SITE.url : `${SITE.url}${path}`;
   const ogImage = image ?? defaultImage;
 
   return {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildMetadata } from "@/config/seo";
+import sitemap from "@/app/sitemap";
 
 describe("buildMetadata", () => {
   it("sets canonical and og", () => {
@@ -9,8 +10,12 @@ describe("buildMetadata", () => {
     expect((m.openGraph as any)?.title).toBe("T");
   });
 
-  it("sets canonical for root path", () => {
+  it("sets canonical for root path with no trailing slash, matching the sitemap root entry", () => {
     const m = buildMetadata({ title: "Home", description: "D", path: "/" });
-    expect(m.alternates?.canonical).toBe("https://myskinwise.com/");
+    expect(m.alternates?.canonical).toBe("https://myskinwise.com");
+
+    const rootEntry = sitemap().find((entry) => entry.url === "https://myskinwise.com");
+    expect(rootEntry).toBeDefined();
+    expect(m.alternates?.canonical).toBe(rootEntry?.url);
   });
 });
