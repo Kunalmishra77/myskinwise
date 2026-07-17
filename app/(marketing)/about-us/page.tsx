@@ -1,10 +1,8 @@
-import Image from "next/image";
 import { Section } from "@/components/ui/section";
 import { Card, CardBody } from "@/components/ui/card";
 import { buildMetadata } from "@/config/seo";
 import { JsonLd } from "@/components/features/json-ld";
 import { SITE } from "@/config/site";
-import { IMAGES } from "@/content/assets";
 import { heading, subheading, mission, vision, coreValues, founderStory, approach } from "@/content/about";
 
 export const metadata = buildMetadata({
@@ -24,7 +22,7 @@ const founderPersonSchema = {
   "@type": "Person",
   name: founderStory.name,
   jobTitle: "Founder",
-  worksFor: SITE.name,
+  worksFor: { "@type": "Organization", name: SITE.name },
 };
 
 /**
@@ -72,28 +70,21 @@ export default function AboutUsPage() {
         </div>
       </Section>
 
-      {/* Founder bio + photo */}
+      {/* Founder bio — text-forward only. No real portrait of Anant Sanadhya
+          is available in the asset library; a stock model photo was
+          previously placed here but that misrepresents a stock person as
+          the founder, so no image is rendered until a real one exists.
+          // TODO(client): real founder portrait of Anant Sanadhya pending */}
       <Section className="bg-surface">
-        <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl md:order-2">
-            <Image
-              src={IMAGES.model1.src}
-              alt={IMAGES.model1.alt}
-              fill
-              sizes="(min-width: 768px) 50vw, 100vw"
-              className="object-cover"
-            />
-          </div>
-          <div className="md:order-1">
-            <h2 className="text-2xl font-semibold text-ink md:text-3xl">Founder&apos;s Story</h2>
-            <p className="mt-2 text-sm font-medium text-accent">{founderStory.name}</p>
-            <div className="mt-4 flex flex-col gap-4">
-              {founderStory.paragraphs.map((paragraph, index) => (
-                <p key={index} className="text-base text-muted">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-2xl font-semibold text-ink md:text-3xl">Founder&apos;s Story</h2>
+          <p className="mt-2 text-sm font-medium text-accent">{founderStory.name}</p>
+          <div className="mt-4 flex flex-col gap-4">
+            {founderStory.paragraphs.map((paragraph, index) => (
+              <p key={index} className="text-base text-muted">
+                {paragraph}
+              </p>
+            ))}
           </div>
         </div>
       </Section>
