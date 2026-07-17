@@ -161,6 +161,8 @@ const otherIssuesObjections: FaqItem[] = [
  * matching questions are inferred from the shared pigmentation/acne
  * objection-handling copy they were lifted from) plus a 4th answer that
  * was a live Lorem-Ipsum placeholder ("In to am attended desirous
+ *
+ * // TODO(client-review): confirm inferred contact-page FAQ questions (1-3) match intended copy
  * raptures declared..."). That placeholder is replaced below with
  * on-brand copy pending client sign-off.
  */
