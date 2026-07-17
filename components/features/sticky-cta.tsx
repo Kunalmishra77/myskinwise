@@ -19,7 +19,10 @@ const SCROLL_THRESHOLD = 300;
  * purely via a transform (slid fully off-screen when not "visible") rather
  * than conditional rendering, so the links stay easy to query/test and the
  * bar can animate in/out. `tabIndex={-1}` keeps the off-screen links out of
- * the tab order until the bar is actually visible.
+ * the tab order until the bar is actually visible, and `aria-hidden` on the
+ * container keeps the whole region (and its links) out of the accessibility
+ * tree while it's off-screen, so screen readers browsing by landmarks/links
+ * don't surface a bar the sighted user can't see yet.
  */
 export function StickyCTA() {
   const [visible, setVisible] = React.useState(false);
@@ -28,27 +31,36 @@ export function StickyCTA() {
   React.useEffect(() => {
     // rAF-throttled scroll listener: `scroll` can fire many times per
     // frame, so we coalesce bursts down to at most one state update per
-    // animation frame instead of one per event.
+    // animation frame instead of one per event. `rafId` tracks the
+    // in-flight frame so cleanup can cancel it — without this, a rAF
+    // scheduled just before unmount would still fire afterwards and call
+    // `setVisible` on a torn-down component.
     let ticking = false;
+    let rafId: number | null = null;
     const update = () => {
       setVisible(window.scrollY > SCROLL_THRESHOLD);
       ticking = false;
+      rafId = null;
     };
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
-      window.requestAnimationFrame(update);
+      rafId = window.requestAnimationFrame(update);
     };
 
     onScroll(); // pick up an already-scrolled position (e.g. back/forward nav)
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafId !== null) window.cancelAnimationFrame(rafId);
+    };
   }, []);
 
   return (
     <motion.div
       role="region"
       aria-label="Quick contact"
+      aria-hidden={!visible || undefined}
       data-visible={visible}
       initial={false}
       animate={{ y: visible ? "0%" : "100%" }}
