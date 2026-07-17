@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,20 +18,24 @@ export interface AccordionProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function Accordion({ items, allowMultiple = false, className, ...props }: AccordionProps) {
+  // Salts every derived DOM id so multiple <Accordion> instances on the same
+  // page (e.g. Task 19's causes + two FAQ sections) never collide even if
+  // their `items` share the same caller-supplied `id` values.
+  const uid = React.useId();
   const [openIds, setOpenIds] = React.useState<Set<string>>(() => new Set());
   const prefersReducedMotion = useReducedMotion();
 
   const toggle = (id: string) => {
     setOpenIds((prev) => {
-      const next = new Set(allowMultiple ? prev : []);
       if (prev.has(id)) {
         // Closing an already-open item: start from the untouched previous
-        // set (not the cleared one above) so single-open mode can collapse
-        // without side effects.
+        // set (not a cleared one) so single-open mode can collapse without
+        // side effects.
         const collapsed = new Set(prev);
         collapsed.delete(id);
         return collapsed;
       }
+      const next = new Set(allowMultiple ? prev : []);
       next.add(id);
       return next;
     });
@@ -41,8 +45,8 @@ export function Accordion({ items, allowMultiple = false, className, ...props }:
     <div className={cn("divide-y divide-ink/10", className)} {...props}>
       {items.map((item) => {
         const isOpen = openIds.has(item.id);
-        const headerId = `acc-${item.id}-header`;
-        const panelId = `acc-${item.id}-panel`;
+        const headerId = `acc-${uid}-${item.id}-header`;
+        const panelId = `acc-${uid}-${item.id}-panel`;
 
         return (
           <div key={item.id} className="py-2">
@@ -65,22 +69,27 @@ export function Accordion({ items, allowMultiple = false, className, ...props }:
                 />
               </button>
             </h3>
-            <AnimatePresence initial={false}>
-              {isOpen && (
-                <motion.div
-                  id={panelId}
-                  role="region"
-                  aria-labelledby={headerId}
-                  initial={prefersReducedMotion ? false : { height: 0 }}
-                  animate={prefersReducedMotion ? {} : { height: "auto" }}
-                  exit={prefersReducedMotion ? {} : { height: 0 }}
-                  transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2, ease: "easeInOut" }}
-                  className="overflow-hidden"
-                >
-                  <div className="pb-4 pt-1 text-muted">{item.answer}</div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/*
+              Permanently mounted (never unmounted) so `aria-controls`/
+              `aria-labelledby` always resolve to a real element, even while
+              collapsed. Hidden from assistive tech via `aria-hidden` +
+              `inert` (removes it from the a11y tree and from tab order)
+              while a `height` collapse — animated unless the user prefers
+              reduced motion — hides it visually.
+            */}
+            <motion.div
+              id={panelId}
+              role="region"
+              aria-labelledby={headerId}
+              aria-hidden={!isOpen}
+              inert={!isOpen}
+              initial={false}
+              animate={{ height: isOpen ? "auto" : 0 }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2, ease: "easeInOut" }}
+              className="overflow-hidden"
+            >
+              <div className="pb-4 pt-1 text-muted">{item.answer}</div>
+            </motion.div>
           </div>
         );
       })}
