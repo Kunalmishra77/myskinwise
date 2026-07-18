@@ -4,7 +4,14 @@
   --color-canvas: #fbf7f4;
   --color-surface: #ffffff;
   --color-accent: #e38a9e;
-  --color-accent-ink: #b05a70;
+  /*
+   * Darker rose "ink" companion to --color-accent, used wherever text/icons
+   * or button backgrounds need to reach WCAG AA (4.5:1). The original
+   * #b05a70 only cleared ~4.6:1 against white and ~4.3:1 against
+   * `--color-canvas` (fails AA there) — #96435a clears ~6.5:1 / ~6.1:1
+   * against both, with a safe margin, while staying in the same rose family.
+   */
+  --color-accent-ink: #96435a;
   --color-ink: #1a1618;
   --color-muted: #6b6469;
 

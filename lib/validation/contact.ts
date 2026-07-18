@@ -12,6 +12,9 @@ export type ContactInput = z.infer<typeof contactSchema>;
 export async function submitContactStub(
   data: ContactInput,
 ): Promise<{ success: true }> {
+  // `data` is unused until the real Server Action lands; referencing it here
+  // (rather than dropping the param) keeps the stub's signature honest.
+  void data;
   await new Promise((r) => setTimeout(r, 300));
   return { success: true };
 }

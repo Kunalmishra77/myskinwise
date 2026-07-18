@@ -7,10 +7,19 @@ const baseClasses =
   "rounded-full px-6 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 inline-flex items-center justify-center gap-2";
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-white hover:bg-accent-ink",
+  // `accent` (#e38a9e) with white text is only ~2.5:1 — fails WCAG AA
+  // (4.5:1) for normal text. `accent-ink`, the darker token already
+  // defined for hover (darkened further to #96435a — see globals.css —
+  // for its own AA needs), is ~6.5:1 against white and keeps the same
+  // rose family, so it's used as the resting background instead; hover
+  // deepens further to `ink` for a clear, on-brand pressed state.
+  primary: "bg-accent-ink text-white hover:bg-ink",
   secondary: "bg-ink text-white",
   outline: "border border-ink/20 text-ink hover:bg-ink/5",
-  whatsapp: "bg-[#25D366] text-white",
+  // WhatsApp's brand green (#25D366) against white text is only ~2:1.
+  // Keeping the brand green background but switching to dark `ink` text
+  // (~9:1) preserves the recognizable brand color while passing AA.
+  whatsapp: "bg-[#25D366] text-ink",
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

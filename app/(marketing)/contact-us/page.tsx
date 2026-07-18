@@ -35,7 +35,10 @@ export default function ContactUsPage() {
       <Section className="pb-0 text-center">
         <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Contact us", href: "/contact-us" }]} />
         <h1 className="mt-6 font-serif text-4xl font-semibold text-ink md:text-5xl">{heading}</h1>
-        <p className="mt-3 text-sm font-medium uppercase tracking-wide text-accent">{subheading}</p>
+        {/* `text-accent` directly as body-text color is only ~2.5:1 against
+            white/canvas (fails AA); `text-accent-ink` keeps the rose hue
+            while reaching a safe contrast margin. */}
+        <p className="mt-3 text-sm font-medium uppercase tracking-wide text-accent-ink">{subheading}</p>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted">{intro}</p>
       </Section>
 

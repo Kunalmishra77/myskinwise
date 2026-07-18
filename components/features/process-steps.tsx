@@ -26,7 +26,11 @@ export function ProcessSteps({ steps, heading }: ProcessStepsProps) {
           <li key={step.title} className="flex flex-col items-start gap-3">
             <span
               aria-hidden="true"
-              className="flex size-10 items-center justify-center rounded-full bg-accent text-lg font-semibold text-white"
+              // `bg-accent` + white text is only ~2.5:1 (fails AA); the
+              // digit is still visually perceived even though aria-hidden
+              // removes it from the a11y tree, so it needs real contrast.
+              // `accent-ink` (~6.5:1 against white) matches the Button primary fix.
+              className="flex size-10 items-center justify-center rounded-full bg-accent-ink text-lg font-semibold text-white"
             >
               {index + 1}
             </span>

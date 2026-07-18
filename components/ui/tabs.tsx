@@ -82,7 +82,11 @@ export function Tabs({ tabs, className, ...props }: TabsProps) {
               onKeyDown={(event) => onKeyDown(event, index)}
               className={cn(
                 "-mb-px border-b-2 border-transparent px-1 py-2 text-sm font-medium transition-colors",
-                isActive ? "border-accent text-accent-ink" : "border-transparent text-muted",
+                // `text-ink` (not `accent-ink`) for the active label keeps
+                // contrast unambiguously safe across every background these
+                // tabs render on; `border-accent` still carries the rose
+                // brand color as the active indicator.
+                isActive ? "border-accent text-ink" : "border-transparent text-muted",
               )}
             >
               {tab.label}

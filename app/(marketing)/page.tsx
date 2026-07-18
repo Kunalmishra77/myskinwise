@@ -49,8 +49,14 @@ export default function HomePage() {
 
       <TrustBadgeStrip badges={trustBadges} />
 
-      {/* Four value props */}
+      {/* Four value props. Visually this grid has no heading of its own
+          (each card's title *is* the visible content), but going straight
+          from the Hero's h1 to a bare h3 per card skips a heading level
+          (fails the heading-order a11y check for screen-reader users
+          navigating by heading). A visually-hidden h2 restores a valid
+          h1 -> h2 -> h3 outline without changing anything visible. */}
       <Section>
+        <h2 className="sr-only">Why choose Skinwise</h2>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {valueProps.map((prop) => (
             <Card key={prop.title} className="text-center">
@@ -70,12 +76,15 @@ export default function HomePage() {
       {/* Research – Driven Results spotlight */}
       <Section>
         <div className="mx-auto flex max-w-3xl flex-col gap-4 text-center">
-          <p className="text-sm font-medium uppercase tracking-wide text-accent">
+          {/* `text-accent` directly as body-text color is only ~2.5:1
+              against white/canvas (fails AA); `text-accent-ink` keeps the
+              rose hue while reaching a safe contrast margin. */}
+          <p className="text-sm font-medium uppercase tracking-wide text-accent-ink">
             {researchSpotlight.eyebrow}
           </p>
           <p className="text-lg text-muted">
             {researchSpotlight.quote}{" "}
-            <Link href={researchSpotlight.readMore.href} className="font-medium text-accent underline">
+            <Link href={researchSpotlight.readMore.href} className="font-medium text-accent-ink underline">
               {researchSpotlight.readMore.label}
             </Link>
           </p>
