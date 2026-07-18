@@ -163,15 +163,19 @@ export const processSteps: ProcessStep[] = [
 // Gallery strip (§1: "Image gallery strip (7 numbered images)" — the source
 // export doesn't preserve 7 distinct numbered gallery assets, so this picks
 // the real gallery/model images available in content/assets.ts.)
+//
+// Curated to the more aspirational lifestyle/editorial shots (model
+// portraits, banners, the launch event, the blog header) rather than the
+// clinical close-up "concern" macro photography, which reads as a diagnostic
+// tool elsewhere on the concern pages but is jarring in a browsing gallery.
 // ---------------------------------------------------------------------------
 
 export const galleryImages: ImageAsset[] = [
   IMAGES.model1,
+  IMAGES.bannerLongterm,
+  IMAGES.bannerScience,
   IMAGES.galleryLaunchEvent,
-  IMAGES.concernRedness,
-  IMAGES.concernTexture,
-  IMAGES.concernPores,
-  IMAGES.concernBlemishes,
+  IMAGES.blogSkincareHabits,
 ];
 
 // ---------------------------------------------------------------------------
