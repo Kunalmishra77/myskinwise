@@ -3,6 +3,13 @@
 @theme {
   --color-canvas: #fbf7f4;
   --color-surface: #ffffff;
+  /*
+   * Soft rose-tint band used for alternating section backgrounds (see
+   * `Section`'s `tone="blush"`). Distinct from `--color-canvas` (#fbf7f4,
+   * a near-white cream) — this is a visibly deeper, warmer rose-cream so
+   * bands read as an intentional rhythm rather than a rounding error.
+   */
+  --color-blush: #f6ebe7;
   --color-accent: #e38a9e;
   /*
    * Darker rose "ink" companion to --color-accent, used wherever text/icons
@@ -28,12 +35,40 @@
 
   --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
+
+  /*
+   * Layered "soft" shadow for resting premium surfaces (Card, hero image
+   * frame, floating chips) and a stronger "lift" shadow for hover/elevated
+   * states. Two layers each: a tight near shadow for definition + a broad,
+   * low-opacity far shadow for the soft editorial glow.
+   */
+  --shadow-soft: 0 1px 2px rgba(26, 22, 24, 0.04), 0 14px 40px -20px rgba(26, 22, 24, 0.22);
+  --shadow-lift: 0 8px 10px -6px rgba(26, 22, 24, 0.14), 0 24px 60px -20px rgba(26, 22, 24, 0.32);
+
+  /*
+   * Editorial type scale. Fluid via clamp() so the hero display size and
+   * section headings scale smoothly between mobile and wide desktop
+   * instead of jumping at breakpoints. Tight leading + slightly negative
+   * tracking is what gives large serif headings their "premium" feel.
+   */
+  --text-display: clamp(2.5rem, 5.5vw, 4.25rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.02em;
+  --text-h2: clamp(1.9rem, 3.6vw, 2.9rem);
+  --text-h2--line-height: 1.15;
+  --text-h2--letter-spacing: -0.02em;
 }
 
 body {
   background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  /* Editorial body copy: 17px/1.7 rather than the 16px UA default. Utility
+     classes like text-sm/text-lg still win where used (Tailwind's text-*
+     utilities set their own line-height), so this only affects otherwise
+     unstyled body text. */
+  font-size: 1.0625rem;
+  line-height: 1.7;
 }
 
 h1,

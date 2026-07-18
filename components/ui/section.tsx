@@ -12,11 +12,27 @@ Container.displayName = "Container";
 
 export interface SectionProps extends React.HTMLAttributes<HTMLElement> {
   containerClassName?: string;
+  /**
+   * Background band for alternating section rhythm down a page. Omit to
+   * keep the current default (transparent — inherits the page's canvas
+   * background from `body`).
+   */
+  tone?: "canvas" | "surface" | "blush";
 }
 
+const toneClasses: Record<NonNullable<SectionProps["tone"]>, string> = {
+  canvas: "bg-canvas",
+  surface: "bg-surface",
+  blush: "bg-blush",
+};
+
 export const Section = React.forwardRef<HTMLElement, SectionProps>(
-  ({ className, containerClassName, children, ...props }, ref) => (
-    <section ref={ref} className={cn("py-16 md:py-24", className)} {...props}>
+  ({ className, containerClassName, tone, children, ...props }, ref) => (
+    <section
+      ref={ref}
+      className={cn("py-20 md:py-28", tone && toneClasses[tone], className)}
+      {...props}
+    >
       <Container className={containerClassName}>{children}</Container>
     </section>
   ),

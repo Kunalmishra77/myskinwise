@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import type { ImageAsset } from "@/content/assets";
 
 export interface ConcernCardProps {
@@ -12,28 +12,38 @@ export interface ConcernCardProps {
 }
 
 /**
- * Single skin-concern teaser card used in concern-picker grids. Links to
- * `/${slug}` — the concern's own landing page.
+ * Single skin-concern teaser card used in concern-picker grids. The whole
+ * card is one link to `/${slug}` — the concern's own landing page — with a
+ * masked, slightly-zooming image frame and an animated "Learn more" row.
  */
 export function ConcernCard({ slug, label, teaser, image }: ConcernCardProps) {
   return (
-    <Card className="flex flex-col gap-4 overflow-hidden rounded-2xl p-0">
-      <div className="relative aspect-[2/1] w-full overflow-hidden">
-        <Image
-          src={image.src}
-          alt={image.alt}
-          fill
-          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-          className="object-cover"
-        />
-      </div>
-      <div className="flex flex-col gap-2 px-6 pb-6">
-        <h3 className="text-lg font-semibold text-ink">{label}</h3>
-        <p className="text-sm text-muted">{teaser}</p>
-        <Button asChild variant="outline" className="mt-2 w-fit">
-          <Link href={`/${slug}`}>Learn more</Link>
-        </Button>
-      </div>
+    <Card className="group overflow-hidden p-0">
+      <Link
+        href={`/${slug}`}
+        className="flex flex-col rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
+      >
+        <div className="relative m-3 aspect-[4/3] overflow-hidden rounded-2xl">
+          <Image
+            src={image.src}
+            alt={image.alt}
+            fill
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+          />
+        </div>
+        <div className="flex flex-col gap-2 px-6 pb-6 pt-1">
+          <h3 className="text-lg font-semibold text-ink">{label}</h3>
+          <p className="text-sm text-ink/70">{teaser}</p>
+          <span className="mt-2 inline-flex w-fit items-center gap-1.5 text-sm font-medium text-accent-ink">
+            Learn more
+            <ArrowRight
+              aria-hidden="true"
+              className="size-4 transition-transform duration-200 ease-out group-hover:translate-x-1"
+            />
+          </span>
+        </div>
+      </Link>
     </Card>
   );
 }
