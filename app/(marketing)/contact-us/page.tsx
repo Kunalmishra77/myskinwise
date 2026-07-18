@@ -10,7 +10,7 @@ import { FAQS } from "@/content/faqs";
 import { heading, subheading, intro } from "@/content/contact";
 
 export const metadata = buildMetadata({
-  title: "Contact Us | Skinwise",
+  title: "Contact Us",
   description:
     "Get in touch with Skinwise for guidance on acne and pigmentation treatments, order support, or general inquiries — by phone, email, WhatsApp, or our contact form.",
   path: "/contact-us",

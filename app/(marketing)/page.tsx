@@ -30,6 +30,9 @@ export const metadata = buildMetadata({
   description:
     "Personalized pigmentation, acne, and skincare solutions backed by research and human expertise. Take a free skin quiz and get a routine tailored to you.",
   path: "/",
+  // Brand-first title — bypass the root layout's "%s | Skinwise" template
+  // so it doesn't double the brand name (see config/seo.ts).
+  titleAbsolute: true,
 });
 
 /**

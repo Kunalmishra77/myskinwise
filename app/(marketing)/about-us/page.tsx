@@ -6,7 +6,7 @@ import { SITE } from "@/config/site";
 import { heading, subheading, mission, vision, coreValues, founderStory, approach } from "@/content/about";
 
 export const metadata = buildMetadata({
-  title: "About Us | Skinwise",
+  title: "About Us",
   description:
     "Meet Skinwise: our mission, vision, and core values, the founder's story behind personalized, science-backed skincare, and our approach to lasting results.",
   path: "/about-us",

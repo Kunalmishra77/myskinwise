@@ -3,7 +3,7 @@ import { LegalPage } from "@/components/features/legal-page";
 import { PRIVACY } from "@/content/legal";
 
 export const metadata = buildMetadata({
-  title: "Privacy Policy | Skinwise",
+  title: "Privacy Policy",
   description:
     "How Skinwise collects, uses, shares, and protects the personal information you provide as a customer or visitor of MySkinWise.com.",
   path: "/privacy-policy",

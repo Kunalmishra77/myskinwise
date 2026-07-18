@@ -3,7 +3,7 @@ import { LegalPage } from "@/components/features/legal-page";
 import { TERMS } from "@/content/legal";
 
 export const metadata = buildMetadata({
-  title: "Terms and Conditions | Skinwise",
+  title: "Terms and Conditions",
   description:
     "The Terms and Conditions governing your use of MySkinWise.com and the purchase of our customized skincare products.",
   path: "/terms-and-conditions",

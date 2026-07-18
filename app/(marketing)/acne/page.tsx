@@ -3,7 +3,7 @@ import { CONCERNS } from "@/content/concerns";
 import { buildMetadata } from "@/config/seo";
 
 export const metadata = buildMetadata({
-  title: "Acne Treatment | Skinwise",
+  title: "Acne Treatment",
   description:
     "Clear breakouts and prevent future acne with a personalized, dermatologist-formulated routine targeting the root cause. Take the skin quiz to get started.",
   path: "/acne",

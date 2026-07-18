@@ -4,7 +4,9 @@ import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Page not found | Skinwise",
+  // Bare segment title — the root layout's "%s | Skinwise" template
+  // appends the site suffix; adding it here too would double it.
+  title: "Page not found",
 };
 
 /**

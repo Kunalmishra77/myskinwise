@@ -3,7 +3,7 @@ import { CONCERNS } from "@/content/concerns";
 import { buildMetadata } from "@/config/seo";
 
 export const metadata = buildMetadata({
-  title: "Hyperpigmentation Treatment | Skinwise",
+  title: "Hyperpigmentation Treatment",
   description:
     "Fade dark spots, melasma, and uneven skin tone with a personalized, science-backed hyperpigmentation routine. Take the skin quiz to get started.",
   path: "/pigmentation",

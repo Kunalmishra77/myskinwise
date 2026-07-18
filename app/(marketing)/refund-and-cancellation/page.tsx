@@ -3,7 +3,7 @@ import { LegalPage } from "@/components/features/legal-page";
 import { REFUND } from "@/content/legal";
 
 export const metadata = buildMetadata({
-  title: "Refund and Cancellation | Skinwise",
+  title: "Refund and Cancellation",
   description:
     "Skinwise's refund and cancellation policy for orders and appointment payments made on MySkinWise.com.",
   path: "/refund-and-cancellation",

@@ -22,7 +22,9 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { concern } = await params;
   const label = isKnownConcern(concern) ? CONCERNS[concern].label : "Skin";
-  return { title: `${label} Quiz | Skinwise` };
+  // Bare segment title — the root layout's "%s | Skinwise" template
+  // appends the site suffix; adding it here too would double it.
+  return { title: `${label} Quiz` };
 }
 
 export default async function QuizPage({ params }: PageProps) {
