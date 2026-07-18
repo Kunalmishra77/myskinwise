@@ -15,7 +15,10 @@ export type ConcernContent = {
   causes: { title: string; body: string }[];
   /** "Which one looks like yours" — the visual sub-type picker. */
   types: { name: string; body: string }[];
-  /** "The science behind treating X" narrative steps. */
+  /**
+   * "The Science Behind Treating…" steps. (Renamed from the plan's
+   * `science` field for clarity.)
+   */
   scienceSteps: { title: string; body: string }[];
   /** Research-driven ingredients, grouped as tabs (one tab per sub-type/skin-type). */
   ingredientsByType: { tabLabel: string; items: string[] }[];

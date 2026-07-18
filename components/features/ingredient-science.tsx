@@ -35,8 +35,8 @@ export function IngredientScience({ groups, heading }: IngredientScienceProps) {
     label: group.tabLabel,
     content: (
       <ul className="list-disc space-y-2 pl-5 text-sm text-muted">
-        {group.items.map((item) => (
-          <li key={item}>{item}</li>
+        {group.items.map((item, index) => (
+          <li key={`${group.tabLabel}-${index}`}>{item}</li>
         ))}
       </ul>
     ),

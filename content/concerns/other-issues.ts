@@ -25,6 +25,7 @@ import { FAQS } from "@/content/faqs";
 export const otherIssues: ConcernContent = {
   slug: "other-issues",
   label: "Other Issues",
+  // TODO(client-confirm): repurposed body copy used as Other Issues hero — confirm intended headline
   hero: {
     heading: "Understanding Common Skin Concerns",
     subheading:
