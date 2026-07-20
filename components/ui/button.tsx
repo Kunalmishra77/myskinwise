@@ -7,13 +7,14 @@ const baseClasses =
   "rounded-full px-6 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 inline-flex items-center justify-center gap-2";
 
 const variantClasses: Record<ButtonVariant, string> = {
-  // `accent` (#e38a9e) with white text is only ~2.5:1 — fails WCAG AA
-  // (4.5:1) for normal text. `accent-ink`, the darker token already
-  // defined for hover (darkened further to #96435a — see globals.css —
-  // for its own AA needs), is ~6.5:1 against white and keeps the same
-  // rose family, so it's used as the resting background instead; hover
-  // deepens further to `ink` for a clear, on-brand pressed state.
-  primary: "bg-accent-ink text-white hover:bg-ink",
+  // `accent` (#ec6a93, the brand's rose-pink CTA color) with white text is
+  // only ~3:1 — fails WCAG AA (4.5:1) for normal text. `accent-ink`, the
+  // darker rose token (see globals.css), clears ~6.5:1 against white and
+  // keeps the same rose family, so it's used as the resting background
+  // instead; hover deepens further to `ink` for a clear, on-brand pressed
+  // state. Rounded-full + soft shadow gives the friendly, pill-shaped CTA
+  // look from the reference brand.
+  primary: "bg-accent-ink text-white shadow-soft hover:bg-ink hover:shadow-lift",
   secondary: "bg-ink text-white",
   outline: "border border-ink/20 text-ink hover:bg-ink/5",
   // WhatsApp's brand green (#25D366) against white text is only ~2:1.

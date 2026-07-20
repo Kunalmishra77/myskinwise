@@ -24,11 +24,9 @@ export function SubscribeForm() {
         type="email"
         name="email"
         placeholder="Enter your email"
-        className="min-w-0 flex-1 rounded-full border border-white/20 bg-transparent px-4 py-2 text-sm text-white placeholder:text-white/60 focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="min-w-0 flex-1 rounded-full border border-accent/30 bg-surface px-4 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2"
       />
-      <Button type="submit" variant="secondary">
-        Subscribe
-      </Button>
+      <Button type="submit">Subscribe</Button>
     </form>
   );
 }

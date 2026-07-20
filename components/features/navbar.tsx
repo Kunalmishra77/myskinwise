@@ -87,7 +87,7 @@ function NavDropdown({ label, children }: { label: string; children: { label: st
         aria-hidden={!open}
         inert={!open}
         className={cn(
-          "absolute left-0 top-full z-50 mt-2 min-w-48 rounded-xl border border-ink/10 bg-surface py-2 shadow-lg",
+          "absolute left-0 top-full z-50 mt-2 min-w-48 rounded-xl border border-accent/15 bg-surface py-2 shadow-lift",
           !open && "pointer-events-none opacity-0",
         )}
       >
@@ -244,7 +244,7 @@ export function Navbar() {
   const drawerId = React.useId();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-ink/10 bg-surface">
+    <header className="sticky top-0 z-50 border-b border-accent/10 bg-surface shadow-[0_1px_0_rgba(168,48,93,0.06)]">
       {/*
         Hidden from assistive tech (and non-interactive via `inert`) while
         the mobile drawer's dialog is open, so a screen-reader's browse

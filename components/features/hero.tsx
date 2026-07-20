@@ -44,13 +44,19 @@ export interface HeroProps {
 export function Hero({ image, heading, subheading, ctas, eyebrow, trustNote, trustChip }: HeroProps) {
   return (
     <Section
+      tone="blush"
       className="relative overflow-hidden py-14 md:py-20"
       containerClassName={cn(
-        "grid grid-cols-1 items-center gap-12",
+        "relative grid grid-cols-1 items-center gap-12",
         image ? "lg:grid-cols-2 lg:gap-16" : "mx-auto max-w-3xl justify-items-center text-center",
       )}
     >
-      <div className={cn("flex flex-col gap-6", image ? "order-2 lg:order-1" : "items-center")}>
+      {/* Botanical leaf line-art watermark behind the hero content, matching
+          the reference brand's pink-on-pink botanical backdrop. Purely
+          decorative, so it's aria-hidden and never intercepts clicks. */}
+      <div aria-hidden="true" className="leaf-motif leaf-motif--mirrored absolute -right-6 -top-10 h-72 w-72 md:h-96 md:w-96" />
+
+      <div className={cn("relative flex flex-col gap-6", image ? "order-2 lg:order-1" : "items-center")}>
         {eyebrow && <Eyebrow className={!image ? "justify-center" : undefined}>{eyebrow}</Eyebrow>}
         <h1 className="text-balance text-display font-semibold text-ink">{heading}</h1>
         {subheading && (
@@ -72,7 +78,7 @@ export function Hero({ image, heading, subheading, ctas, eyebrow, trustNote, tru
         <div className="relative order-1 lg:order-2">
           <div
             aria-hidden="true"
-            className="absolute -inset-8 -z-10 rounded-[3rem] bg-[radial-gradient(circle_at_50%_35%,rgba(227,138,158,0.35),transparent_70%)] blur-2xl"
+            className="absolute -inset-8 -z-10 rounded-[3rem] bg-[radial-gradient(circle_at_50%_35%,rgba(236,106,147,0.4),transparent_70%)] blur-2xl"
           />
           <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl shadow-lift">
             <Image
@@ -85,7 +91,7 @@ export function Hero({ image, heading, subheading, ctas, eyebrow, trustNote, tru
             />
           </div>
           {trustChip && (
-            <div className="absolute -bottom-5 left-5 flex items-center gap-2 rounded-2xl border border-ink/5 bg-surface px-4 py-3 shadow-soft sm:left-8">
+            <div className="absolute -bottom-5 left-5 flex items-center gap-2 rounded-2xl border border-accent/15 bg-surface px-4 py-3 shadow-soft sm:left-8">
               {trustChip.icon && (
                 <trustChip.icon aria-hidden="true" className="size-5 shrink-0 text-accent-ink" />
               )}

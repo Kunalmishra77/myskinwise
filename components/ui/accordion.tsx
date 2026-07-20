@@ -57,16 +57,20 @@ export function Accordion({ items, allowMultiple = false, className, ...props }:
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 onClick={() => toggle(item.id)}
-                className="flex w-full items-center justify-between gap-4 py-3 text-left font-medium text-ink"
+                className="flex w-full items-center justify-between gap-4 py-3 text-left font-medium text-ink transition-colors hover:text-accent-ink"
               >
                 <span>{item.question}</span>
-                <ChevronDown
+                <span
                   aria-hidden="true"
                   className={cn(
-                    "size-5 shrink-0 text-muted transition-transform duration-200",
-                    isOpen && "rotate-180",
+                    "flex size-8 shrink-0 items-center justify-center rounded-full bg-blush text-accent-ink transition-colors",
+                    isOpen && "bg-accent-ink text-white",
                   )}
-                />
+                >
+                  <ChevronDown
+                    className={cn("size-4 transition-transform duration-200", isOpen && "rotate-180")}
+                  />
+                </span>
               </button>
             </h3>
             {/*

@@ -30,7 +30,7 @@ export function ProcessSteps({ steps, heading }: ProcessStepsProps) {
             <li> children. */}
         <div
           aria-hidden="true"
-          className="absolute left-0 right-0 top-5 hidden h-px bg-ink/10 sm:block"
+          className="absolute left-0 right-0 top-5 hidden h-px bg-accent/20 sm:block"
         />
         <ol className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-14 lg:grid-cols-4">
           {steps.map((step, index) => (
@@ -47,7 +47,7 @@ export function ProcessSteps({ steps, heading }: ProcessStepsProps) {
                   {index + 1}
                 </span>
                 {index < steps.length - 1 && (
-                  <span aria-hidden="true" className="mt-1 w-px flex-1 bg-ink/15 sm:hidden" />
+                  <span aria-hidden="true" className="mt-1 w-px flex-1 bg-accent/25 sm:hidden" />
                 )}
               </div>
               <div className="flex flex-col gap-2 pb-2 sm:items-center">

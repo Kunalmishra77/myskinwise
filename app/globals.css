@@ -1,26 +1,43 @@
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: #fbf7f4;
+  /*
+   * Skinwise brand palette (matched from myskinwise.com screenshots — soft
+   * pink + botanical, friendly premium consumer-beauty — not the earlier
+   * cream/editorial direction).
+   */
+  --color-canvas: #fdecef;
   --color-surface: #ffffff;
   /*
    * Soft rose-tint band used for alternating section backgrounds (see
-   * `Section`'s `tone="blush"`). Distinct from `--color-canvas` (#fbf7f4,
-   * a near-white cream) — this is a visibly deeper, warmer rose-cream so
-   * bands read as an intentional rhythm rather than a rounding error.
+   * `Section`'s `tone="blush"`) and for card/pill fills that need to read
+   * as "pink" without the full CTA saturation. Distinct from
+   * `--color-canvas` (#fdecef, a near-white blush) — this is a visibly
+   * deeper dusty pink so bands read as an intentional rhythm rather than a
+   * rounding error.
    */
-  --color-blush: #f6ebe7;
-  --color-accent: #e38a9e;
+  --color-blush: #f8dde3;
+  /*
+   * Medium rose-pink used for CTA/button backgrounds paired with dark text,
+   * decorative icon fills, borders and hover tints. White text directly on
+   * `--color-accent` only clears ~3:1 (fails WCAG AA's 4.5:1 for normal
+   * text) — anywhere text sits *on* a rose fill, use `--color-accent-ink`
+   * instead (see Button `primary`, TrustBadgeStrip).
+   */
+  --color-accent: #ec6a93;
   /*
    * Darker rose "ink" companion to --color-accent, used wherever text/icons
-   * or button backgrounds need to reach WCAG AA (4.5:1). The original
-   * #b05a70 only cleared ~4.6:1 against white and ~4.3:1 against
-   * `--color-canvas` (fails AA there) — #96435a clears ~6.5:1 / ~6.1:1
-   * against both, with a safe margin, while staying in the same rose family.
+   * or filled backgrounds need to reach WCAG AA (4.5:1): headings/eyebrows
+   * in rose, button fills with white text, icons on white. Verified via
+   * relative-luminance contrast math: ~6.5:1 on white, ~5.7:1 on
+   * `--color-canvas`, ~5.1:1 on `--color-blush` — safe margin over 4.5:1 on
+   * every surface token it's paired with.
    */
-  --color-accent-ink: #96435a;
-  --color-ink: #1a1618;
-  --color-muted: #6b6469;
+  --color-accent-ink: #a8305d;
+  --color-ink: #201720;
+  --color-muted: #6b5a62;
+  /* Dark charcoal band for the "Powered by data" stats strip. */
+  --color-charcoal: #3c3a3b;
 
   --color-gray-50: #fafafa;
   --color-gray-100: #f4f4f5;
@@ -39,17 +56,18 @@
   /*
    * Layered "soft" shadow for resting premium surfaces (Card, hero image
    * frame, floating chips) and a stronger "lift" shadow for hover/elevated
-   * states. Two layers each: a tight near shadow for definition + a broad,
-   * low-opacity far shadow for the soft editorial glow.
+   * states. Two layers each: a tight near-neutral shadow for definition +
+   * a broad, low-opacity rose-tinted far shadow, so elevated surfaces glow
+   * softly pink rather than a generic drop shadow.
    */
-  --shadow-soft: 0 1px 2px rgba(26, 22, 24, 0.04), 0 14px 40px -20px rgba(26, 22, 24, 0.22);
-  --shadow-lift: 0 8px 10px -6px rgba(26, 22, 24, 0.14), 0 24px 60px -20px rgba(26, 22, 24, 0.32);
+  --shadow-soft: 0 1px 2px rgba(32, 23, 32, 0.05), 0 14px 40px -20px rgba(168, 48, 93, 0.28);
+  --shadow-lift: 0 8px 10px -6px rgba(32, 23, 32, 0.16), 0 24px 60px -20px rgba(168, 48, 93, 0.4);
 
   /*
    * Editorial type scale. Fluid via clamp() so the hero display size and
    * section headings scale smoothly between mobile and wide desktop
    * instead of jumping at breakpoints. Tight leading + slightly negative
-   * tracking is what gives large serif headings their "premium" feel.
+   * tracking is what gives large headings their premium feel.
    */
   --text-display: clamp(2.5rem, 5.5vw, 4.25rem);
   --text-display--line-height: 1.05;
@@ -104,4 +122,31 @@ h4 {
   .marquee {
     animation: none;
   }
+}
+
+/*
+ * Botanical leaf line-art motif — the harvested brand asset
+ * (public/images/brand/leaf-motif.png) used as a subtle decorative texture
+ * behind hero sections and banners, matching the reference site's
+ * pink-on-pink leaf pattern.
+ *
+ * Usage: an absolutely-positioned, `aria-hidden="true"` element (the
+ * decoration carries no information, so it must stay out of the a11y tree)
+ * sized by the caller, e.g.:
+ *   <div aria-hidden="true" className="leaf-motif absolute inset-0" />
+ * `pointer-events-none` is baked in here (not left to callers) so the
+ * decoration can never intercept clicks/taps meant for real content
+ * underneath it.
+ */
+.leaf-motif {
+  pointer-events: none;
+  background-image: url("/images/brand/leaf-motif.png");
+  background-repeat: no-repeat;
+  background-position: top right;
+  background-size: 26rem auto;
+  opacity: 0.35;
+}
+
+.leaf-motif--mirrored {
+  transform: scaleX(-1);
 }
