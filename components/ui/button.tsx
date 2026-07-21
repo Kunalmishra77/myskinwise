@@ -14,7 +14,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   // instead; hover deepens further to `ink` for a clear, on-brand pressed
   // state. Rounded-full + soft shadow gives the friendly, pill-shaped CTA
   // look from the reference brand.
-  primary: "bg-accent-ink text-white shadow-soft hover:bg-ink hover:shadow-lift",
+  primary: "bg-rose-ink text-white shadow-soft hover:bg-ink hover:shadow-lift",
   secondary: "bg-ink text-white",
   outline: "border border-ink/20 text-ink hover:bg-ink/5",
   // WhatsApp's brand green (#25D366) against white text is only ~2:1.

@@ -33,11 +33,11 @@ export function Accordion({ items, className, ...props }: AccordionProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   return (
-    <div className={cn("divide-y divide-hp-ink/10", className)} {...props}>
+    <div className={cn("divide-y divide-ink/10", className)} {...props}>
       {items.map((item) => {
         const isOpen = openId === item.id;
-        const headerId = `hp-acc-${uid}-${item.id}-header`;
-        const panelId = `hp-acc-${uid}-${item.id}-panel`;
+        const headerId = `acc-${uid}-${item.id}-header`;
+        const panelId = `acc-${uid}-${item.id}-panel`;
 
         return (
           <div key={item.id} className="py-2">
@@ -48,14 +48,14 @@ export function Accordion({ items, className, ...props }: AccordionProps) {
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 onClick={() => setOpenId(isOpen ? null : item.id)}
-                className="flex w-full items-center justify-between gap-4 py-4 text-left font-display text-lg font-medium text-hp-ink transition-colors hover:text-hp-rose-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hp-rose-ink focus-visible:ring-offset-2"
+                className="flex w-full items-center justify-between gap-4 py-4 text-left font-display text-lg font-medium text-ink transition-colors hover:text-rose-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
               >
                 <span>{item.q}</span>
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-full bg-hp-blush text-hp-rose-ink transition-colors",
-                    isOpen && "bg-hp-rose-ink text-white",
+                    "flex size-8 shrink-0 items-center justify-center rounded-full bg-blush text-rose-ink transition-colors",
+                    isOpen && "bg-rose-ink text-white",
                   )}
                 >
                   {isOpen ? <Minus className="size-4" /> : <Plus className="size-4" />}
@@ -73,7 +73,7 @@ export function Accordion({ items, className, ...props }: AccordionProps) {
               transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.25, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="pb-5 pt-1 font-body text-hp-ink-soft">{item.a}</div>
+              <div className="pb-5 pt-1 font-body text-ink-soft">{item.a}</div>
             </motion.div>
           </div>
         );

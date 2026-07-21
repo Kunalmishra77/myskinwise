@@ -57,14 +57,14 @@ export function Accordion({ items, allowMultiple = false, className, ...props }:
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 onClick={() => toggle(item.id)}
-                className="flex w-full items-center justify-between gap-4 py-3 text-left font-medium text-ink transition-colors hover:text-accent-ink"
+                className="flex w-full items-center justify-between gap-4 py-3 text-left font-medium text-ink transition-colors hover:text-rose-ink"
               >
                 <span>{item.question}</span>
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-full bg-blush text-accent-ink transition-colors",
-                    isOpen && "bg-accent-ink text-white",
+                    "flex size-8 shrink-0 items-center justify-center rounded-full bg-blush text-rose-ink transition-colors",
+                    isOpen && "bg-rose-ink text-white",
                   )}
                 >
                   <ChevronDown
@@ -92,7 +92,7 @@ export function Accordion({ items, allowMultiple = false, className, ...props }:
               transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="pb-4 pt-1 text-muted">{item.answer}</div>
+              <div className="pb-4 pt-1 text-ink-soft">{item.answer}</div>
             </motion.div>
           </div>
         );

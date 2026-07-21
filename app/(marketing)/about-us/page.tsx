@@ -37,11 +37,11 @@ export default function AboutUsPage() {
 
       {/* Heading / subheading */}
       <Section className="text-center">
-        <h1 className="font-serif text-4xl font-semibold text-ink md:text-5xl">{heading}</h1>
-        {/* `text-accent` directly as body-text color is only ~2.5:1 against
-            white/canvas (fails AA); `text-accent-ink` keeps the rose hue
+        <h1 className="font-display text-4xl font-semibold text-ink md:text-5xl">{heading}</h1>
+        {/* `text-rose` directly as body-text color is only ~2.5:1 against
+            white/canvas (fails AA); `text-rose-ink` keeps the rose hue
             while reaching a safe contrast margin. */}
-        <p className="mt-3 text-sm font-medium uppercase tracking-wide text-accent-ink">{subheading}</p>
+        <p className="mt-3 text-sm font-medium uppercase tracking-wide text-rose-ink">{subheading}</p>
       </Section>
 
       {/* Mission & Vision */}
@@ -49,11 +49,11 @@ export default function AboutUsPage() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <div>
             <h2 className="text-2xl font-semibold text-ink md:text-3xl">Our Mission</h2>
-            <p className="mt-4 text-lg text-muted">{mission}</p>
+            <p className="mt-4 text-lg text-ink-soft">{mission}</p>
           </div>
           <div>
             <h2 className="text-2xl font-semibold text-ink md:text-3xl">Our Vision</h2>
-            <p className="mt-4 text-lg text-muted">{vision}</p>
+            <p className="mt-4 text-lg text-ink-soft">{vision}</p>
           </div>
         </div>
       </Section>
@@ -66,7 +66,7 @@ export default function AboutUsPage() {
             <Card key={value.title} className="text-center">
               <CardBody>
                 <h3 className="text-lg font-semibold text-ink">{value.title}</h3>
-                <p className="mt-2 text-sm text-muted">{value.description}</p>
+                <p className="mt-2 text-sm text-ink-soft">{value.description}</p>
               </CardBody>
             </Card>
           ))}
@@ -81,10 +81,10 @@ export default function AboutUsPage() {
       <Section className="bg-surface">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-2xl font-semibold text-ink md:text-3xl">Founder&apos;s Story</h2>
-          <p className="mt-2 text-sm font-medium text-accent-ink">{founderStory.name}</p>
+          <p className="mt-2 text-sm font-medium text-rose-ink">{founderStory.name}</p>
           <div className="mt-4 flex flex-col gap-4">
             {founderStory.paragraphs.map((paragraph, index) => (
-              <p key={index} className="text-base text-muted">
+              <p key={index} className="text-base text-ink-soft">
                 {paragraph}
               </p>
             ))}
@@ -100,7 +100,7 @@ export default function AboutUsPage() {
             <Card key={pillar.title}>
               <CardBody>
                 <h3 className="text-lg font-semibold text-ink">{pillar.title}</h3>
-                <p className="mt-2 text-sm text-muted">{pillar.body}</p>
+                <p className="mt-2 text-sm text-ink-soft">{pillar.body}</p>
               </CardBody>
             </Card>
           ))}

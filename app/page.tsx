@@ -41,10 +41,10 @@ const TRUST_PILLS = [
 type PlaceholderTone = "warm" | "surface" | "blush" | "champagne";
 
 const TONE_CLASSES: Record<PlaceholderTone, string> = {
-  warm: "bg-hp-warm",
-  surface: "bg-hp-surface",
-  blush: "bg-hp-blush",
-  champagne: "bg-hp-champagne",
+  warm: "bg-warm",
+  surface: "bg-surface",
+  blush: "bg-blush",
+  champagne: "bg-champagne",
 };
 
 /**
@@ -73,7 +73,7 @@ function PlaceholderSection({
     <section id={id} className={cn("scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8", TONE_CLASSES[tone])}>
       <RevealOnScroll className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
         <SectionEyebrow index={index}>{eyebrow}</SectionEyebrow>
-        <h2 className="font-display text-3xl font-semibold leading-tight tracking-[-0.015em] text-hp-ink sm:text-5xl">
+        <h2 className="font-display text-3xl font-semibold leading-tight tracking-[-0.015em] text-ink sm:text-5xl">
           {heading}
         </h2>
       </RevealOnScroll>
@@ -84,7 +84,7 @@ function PlaceholderSection({
 
 export default function Home() {
   return (
-    <div className="font-body bg-hp-warm text-hp-ink">
+    <div className="font-body bg-warm text-ink">
       <ScrollProgress />
       <FilmGrain />
       <CursorGlow />
@@ -98,13 +98,13 @@ export default function Home() {
           <GradientMesh className="opacity-70" />
           <RevealOnScroll className="relative mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
             <Pill dot>AI-Powered Skin Analysis</Pill>
-            <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.015em] text-hp-ink sm:text-6xl md:text-7xl">
+            <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.015em] text-ink sm:text-6xl md:text-7xl">
               Understand your skin.{" "}
-              <span className="block bg-gradient-to-r from-hp-rose via-hp-rose-deep to-hp-rose-ink bg-clip-text italic text-transparent">
+              <span className="block bg-gradient-to-r from-rose via-rose-deep to-rose-ink bg-clip-text italic text-transparent">
                 Then transform it.
               </span>
             </h1>
-            <p className="max-w-xl text-base text-hp-ink-soft sm:text-lg">
+            <p className="max-w-xl text-base text-ink-soft sm:text-lg">
               Skinwise pairs AI-powered analysis with real human experts to build a customised routine for your
               exact concern — hyperpigmentation, acne, and beyond. No guesswork. Just skin science, made personal.
             </p>
@@ -118,7 +118,7 @@ export default function Home() {
                 <a href="#chat">Try AI Chat</a>
               </Button>
             </div>
-            <p className="text-sm text-hp-ink-mute">
+            <p className="text-sm text-ink-mute">
               The full hero visual, scan animation and floating stat cards land in Stage 2.
             </p>
           </RevealOnScroll>
@@ -126,7 +126,7 @@ export default function Home() {
 
         {/* Trust marquee placeholder — proves the Marquee primitive; the
             styled strip with icons arrives with the real section content. */}
-        <section aria-label="Trust signals" className="border-y border-hp-ink/5 bg-hp-surface py-6">
+        <section aria-label="Trust signals" className="border-y border-ink/5 bg-surface py-6">
           <Marquee speed={30}>
             {TRUST_PILLS.map((label) => (
               <Pill key={label}>{label}</Pill>
@@ -142,7 +142,7 @@ export default function Home() {
           heading="A dermatology-grade read of your skin in seconds."
         >
           <Card className="mx-auto max-w-md text-center">
-            <p className="text-sm text-hp-ink-soft">
+            <p className="text-sm text-ink-soft">
               The working multi-step quiz card (skin close-up scan + 4-step form) is built in Stage 2/3.
             </p>
           </Card>
@@ -156,7 +156,7 @@ export default function Home() {
           heading="Ask anything. Get skin answers, instantly."
         >
           <GlassCard className="mx-auto max-w-md text-center">
-            <p className="text-sm text-hp-ink-soft">
+            <p className="text-sm text-ink-soft">
               The full chat UI (suggested questions + message thread) is built in Stage 2/3.
             </p>
           </GlassCard>
@@ -169,7 +169,7 @@ export default function Home() {
           tone="warm"
           heading="Four gentle steps to healthier skin."
         >
-          <p className="mx-auto max-w-md text-center text-sm text-hp-ink-soft">
+          <p className="mx-auto max-w-md text-center text-sm text-ink-soft">
             The four connected process cards are built in Stage 2/3.
           </p>
         </PlaceholderSection>
@@ -181,19 +181,19 @@ export default function Home() {
           tone="surface"
           heading="Built for your exact concern."
         >
-          <p className="mx-auto max-w-md text-center text-sm text-hp-ink-soft">
+          <p className="mx-auto max-w-md text-center text-sm text-ink-soft">
             Hyperpigmentation / Acne &amp; breakouts / Ageing &amp; texture cards are built in Stage 2/3.
           </p>
         </PlaceholderSection>
 
         <PlaceholderSection id="results" eyebrow="Results" tone="surface" heading="Skin journeys that speak for themselves.">
           <div className="mx-auto flex max-w-md flex-col items-center gap-1 text-center">
-            <p className="font-display text-4xl font-semibold text-hp-ink">
+            <p className="font-display text-4xl font-semibold text-ink">
               <CountUp value={2000} suffix="+" />
             </p>
-            <p className="text-sm text-hp-ink-soft">skin journeys started*</p>
+            <p className="text-sm text-ink-soft">skin journeys started*</p>
           </div>
-          <p className="mt-6 text-center text-xs text-hp-ink-mute">
+          <p className="mt-6 text-center text-xs text-ink-mute">
             *Placeholder stat — replace with verified figures before launch. The full stats + results panel is built
             in Stage 2/3.
           </p>

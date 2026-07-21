@@ -65,7 +65,7 @@ export function BeforeAfterCarousel({ slides }: BeforeAfterCarouselProps) {
     return (
       <Card className="flex flex-col items-center gap-2 text-center">
         <h3 className="text-lg font-semibold text-ink">Before &amp; after results coming soon</h3>
-        <p className="text-sm text-muted">
+        <p className="text-sm text-ink-soft">
           We&apos;re gathering real customer transformations to share here.
         </p>
       </Card>
@@ -129,10 +129,10 @@ export function BeforeAfterCarousel({ slides }: BeforeAfterCarouselProps) {
         </button>
       </div>
 
-      {slide.caption && <p className="text-center text-sm text-muted">{slide.caption}</p>}
+      {slide.caption && <p className="text-center text-sm text-ink-soft">{slide.caption}</p>}
 
       <div className="flex items-center justify-center gap-3">
-        <div aria-live="polite" className="text-xs font-medium text-muted">
+        <div aria-live="polite" className="text-xs font-medium text-ink-soft">
           {index + 1} of {slides.length}
         </div>
         <div className="flex gap-1.5" role="tablist" aria-label="Slides">
@@ -146,7 +146,7 @@ export function BeforeAfterCarousel({ slides }: BeforeAfterCarouselProps) {
               onClick={() => goTo(dotIndex)}
               className={cn(
                 "size-2 rounded-full transition",
-                dotIndex === index ? "bg-accent" : "bg-ink/20",
+                dotIndex === index ? "bg-rose" : "bg-ink/20",
               )}
             />
           ))}

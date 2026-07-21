@@ -5,7 +5,7 @@ export type ButtonVariant = "primary" | "dark" | "glass" | "outline";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const baseClasses =
-  "inline-flex items-center justify-center gap-2 rounded-full font-body font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hp-rose-ink focus-visible:ring-offset-2 focus-visible:ring-offset-hp-warm disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-full font-body font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2 focus-visible:ring-offset-warm disabled:pointer-events-none disabled:opacity-50";
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "px-5 py-2.5 text-sm",
@@ -25,10 +25,10 @@ const sizeClasses: Record<ButtonSize, string> = {
  * pair.
  */
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-hp-rose-ink text-white shadow-hp-soft hover:bg-hp-rose-deep hover:shadow-hp-lift",
-  dark: "bg-hp-plum text-white shadow-hp-soft hover:bg-hp-ink hover:shadow-hp-lift",
-  glass: "border border-white/50 bg-white/60 text-hp-ink backdrop-blur-xl shadow-hp-soft hover:bg-white/80",
-  outline: "border border-hp-ink/20 text-hp-ink hover:border-hp-rose-ink/40 hover:bg-hp-blush",
+  primary: "bg-rose-ink text-white shadow-soft hover:bg-rose-deep hover:shadow-lift",
+  dark: "bg-plum text-white shadow-soft hover:bg-ink hover:shadow-lift",
+  glass: "border border-white/50 bg-white/60 text-ink backdrop-blur-xl shadow-soft hover:bg-white/80",
+  outline: "border border-ink/20 text-ink hover:border-rose-ink/40 hover:bg-blush",
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

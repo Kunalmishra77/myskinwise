@@ -12,7 +12,7 @@ export interface MarqueeProps {
 /**
  * Infinite horizontal marquee. A single flex track holds the content twice
  * back-to-back (the second copy is `aria-hidden`) and is translated from 0
- * to -50% via the `animate-hp-marquee` CSS animation (see globals.css) —
+ * to -50% via the `animate-marquee` CSS animation (see globals.css) —
  * since the track is exactly double-width, a -50% translate is a seamless
  * loop back to the start. Pure CSS (no JS/client component needed): pausing
  * under reduced motion is handled by Tailwind's `motion-reduce:` variant.
@@ -22,7 +22,7 @@ export function Marquee({ children, speed = 28, reverse = false, className }: Ma
     <div className={cn("overflow-hidden", className)}>
       <div
         className={cn(
-          "flex w-max animate-hp-marquee items-center gap-4 motion-reduce:animate-none",
+          "flex w-max animate-marquee items-center gap-4 motion-reduce:animate-none",
           reverse && "[animation-direction:reverse]",
         )}
         style={{ animationDuration: `${speed}s` }}

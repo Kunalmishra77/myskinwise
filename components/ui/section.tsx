@@ -21,7 +21,7 @@ export interface SectionProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 const toneClasses: Record<NonNullable<SectionProps["tone"]>, string> = {
-  canvas: "bg-canvas",
+  canvas: "bg-warm",
   surface: "bg-surface",
   blush: "bg-blush",
 };

@@ -8,7 +8,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(({ className, ..
   <div
     ref={ref}
     className={cn(
-      "rounded-3xl bg-hp-surface p-6 shadow-hp-soft transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-hp-lift",
+      "rounded-3xl bg-surface p-6 shadow-soft transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-lift",
       className,
     )}
     {...props}
@@ -23,7 +23,7 @@ export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(({ cla
   <div
     ref={ref}
     className={cn(
-      "rounded-3xl border border-white/40 bg-white/60 p-6 shadow-hp-soft backdrop-blur-xl",
+      "rounded-3xl border border-white/40 bg-white/60 p-6 shadow-soft backdrop-blur-xl",
       className,
     )}
     {...props}

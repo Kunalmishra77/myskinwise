@@ -69,7 +69,7 @@ function NavDropdown({ label, children }: { label: string; children: { label: st
         // outside click, blur out of the group).
         onClick={() => setOpen(true)}
         onFocus={() => setOpen(true)}
-        className="inline-flex items-center gap-1 font-medium text-ink transition hover:text-accent-ink"
+        className="inline-flex items-center gap-1 font-medium text-ink transition hover:text-rose-ink"
       >
         {label}
         <ChevronDown aria-hidden="true" className={cn("size-4 transition-transform", open && "rotate-180")} />
@@ -87,7 +87,7 @@ function NavDropdown({ label, children }: { label: string; children: { label: st
         aria-hidden={!open}
         inert={!open}
         className={cn(
-          "absolute left-0 top-full z-50 mt-2 min-w-48 rounded-xl border border-accent/15 bg-surface py-2 shadow-lift",
+          "absolute left-0 top-full z-50 mt-2 min-w-48 rounded-xl border border-rose/15 bg-surface py-2 shadow-lift",
           !open && "pointer-events-none opacity-0",
         )}
       >
@@ -95,7 +95,7 @@ function NavDropdown({ label, children }: { label: string; children: { label: st
           <li key={child.href}>
             <Link
               href={child.href}
-              className="block px-4 py-2 text-sm text-ink transition hover:bg-canvas hover:text-accent-ink"
+              className="block px-4 py-2 text-sm text-ink transition hover:bg-warm hover:text-rose-ink"
             >
               {child.label}
             </Link>
@@ -182,7 +182,7 @@ function MobileDrawer({ onClose, triggerRef }: { onClose: () => void; triggerRef
       className="fixed inset-0 z-50 flex flex-col bg-surface md:hidden"
     >
       <div className="flex items-center justify-between border-b border-ink/10 px-4 py-4">
-        <span id={titleId} className="font-serif text-lg text-ink">
+        <span id={titleId} className="font-display text-lg text-ink">
           {SITE.name}
         </span>
         <button
@@ -190,7 +190,7 @@ function MobileDrawer({ onClose, triggerRef }: { onClose: () => void; triggerRef
           type="button"
           aria-label="Close menu"
           onClick={onClose}
-          className="rounded-full p-2 text-ink transition hover:bg-canvas"
+          className="rounded-full p-2 text-ink transition hover:bg-warm"
         >
           <X aria-hidden="true" className="size-6" />
         </button>
@@ -208,7 +208,7 @@ function MobileDrawer({ onClose, triggerRef }: { onClose: () => void; triggerRef
                         <Link
                           href={child.href}
                           onClick={onClose}
-                          className="block py-2 text-muted transition hover:text-accent-ink"
+                          className="block py-2 text-ink-soft transition hover:text-rose-ink"
                         >
                           {child.label}
                         </Link>
@@ -220,7 +220,7 @@ function MobileDrawer({ onClose, triggerRef }: { onClose: () => void; triggerRef
                 <Link
                   href={item.href}
                   onClick={onClose}
-                  className="block py-2 font-medium text-ink transition hover:text-accent-ink"
+                  className="block py-2 font-medium text-ink transition hover:text-rose-ink"
                 >
                   {item.label}
                 </Link>
@@ -244,7 +244,7 @@ export function Navbar() {
   const drawerId = React.useId();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-accent/10 bg-surface shadow-[0_1px_0_rgba(168,48,93,0.06)]">
+    <header className="sticky top-0 z-50 border-b border-rose/10 bg-surface shadow-[0_1px_0_rgba(168,48,93,0.06)]">
       {/*
         Hidden from assistive tech (and non-interactive via `inert`) while
         the mobile drawer's dialog is open, so a screen-reader's browse
@@ -279,7 +279,7 @@ export function Navbar() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="font-medium text-ink transition hover:text-accent-ink"
+                className="font-medium text-ink transition hover:text-rose-ink"
               >
                 {item.label}
               </Link>
@@ -300,7 +300,7 @@ export function Navbar() {
           aria-expanded={drawerOpen}
           aria-controls={drawerId}
           onClick={() => setDrawerOpen(true)}
-          className="rounded-full p-2 text-ink transition hover:bg-canvas md:hidden"
+          className="rounded-full p-2 text-ink transition hover:bg-warm md:hidden"
         >
           <Menu aria-hidden="true" className="size-6" />
         </button>

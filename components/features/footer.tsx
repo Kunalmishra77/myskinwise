@@ -64,7 +64,7 @@ export function Footer() {
               <li>
                 <a
                   href={telHref(SITE.phones.general.e164)}
-                  className="inline-flex items-center gap-2 hover:text-accent-ink"
+                  className="inline-flex items-center gap-2 hover:text-rose-ink"
                 >
                   <Phone aria-hidden="true" className="size-4" />
                   {SITE.phones.general.label}: {SITE.phones.general.display}
@@ -73,7 +73,7 @@ export function Footer() {
               <li>
                 <a
                   href={telHref(SITE.phones.product.e164)}
-                  className="inline-flex items-center gap-2 hover:text-accent-ink"
+                  className="inline-flex items-center gap-2 hover:text-rose-ink"
                 >
                   <Phone aria-hidden="true" className="size-4" />
                   {SITE.phones.product.label}: {SITE.phones.product.display}
@@ -82,7 +82,7 @@ export function Footer() {
               <li>
                 <a
                   href={`mailto:${SITE.email}`}
-                  className="inline-flex items-center gap-2 hover:text-accent-ink"
+                  className="inline-flex items-center gap-2 hover:text-rose-ink"
                 >
                   <Mail aria-hidden="true" className="size-4" />
                   {SITE.email}
@@ -91,7 +91,7 @@ export function Footer() {
             </ul>
 
             <div>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-accent-ink">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-rose-ink">
                 Reach Out
               </h2>
               <ul className="flex flex-col gap-2 text-sm text-ink/80">
@@ -100,7 +100,7 @@ export function Footer() {
                     href={waHref(SITE.whatsapp.e164)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 hover:text-accent-ink"
+                    className="inline-flex items-center gap-2 hover:text-rose-ink"
                   >
                     <MessageCircle aria-hidden="true" className="size-4" />
                     WhatsApp: {SITE.whatsapp.display}
@@ -109,7 +109,7 @@ export function Footer() {
                 <li>
                   <a
                     href={telHref(SITE.phones.general.e164)}
-                    className="inline-flex items-center gap-2 hover:text-accent-ink"
+                    className="inline-flex items-center gap-2 hover:text-rose-ink"
                   >
                     <Phone aria-hidden="true" className="size-4" />
                     Customer Care: {SITE.phones.general.display}
@@ -118,7 +118,7 @@ export function Footer() {
                 <li>
                   <a
                     href={`mailto:${SITE.email}`}
-                    className="inline-flex items-center gap-2 hover:text-accent-ink"
+                    className="inline-flex items-center gap-2 hover:text-rose-ink"
                   >
                     <Mail aria-hidden="true" className="size-4" />
                     {SITE.email}
@@ -129,13 +129,13 @@ export function Footer() {
           </div>
 
           <div>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-ink">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-rose-ink">
               Visit Links
             </h2>
             <ul className="flex flex-col gap-2 text-sm text-ink/80">
               {visitLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="hover:text-accent-ink">
+                  <Link href={link.href} className="hover:text-rose-ink">
                     {link.label}
                   </Link>
                 </li>
@@ -144,7 +144,7 @@ export function Footer() {
           </div>
 
           <div className="md:col-span-2">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-ink">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-rose-ink">
               Subscribe Now
             </h2>
             <p className="mb-4 text-sm text-ink/80">
@@ -164,7 +164,7 @@ export function Footer() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={label}
-                        className="inline-flex size-9 items-center justify-center rounded-full bg-accent-ink text-white transition hover:bg-ink"
+                        className="inline-flex size-9 items-center justify-center rounded-full bg-rose-ink text-white transition hover:bg-ink"
                       >
                         <Globe aria-hidden="true" className="size-4" />
                       </a>
@@ -176,11 +176,11 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-accent/20 pt-6 text-sm text-ink/70 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 border-t border-rose/20 pt-6 text-sm text-ink/70 md:flex-row md:items-center md:justify-between">
           <ul className="flex flex-wrap gap-4">
             {legalLinks.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="hover:text-accent-ink">
+                <Link href={link.href} className="hover:text-rose-ink">
                   {link.label}
                 </Link>
               </li>

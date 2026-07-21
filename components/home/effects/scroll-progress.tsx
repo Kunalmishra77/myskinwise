@@ -19,7 +19,7 @@ export function ScrollProgress() {
     <motion.div
       aria-hidden="true"
       style={{ scaleX: prefersReducedMotion ? scrollYProgress : smoothed }}
-      className="fixed inset-x-0 top-0 z-[60] h-1 origin-left bg-gradient-to-r from-hp-rose via-hp-rose-deep to-hp-rose-ink"
+      className="fixed inset-x-0 top-0 z-[60] h-1 origin-left bg-gradient-to-r from-rose via-rose-deep to-rose-ink"
     />
   );
 }

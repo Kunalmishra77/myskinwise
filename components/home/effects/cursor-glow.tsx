@@ -43,7 +43,7 @@ export function CursorGlow() {
         y: springY,
         translateX: "-50%",
         translateY: "-50%",
-        background: "radial-gradient(circle, color-mix(in srgb, var(--color-hp-rose) 35%, transparent), transparent 70%)",
+        background: "radial-gradient(circle, color-mix(in srgb, var(--color-rose) 35%, transparent), transparent 70%)",
       }}
     />
   );

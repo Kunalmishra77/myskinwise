@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <Section className="text-center">
-      <h1 className="font-serif text-4xl font-semibold text-ink">Page not found</h1>
+      <h1 className="font-display text-4xl font-semibold text-ink">Page not found</h1>
       <p className="mt-4 text-ink/70">
         Sorry, we couldn&apos;t find the page you were looking for. It may have
         been moved or no longer exists.

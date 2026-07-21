@@ -21,7 +21,7 @@ export function ConcernCard({ slug, label, teaser, image }: ConcernCardProps) {
     <Card className="group overflow-hidden p-0">
       <Link
         href={`/${slug}`}
-        className="flex flex-col rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
+        className="flex flex-col rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-ink"
       >
         <div className="relative m-3 aspect-[4/3] overflow-hidden rounded-2xl">
           <Image
@@ -35,7 +35,7 @@ export function ConcernCard({ slug, label, teaser, image }: ConcernCardProps) {
         <div className="flex flex-col gap-2 px-6 pb-6 pt-1">
           <h3 className="text-lg font-semibold text-ink">{label}</h3>
           <p className="text-sm text-ink/70">{teaser}</p>
-          <span className="mt-2 inline-flex w-fit items-center gap-1.5 text-sm font-medium text-accent-ink">
+          <span className="mt-2 inline-flex w-fit items-center gap-1.5 text-sm font-medium text-rose-ink">
             Learn more
             <ArrowRight
               aria-hidden="true"

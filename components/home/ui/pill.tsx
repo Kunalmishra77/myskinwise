@@ -17,12 +17,12 @@ export function Pill({ dot, icon, className, children, ...props }: PillProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-hp-rose-ink/15 bg-hp-blush px-4 py-2 font-body text-[12.5px] font-semibold uppercase tracking-[0.1em] text-hp-rose-ink",
+        "inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-rose-ink/15 bg-blush px-4 py-2 font-body text-[12.5px] font-semibold uppercase tracking-[0.1em] text-rose-ink",
         className,
       )}
       {...props}
     >
-      {dot && <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-hp-rose-ink" />}
+      {dot && <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-rose-ink" />}
       {icon}
       {children}
     </span>

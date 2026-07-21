@@ -91,9 +91,9 @@ export function Hero({ image, heading, subheading, ctas, eyebrow, trustNote, tru
             />
           </div>
           {trustChip && (
-            <div className="absolute -bottom-5 left-5 flex items-center gap-2 rounded-2xl border border-accent/15 bg-surface px-4 py-3 shadow-soft sm:left-8">
+            <div className="absolute -bottom-5 left-5 flex items-center gap-2 rounded-2xl border border-rose/15 bg-surface px-4 py-3 shadow-soft sm:left-8">
               {trustChip.icon && (
-                <trustChip.icon aria-hidden="true" className="size-5 shrink-0 text-accent-ink" />
+                <trustChip.icon aria-hidden="true" className="size-5 shrink-0 text-rose-ink" />
               )}
               <span className="text-sm font-medium text-ink">{trustChip.label}</span>
             </div>

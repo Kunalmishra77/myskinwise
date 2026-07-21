@@ -38,10 +38,10 @@ export default async function QuizPage({ params }: PageProps) {
 
   return (
     <Section className="text-center">
-      <h1 className="font-serif text-4xl font-semibold text-ink md:text-5xl">
+      <h1 className="font-display text-4xl font-semibold text-ink md:text-5xl">
         Your {content.label} skin quiz is coming soon
       </h1>
-      <p className="mt-4 text-lg text-muted">
+      <p className="mt-4 text-lg text-ink-soft">
         We&apos;re putting the finishing touches on this quiz. In the meantime, share your
         details on the {content.label.toLowerCase()} page and our expert will contact you
         within 24 hours to build your personalized routine.

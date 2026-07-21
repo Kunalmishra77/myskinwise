@@ -30,7 +30,7 @@ export function ProcessSteps({ steps, heading }: ProcessStepsProps) {
             <li> children. */}
         <div
           aria-hidden="true"
-          className="absolute left-0 right-0 top-5 hidden h-px bg-accent/20 sm:block"
+          className="absolute left-0 right-0 top-5 hidden h-px bg-rose/20 sm:block"
         />
         <ol className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-14 lg:grid-cols-4">
           {steps.map((step, index) => (
@@ -38,16 +38,16 @@ export function ProcessSteps({ steps, heading }: ProcessStepsProps) {
               <div className="flex flex-col items-center self-stretch">
                 <span
                   aria-hidden="true"
-                  // `bg-accent` + white text is only ~2.5:1 (fails AA); the
+                  // `bg-rose` + white text is only ~2.5:1 (fails AA); the
                   // digit is still visually perceived even though aria-hidden
                   // removes it from the a11y tree, so it needs real contrast.
                   // `accent-ink` (~6.5:1 against white) matches the Button primary fix.
-                  className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-ink text-lg font-semibold text-white ring-8 ring-canvas"
+                  className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full bg-rose-ink text-lg font-semibold text-white ring-8 ring-warm"
                 >
                   {index + 1}
                 </span>
                 {index < steps.length - 1 && (
-                  <span aria-hidden="true" className="mt-1 w-px flex-1 bg-accent/25 sm:hidden" />
+                  <span aria-hidden="true" className="mt-1 w-px flex-1 bg-rose/25 sm:hidden" />
                 )}
               </div>
               <div className="flex flex-col gap-2 pb-2 sm:items-center">

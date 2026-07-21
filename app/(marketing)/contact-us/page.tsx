@@ -34,12 +34,12 @@ export default function ContactUsPage() {
     <>
       <Section className="pb-0 text-center">
         <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Contact us", href: "/contact-us" }]} />
-        <h1 className="mt-6 font-serif text-4xl font-semibold text-ink md:text-5xl">{heading}</h1>
-        {/* `text-accent` directly as body-text color is only ~2.5:1 against
-            white/canvas (fails AA); `text-accent-ink` keeps the rose hue
+        <h1 className="mt-6 font-display text-4xl font-semibold text-ink md:text-5xl">{heading}</h1>
+        {/* `text-rose` directly as body-text color is only ~2.5:1 against
+            white/canvas (fails AA); `text-rose-ink` keeps the rose hue
             while reaching a safe contrast margin. */}
-        <p className="mt-3 text-sm font-medium uppercase tracking-wide text-accent-ink">{subheading}</p>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted">{intro}</p>
+        <p className="mt-3 text-sm font-medium uppercase tracking-wide text-rose-ink">{subheading}</p>
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-ink-soft">{intro}</p>
       </Section>
 
       <Section>
@@ -47,9 +47,9 @@ export default function ContactUsPage() {
           {departmentPhones.map((phone) => (
             <Card key={phone.label}>
               <CardBody className="flex flex-col items-center gap-2 text-center">
-                <Phone aria-hidden="true" className="size-6 text-accent" />
+                <Phone aria-hidden="true" className="size-6 text-rose" />
                 <h3 className="text-lg font-semibold text-ink">{phone.label}</h3>
-                <a href={telHref(phone.e164)} className="text-muted hover:text-accent-ink">
+                <a href={telHref(phone.e164)} className="text-ink-soft hover:text-rose-ink">
                   {phone.display}
                 </a>
               </CardBody>
@@ -60,22 +60,22 @@ export default function ContactUsPage() {
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
           <Card>
             <CardBody className="flex flex-col items-center gap-2 text-center">
-              <Mail aria-hidden="true" className="size-6 text-accent" />
+              <Mail aria-hidden="true" className="size-6 text-rose" />
               <h3 className="text-lg font-semibold text-ink">Email Support</h3>
-              <a href={`mailto:${SITE.email}`} className="text-muted hover:text-accent-ink">
+              <a href={`mailto:${SITE.email}`} className="text-ink-soft hover:text-rose-ink">
                 {SITE.email}
               </a>
             </CardBody>
           </Card>
           <Card>
             <CardBody className="flex flex-col items-center gap-2 text-center">
-              <MessageCircle aria-hidden="true" className="size-6 text-accent" />
+              <MessageCircle aria-hidden="true" className="size-6 text-rose" />
               <h3 className="text-lg font-semibold text-ink">WhatsApp</h3>
               <a
                 href={waHref(SITE.whatsapp.e164)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted hover:text-accent-ink"
+                className="text-ink-soft hover:text-rose-ink"
               >
                 {SITE.whatsapp.display}
               </a>

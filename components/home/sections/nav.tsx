@@ -91,10 +91,10 @@ function MobileDrawer({
       aria-modal="true"
       aria-labelledby={titleId}
       onKeyDown={onKeyDown}
-      className="fixed inset-0 z-50 flex flex-col bg-hp-warm lg:hidden"
+      className="fixed inset-0 z-50 flex flex-col bg-warm lg:hidden"
     >
-      <div className="flex items-center justify-between border-b border-hp-ink/10 px-4 py-4">
-        <span id={titleId} className="font-display text-lg italic text-hp-ink">
+      <div className="flex items-center justify-between border-b border-ink/10 px-4 py-4">
+        <span id={titleId} className="font-display text-lg italic text-ink">
           Menu
         </span>
         <button
@@ -102,7 +102,7 @@ function MobileDrawer({
           type="button"
           aria-label="Close menu"
           onClick={onClose}
-          className="rounded-full p-2 text-hp-ink transition hover:bg-hp-blush"
+          className="rounded-full p-2 text-ink transition hover:bg-blush"
         >
           <X aria-hidden="true" className="size-6" />
         </button>
@@ -114,7 +114,7 @@ function MobileDrawer({
               <a
                 href={item.href}
                 onClick={onClose}
-                className="block py-3 font-body text-base font-medium text-hp-ink transition hover:text-hp-rose-ink"
+                className="block py-3 font-body text-base font-medium text-ink transition hover:text-rose-ink"
               >
                 {item.label}
               </a>
@@ -146,7 +146,7 @@ export function Nav() {
   const drawerId = React.useId();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/50 bg-hp-warm/75 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/50 bg-warm/75 backdrop-blur-xl">
       <div
         aria-hidden={drawerOpen || undefined}
         inert={drawerOpen}
@@ -168,7 +168,7 @@ export function Nav() {
             <a
               key={item.href}
               href={item.href}
-              className="font-body text-sm font-medium text-hp-ink transition-colors hover:text-hp-rose-ink"
+              className="font-body text-sm font-medium text-ink transition-colors hover:text-rose-ink"
             >
               {item.label}
             </a>
@@ -194,7 +194,7 @@ export function Nav() {
           aria-controls={drawerId}
           onClick={() => setDrawerOpen(true)}
           className={cn(
-            "rounded-full p-2 text-hp-ink transition hover:bg-hp-blush lg:hidden",
+            "rounded-full p-2 text-ink transition hover:bg-blush lg:hidden",
           )}
         >
           <Menu aria-hidden="true" className="size-6" />

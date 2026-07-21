@@ -66,13 +66,13 @@ export function StickyCTA() {
       animate={{ y: visible ? "0%" : "100%" }}
       // Reduced motion: snap instantly instead of sliding.
       transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.25, ease: "easeInOut" }}
-      className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-accent/15 bg-surface px-4 py-3 shadow-[0_-4px_12px_rgba(168,48,93,0.12)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-rose/15 bg-surface px-4 py-3 shadow-[0_-4px_12px_rgba(168,48,93,0.12)] md:hidden"
     >
       <a
         href={telHref(SITE.phones.general.e164)}
         aria-label="Call us"
         tabIndex={visible ? undefined : -1}
-        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-accent-ink/30 text-accent-ink transition hover:bg-canvas"
+        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-rose-ink/30 text-rose-ink transition hover:bg-warm"
       >
         <Phone aria-hidden="true" className="size-5" />
       </a>

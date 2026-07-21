@@ -47,7 +47,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-hp-plum font-body text-white">
+    <footer className="bg-plum font-body text-white">
       <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4 py-16 md:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
           <div className="flex flex-col gap-4 md:col-span-1">
@@ -73,7 +73,7 @@ export function Footer() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={label}
-                      className="inline-flex size-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-hp-rose hover:text-hp-plum"
+                      className="inline-flex size-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-rose hover:text-plum"
                     >
                       <Icon aria-hidden="true" className="size-4" />
                     </a>
@@ -84,7 +84,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h2 className="hp-eyebrow hp-eyebrow--dark mb-4">Explore</h2>
+            <h2 className="eyebrow eyebrow--dark mb-4">Explore</h2>
             <ul className="flex flex-col gap-2.5 text-sm text-white/75">
               {EXPLORE_LINKS.map((link) => (
                 <li key={link.href}>
@@ -97,7 +97,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h2 className="hp-eyebrow hp-eyebrow--dark mb-4">Concerns</h2>
+            <h2 className="eyebrow eyebrow--dark mb-4">Concerns</h2>
             <ul className="flex flex-col gap-2.5 text-sm text-white/75">
               {SITE.concerns.map((concern) => (
                 <li key={concern.slug}>
@@ -117,28 +117,28 @@ export function Footer() {
           </div>
 
           <div>
-            <h2 className="hp-eyebrow hp-eyebrow--dark mb-4">Stay in the loop</h2>
+            <h2 className="eyebrow eyebrow--dark mb-4">Stay in the loop</h2>
             <p className="mb-4 text-sm text-white/70">Skincare science and routine tips, occasionally, never spam.</p>
             {submitted ? (
-              <p className="text-sm font-medium text-hp-rose">Thanks — you&apos;re on the list.</p>
+              <p className="text-sm font-medium text-rose">Thanks — you&apos;re on the list.</p>
             ) : (
               <form onSubmit={onNewsletterSubmit} className="flex items-center gap-2">
-                <label htmlFor="hp-footer-newsletter-email" className="sr-only">
+                <label htmlFor="footer-newsletter-email" className="sr-only">
                   Email address
                 </label>
                 <input
-                  id="hp-footer-newsletter-email"
+                  id="footer-newsletter-email"
                   type="email"
                   required
                   placeholder="you@email.com"
                   value={newsletterEmail}
                   onChange={(event) => setNewsletterEmail(event.target.value)}
-                  className="w-full min-w-0 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hp-rose"
+                  className="w-full min-w-0 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose"
                 />
                 <button
                   type="submit"
                   aria-label="Subscribe"
-                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-hp-rose-ink text-white transition hover:bg-hp-rose focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hp-rose focus-visible:ring-offset-2 focus-visible:ring-offset-hp-plum"
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-rose-ink text-white transition hover:bg-rose focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose focus-visible:ring-offset-2 focus-visible:ring-offset-plum"
                 >
                   <Send aria-hidden="true" className="size-4" />
                 </button>
