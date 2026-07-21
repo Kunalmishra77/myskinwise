@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Cormorant_Garamond, Fraunces, Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import { SITE } from "@/config/site";
 import { organizationSchema } from "@/config/seo";
@@ -17,6 +17,24 @@ const sans = Inter({
   display: "swap",
 });
 
+// Homepage (app/page.tsx) typography — added alongside Fraunces/Inter
+// (never replacing them) since the (marketing) route group's pages still
+// depend on --font-serif/--font-sans.
+const displaySerif = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const body = Manrope({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-body",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: { default: "Skinwise", template: "%s | Skinwise" },
@@ -31,7 +49,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${serif.variable} ${sans.variable} h-full antialiased`}
+      className={`${serif.variable} ${sans.variable} ${displaySerif.variable} ${body.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <JsonLd data={organizationSchema} />

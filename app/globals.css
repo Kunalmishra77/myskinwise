@@ -75,6 +75,62 @@
   --text-h2: clamp(1.9rem, 3.6vw, 2.9rem);
   --text-h2--line-height: 1.15;
   --text-h2--letter-spacing: -0.02em;
+
+  /*
+   * ---------------------------------------------------------------------
+   * Homepage (app/page.tsx, components/home/**) design tokens — Stage 1
+   * foundation. Every homepage-specific token is prefixed `hp-` (colors:
+   * --color-hp-*, shadows: --shadow-hp-*, animations: --animate-hp-*) so it
+   * can never collide with the tokens above that the (marketing) route
+   * group's pages already depend on — e.g. this palette's `blush`
+   * (#FCEEF2) is a different value from the marketing site's existing
+   * --color-blush (#F8DDE3); reusing the bare name would have silently
+   * changed one or the other. `--font-display` / `--font-body` have no
+   * naming collision with --font-serif/--font-sans, so they're unprefixed.
+   *
+   * Contrast notes (WCAG relative-luminance, verified numerically — see
+   * .superpowers/sdd/aihome-1-report.md for the full pairing table):
+   *  - rose (#E0819A) FAILS AA as text on white/warm/surface (~2.6-2.7:1)
+   *    and fails as a white-text button fill (~2.7:1) — it's for large
+   *    display accents/fills only, or dark text on top of it (ink-on-rose
+   *    is ~6.2:1, safe).
+   *  - rose-deep (#C05E78) with white text is ~4.1:1 — fails normal-text
+   *    AA, only safe for large/bold text (18.66px+/24px+).
+   *  - rose-ink (#A8506A) is the AA-safe "text/button" rose: ~5.0-5.2:1 on
+   *    warm/surface, ~4.6:1 on blush, ~6.5:1 as `rose` text-on-dark-plum.
+   *    It does NOT clear AA on champagne (~4.2:1) or on dark plum as
+   *    foreground (~3.4:1) — use `ink` or the lighter `rose` token there
+   *    instead (see SectionEyebrow's `tone` prop).
+   */
+  --color-hp-warm: #fbfaf7;
+  --color-hp-surface: #ffffff;
+  --color-hp-ink: #241c19;
+  --color-hp-ink-soft: #6e645f;
+  --color-hp-ink-mute: #8a807b;
+  --color-hp-rose: #e0819a;
+  --color-hp-rose-deep: #c05e78;
+  --color-hp-rose-ink: #a8506a;
+  --color-hp-blush: #fceef2;
+  --color-hp-champagne: #f1e5d2;
+  --color-hp-sage: #8fa187;
+  --color-hp-plum: #231619;
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+
+  /*
+   * Warm, layered shadows — a tight near-neutral layer plus a broad,
+   * low-opacity rose-tinted layer — so elevated homepage surfaces (Card,
+   * GlassCard, floating chips) glow softly pink instead of reading as a
+   * generic grey drop shadow. `hp-lift` is the stronger hover/elevated
+   * state.
+   */
+  --shadow-hp-soft: 0 1px 2px rgba(36, 28, 25, 0.04), 0 24px 54px rgba(120, 70, 80, 0.12);
+  --shadow-hp-lift: 0 10px 20px -8px rgba(36, 28, 25, 0.14), 0 32px 70px -16px rgba(120, 70, 80, 0.32);
+
+  --animate-hp-marquee: hp-marquee 32s linear infinite;
+  --animate-hp-drift-a: hp-drift-a 22s ease-in-out infinite;
+  --animate-hp-drift-b: hp-drift-b 26s ease-in-out infinite;
 }
 
 body {
@@ -149,4 +205,60 @@ h4 {
 
 .leaf-motif--mirrored {
   transform: scaleX(-1);
+}
+
+/*
+ * ---------------------------------------------------------------------
+ * Homepage (app/page.tsx) motion + typography primitives.
+ */
+
+@keyframes hp-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes hp-drift-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(24px, -18px) scale(1.06);
+  }
+}
+
+@keyframes hp-drift-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-20px, 22px) scale(1.08);
+  }
+}
+
+/*
+ * Section eyebrow label: Manrope 12.5px, uppercase, letter-spacing .16em,
+ * rose-ink — prefixed by an italic serif index number in the consuming
+ * component (see components/home/ui/section-eyebrow.tsx). `--dark` swaps to
+ * the lighter `rose` token for use on the #231619 dark section, where
+ * rose-ink itself falls short of AA (~3.4:1) — see the contrast notes on
+ * the `--color-hp-*` tokens above.
+ */
+.hp-eyebrow {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--color-hp-rose-ink);
+}
+
+.hp-eyebrow--dark {
+  color: var(--color-hp-rose);
 }
