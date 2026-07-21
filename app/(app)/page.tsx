@@ -1,20 +1,15 @@
 import type { Metadata } from "next";
 import { SITE } from "@/config/site";
 import { cn } from "@/lib/utils";
-import { ScrollProgress } from "@/components/home/effects/scroll-progress";
-import { FilmGrain } from "@/components/home/effects/film-grain";
-import { CursorGlow } from "@/components/home/effects/cursor-glow";
-import { GradientMesh } from "@/components/home/effects/gradient-mesh";
-import { Nav } from "@/components/home/sections/nav";
-import { Footer } from "@/components/home/sections/footer";
-import { Button } from "@/components/home/ui/button";
-import { MagneticButton } from "@/components/home/ui/magnetic-button";
-import { Pill } from "@/components/home/ui/pill";
-import { Card, GlassCard } from "@/components/home/ui/card";
-import { SectionEyebrow } from "@/components/home/ui/section-eyebrow";
-import { RevealOnScroll } from "@/components/home/ui/reveal-on-scroll";
-import { Marquee } from "@/components/home/ui/marquee";
-import { CountUp } from "@/components/home/ui/count-up";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { GradientMesh } from "@/components/ui/gradient-mesh";
+import { Button } from "@/components/ui/button";
+import { Pill } from "@/components/ui/pill";
+import { Card, GlassCard } from "@/components/ui/card";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { Reveal } from "@/components/ui/reveal";
+import { Marquee } from "@/components/ui/marquee";
+import { CountUp } from "@/components/ui/count-up";
 
 // Brand-first title, bypassing the root layout's "%s | Skinwise" template
 // (via `title: { absolute }`) so it never doubles the brand name — see
@@ -71,12 +66,12 @@ function PlaceholderSection({
 }) {
   return (
     <section id={id} className={cn("scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8", TONE_CLASSES[tone])}>
-      <RevealOnScroll className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
-        <SectionEyebrow index={index}>{eyebrow}</SectionEyebrow>
+      <Reveal className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
+        <Eyebrow index={index}>{eyebrow}</Eyebrow>
         <h2 className="font-display text-3xl font-semibold leading-tight tracking-[-0.015em] text-ink sm:text-5xl">
           {heading}
         </h2>
-      </RevealOnScroll>
+      </Reveal>
       {children && <div className="mt-10">{children}</div>}
     </section>
   );
@@ -86,17 +81,14 @@ export default function Home() {
   return (
     <div className="font-body bg-warm text-ink">
       <ScrollProgress />
-      <FilmGrain />
-      <CursorGlow />
-      <Nav />
 
-      <main>
+      <>
         {/* Hero placeholder — the full hero (portrait, scan-line sweep,
             floating glass stat cards) is built in Stage 2. This proves the
             foundation's text/gradient/button/pill primitives together. */}
         <section className="relative overflow-hidden px-4 pb-16 pt-16 sm:px-6 md:pt-24 lg:px-8">
           <GradientMesh className="opacity-70" />
-          <RevealOnScroll className="relative mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
+          <Reveal className="relative mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
             <Pill dot>AI-Powered Skin Analysis</Pill>
             <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.015em] text-ink sm:text-6xl md:text-7xl">
               Understand your skin.{" "}
@@ -109,11 +101,9 @@ export default function Home() {
               exact concern — hyperpigmentation, acne, and beyond. No guesswork. Just skin science, made personal.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <MagneticButton>
-                <Button asChild size="lg">
-                  <a href="#analyzer">Analyze My Skin →</a>
-                </Button>
-              </MagneticButton>
+              <Button asChild size="lg">
+                <a href="#analyzer">Analyze My Skin →</a>
+              </Button>
               <Button asChild variant="glass" size="lg">
                 <a href="#chat">Try AI Chat</a>
               </Button>
@@ -121,7 +111,7 @@ export default function Home() {
             <p className="text-sm text-ink-mute">
               The full hero visual, scan animation and floating stat cards land in Stage 2.
             </p>
-          </RevealOnScroll>
+          </Reveal>
         </section>
 
         {/* Trust marquee placeholder — proves the Marquee primitive; the
@@ -198,9 +188,8 @@ export default function Home() {
             in Stage 2/3.
           </p>
         </PlaceholderSection>
-      </main>
+      </>
 
-      <Footer />
     </div>
   );
 }

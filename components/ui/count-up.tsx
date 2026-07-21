@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePrefersReducedMotion } from "@/components/home/lib/use-reduced-motion";
+import { usePrefersReducedMotion } from "@/lib/use-media-query";
 
 const DEFAULT_DURATION_MS = 1600;
 

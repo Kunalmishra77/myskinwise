@@ -1,14 +1,15 @@
 "use client";
 
-import * as React from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
-import { usePrefersReducedMotion } from "@/components/home/lib/use-reduced-motion";
+import { usePrefersReducedMotion } from "@/lib/use-media-query";
 
 /**
- * Fixed top scroll-progress bar (rose gradient) tracking page scroll. Kept
- * visible (not hidden) under reduced motion — it's an information affordance,
- * not a decorative flourish — but skips the spring smoothing so it tracks
- * scroll position 1:1 instead of animating.
+ * Fixed top scroll-progress bar tracking page scroll.
+ *
+ * Kept visible under prefers-reduced-motion rather than hidden — it is an
+ * information affordance, not a decorative flourish — but the spring
+ * smoothing is skipped there so it tracks scroll position 1:1 instead of
+ * easing toward it.
  */
 export function ScrollProgress() {
   const prefersReducedMotion = usePrefersReducedMotion();

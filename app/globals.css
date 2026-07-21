@@ -101,8 +101,6 @@
 
   /* --- Motion -------------------------------------------------------- */
   --animate-marquee: marquee 32s linear infinite;
-  --animate-drift-a: drift-a 22s ease-in-out infinite;
-  --animate-drift-b: drift-b 26s ease-in-out infinite;
 
   /* --- Layout -------------------------------------------------------- */
   /*
@@ -153,26 +151,6 @@ h4 {
   }
   to {
     transform: translateX(-50%);
-  }
-}
-
-@keyframes drift-a {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(24px, -18px) scale(1.06);
-  }
-}
-
-@keyframes drift-b {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-20px, 22px) scale(1.08);
   }
 }
 
