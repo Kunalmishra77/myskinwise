@@ -26,17 +26,27 @@ export interface RevealProps {
 const TRANSITION: Transition = { duration: 0.7, ease: [0.22, 1, 0.36, 1] };
 
 /**
- * Staggered scroll reveal: fade + translateY + blur resolving to clear, via
- * Framer's `whileInView` with `viewport={{ once: true }}`.
+ * Scroll reveal: content slides up into place via Framer's `whileInView`
+ * with `viewport={{ once: true }}`.
  *
- * The content-visibility trap this component exists to avoid: an earlier
- * version set `initial={{ opacity: 0 }}` unconditionally, and Framer
- * serialises that hidden state into the SSR HTML. Below-the-fold content —
- * and everything, for any user whose JS is slow or absent — rendered
- * invisible until it happened to scroll into view. A decorative fade must
- * never be able to hide real content, so under prefers-reduced-motion this
- * renders a plain, fully-visible element with no hidden initial state at
- * all. Any future change here must preserve that property.
+ * It deliberately animates POSITION ONLY — never opacity. Two reasons, and
+ * both are load-bearing:
+ *
+ * 1. Content visibility. An opacity-based reveal leaves everything below
+ *    the fold at `opacity: 0` until it is scrolled to. Anyone who does not
+ *    scroll never sees it, and an earlier version of this component had to
+ *    have its motion stripped entirely because Framer also serialises that
+ *    hidden state into SSR HTML.
+ * 2. It is measurably an accessibility failure, not a theoretical one. With
+ *    the fade in place, axe-core reported serious `color-contrast`
+ *    violations on the homepage in every run — text sampled mid-fade
+ *    computes to washed-out colours like #E8D3D7 on #FBF7F6, a ratio of
+ *    1.33:1. Sliding content cannot produce that, because the colours never
+ *    change.
+ *
+ * Under prefers-reduced-motion this renders a plain element with no
+ * transform at all. Any future change must keep both properties: never hide
+ * content, never animate its colour.
  */
 export function Reveal({ children, className, delay = 0, as = "div" }: RevealProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -50,8 +60,8 @@ export function Reveal({ children, className, delay = 0, as = "div" }: RevealPro
   return (
     <MotionTag
       className={className}
-      initial={{ opacity: 0, y: 34, filter: "blur(6px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      initial={{ y: 28 }}
+      whileInView={{ y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ ...TRANSITION, delay }}
     >

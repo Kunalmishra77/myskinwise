@@ -108,7 +108,7 @@ export default function Home() {
                 <a href="#chat">Try AI Chat</a>
               </Button>
             </div>
-            <p className="text-sm text-ink-mute">
+            <p className="text-sm text-ink-soft">
               The full hero visual, scan animation and floating stat cards land in Stage 2.
             </p>
           </Reveal>
@@ -183,7 +183,7 @@ export default function Home() {
             </p>
             <p className="text-sm text-ink-soft">skin journeys started*</p>
           </div>
-          <p className="mt-6 text-center text-xs text-ink-mute">
+          <p className="mt-6 text-center text-xs text-ink-soft">
             *Placeholder stat — replace with verified figures before launch. The full stats + results panel is built
             in Stage 2/3.
           </p>

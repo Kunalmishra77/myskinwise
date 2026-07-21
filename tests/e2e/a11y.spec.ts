@@ -12,6 +12,8 @@ const ROUTES = [
   "/privacy-policy",
   "/terms-and-conditions",
   "/refund-and-cancellation",
+  "/skin-check",
+  "/me",
 ] as const;
 
 for (const route of ROUTES) {

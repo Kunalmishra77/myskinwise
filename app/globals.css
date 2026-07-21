@@ -40,10 +40,26 @@
   /* Deep plum-brown for dark sections and the footer. */
   --color-plum: #231619;
 
-  /* --- Text ---------------------------------------------------------- */
+  /*
+   * --- Text -----------------------------------------------------------
+   * Exactly two text colours, both AA-safe on every surface token above:
+   *   ink      #241C19  16.73:1 on white
+   *   ink-soft #6E645F   5.75:1 on white
+   *
+   * There used to be a third, `ink-mute` (#8A807B). It was removed rather
+   * than fixed. It measured 3.85:1 on white — a real AA failure that axe
+   * caught on the homepage — and the darkest value that would pass on
+   * white, warm AND blush is around #756C67, which lands at 5.13:1. That
+   * is visually indistinguishable from ink-soft's 5.75:1, so the token
+   * bought a third tier that does not exist perceptually while costing a
+   * genuine accessibility bug. Use ink-soft for secondary text.
+   *
+   * Do NOT reach for `text-ink/60` to get a lighter tone either: composited
+   * over white that is #7C7775 at 4.42:1, and over blush 4.26:1 — both
+   * fail. `text-ink/70` (6.18:1 on white) is the lowest safe opacity step.
+   */
   --color-ink: #241c19;
   --color-ink-soft: #6e645f;
-  --color-ink-mute: #8a807b;
 
   /*
    * --- Rose ramp -----------------------------------------------------

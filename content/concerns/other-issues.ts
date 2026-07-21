@@ -107,7 +107,11 @@ export const otherIssues: ConcernContent = {
     },
     {
       title: "Root Cause Treatment",
-      body: "The product targets the root cause of all your facial concerns, working to clear them permanently for flawless skin.",
+      // TODO(client-confirm): claim rewrite pending sign-off — same reason as
+      // the equivalent line in acne.ts. Sourced copy read "working to clear
+      // them permanently for flawless skin"; both the permanence promise and
+      // "flawless" are unsubstantiated outcome claims.
+      body: "Your routine targets what is driving each concern rather than masking it, supporting clearer, healthier-looking skin over time.",
     },
     {
       title: "Continuous Support & Care",

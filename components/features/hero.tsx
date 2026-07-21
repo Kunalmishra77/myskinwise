@@ -71,7 +71,7 @@ export function Hero({ image, heading, subheading, ctas, eyebrow, trustNote, tru
             </Button>
           ))}
         </div>
-        {trustNote && <p className="text-sm text-ink/60">{trustNote}</p>}
+        {trustNote && <p className="text-sm text-ink-soft">{trustNote}</p>}
       </div>
 
       {image && (

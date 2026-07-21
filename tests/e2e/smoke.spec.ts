@@ -48,42 +48,82 @@ test("every route's <title> is unique", async ({ page }) => {
   expect(unique.size, `duplicate <title> values found: ${titles.join(", ")}`).toBe(titles.length);
 });
 
-test.describe("navbar", () => {
-  test('desktop "Skin Problem" dropdown reveals the 3 concern links', async ({ page }, testInfo) => {
-    test.skip(
-      testInfo.project.name !== "chromium",
-      "desktop-only dropdown; the mobile project renders the hamburger drawer instead",
-    );
-
-    await gotoOk(page, "/");
-
-    const trigger = page.getByRole("button", { name: "Skin Problem" });
-    await trigger.hover();
-    await trigger.click();
-
-    const menu = page.getByRole("list", { name: "Skin Problem" });
-    await expect(menu).toBeVisible();
-
-    const links = menu.getByRole("link");
-    await expect(links).toHaveCount(3);
-    await expect(links.nth(0)).toHaveAttribute("href", "/pigmentation");
-    await expect(links.nth(1)).toHaveAttribute("href", "/acne");
-    await expect(links.nth(2)).toHaveAttribute("href", "/other-issues");
-  });
-
-  test("mobile hamburger opens a dialog drawer", async ({ page }, testInfo) => {
+test.describe("app shell", () => {
+  test("menu button opens a focus-trapped drawer and Escape restores focus", async ({ page }, testInfo) => {
     test.skip(
       testInfo.project.name !== "mobile-chrome",
-      "hamburger is hidden (md:hidden) at desktop viewport widths",
+      "the menu trigger is hidden (lg:hidden) at desktop widths",
     );
 
     await gotoOk(page, "/");
 
-    await page.getByRole("button", { name: "Open menu" }).click();
+    const trigger = page.getByRole("button", { name: "Open menu" });
+    await trigger.click();
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("link", { name: "Home" })).toBeVisible();
+
+    // Focus must land inside the dialog, not stay on the page behind it.
+    await expect(dialog.getByRole("button", { name: "Close menu" })).toBeFocused();
+
+    // Escape closes it and hands focus back to the trigger, so a keyboard
+    // user is not dumped at the top of the document.
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+  });
+
+  test("bottom nav is mobile-only and marks the current page", async ({ page }, testInfo) => {
+    await gotoOk(page, "/");
+
+    const bottomNav = page.getByRole("navigation", { name: "Primary" });
+
+    if (testInfo.project.name === "chromium") {
+      await expect(bottomNav).toBeHidden();
+      return;
+    }
+
+    await expect(bottomNav).toBeVisible();
+    await expect(bottomNav.getByRole("link", { name: "Home" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    // Every tab must clear the 44px minimum touch target. `exact` matters:
+    // an inexact "Me" also matches "Home".
+    for (const name of ["Home", "Concerns", "Skin Check", "Me"]) {
+      const box = await bottomNav.getByRole("link", { name, exact: true }).boundingBox();
+      expect(box, `${name} tab has no box`).not.toBeNull();
+      expect(box!.height, `${name} tab is under 44px tall`).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test("the Skin Check flow renders without the shell around it", async ({ page }) => {
+    await gotoOk(page, "/skin-check");
+
+    // The assessment is full-screen by routing, not by a conditional — it
+    // lives outside the (app) route group, so no shell chrome exists here.
+    await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Open menu" })).toHaveCount(0);
+  });
+
+  test("bottom nav does not cover the end of page content", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile-chrome", "bottom nav is mobile-only");
+
+    await gotoOk(page, "/me");
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    const navBox = await nav.boundingBox();
+    const main = page.locator("main#main");
+    const mainBox = await main.boundingBox();
+
+    expect(navBox).not.toBeNull();
+    expect(mainBox).not.toBeNull();
+    // <main> reserves bottom padding for the bar, so its content bottom
+    // must not extend underneath the bar's top edge.
+    expect(mainBox!.y + mainBox!.height).toBeLessThanOrEqual(navBox!.y + 1);
   });
 });
 
