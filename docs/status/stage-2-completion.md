@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-22
 **Branch:** `feat/skinwise-stage-1-homepage-content`
-**Readiness:** **Staging ready. NOT production ready.**
+**Readiness:** **Persistence verified. Production-ready pending deployment + credential rotation.**
 
 ---
 
@@ -87,13 +87,38 @@ live ad traffic and a botched redirect costs more than the tidier URL earns.
 
 ---
 
+## Verified against the live database (2026-07-22)
+
+| Check | Result |
+|---|---|
+| Schema migration applied | HTTP 201 — 4 tables, RLS enabled on all, 0 policies |
+| Real submission | **HTTP 201, `status: stored`**, id `467f004b-…` |
+| Lead persisted | name, phone, email |
+| Assessment persisted | concern, skin type, consent, policy version |
+| Answers persisted | 8 rows; multi-select correctly split into one row per value |
+| Recommendation persisted | `engine_version: rules-1`, 4 ingredients, 2 fired rules |
+| Anon SELECT × 4 tables | 200 but **empty** — RLS filters every row |
+| Anon INSERT | **401 denied** |
+| Anon DELETE | 204, but **0 rows affected** — row verified still present afterwards |
+| Forced DB failure | **HTTP 200 `fallback`, `reason: "failed"`**, no assessment id, outline still returned |
+| Orphan rows after failure | **none** — counts unchanged |
+
+The failure path distinguishes `"failed"` (a real database error) from `"not-configured"` (no
+credentials), so the two are not conflated in logs or metrics.
+
+Rate limiting: 5 submissions per IP per 10 minutes, 64KB body cap. Service role key confirmed absent
+from `.next/static`.
+
 ## Production blockers
 
+0. **Credential rotation.** The service role key and a Supabase personal access token were both
+   pasted into a chat transcript during development. Both must be rotated before launch, and
+   production environment variables updated.
 1. **The WordPress quiz is still broken.** All three URLs return HTTP 200 with zero forms and zero
    inputs, and the live homepage still links to all three. Every ad click is currently wasted.
    Requires wp-admin access — repair steps in `docs/migrations/wordpress-to-native-skin-check.md`.
-2. **No Supabase credentials.** Every submission takes the fallback path. The user still reaches the
-   team via WhatsApp, but there is no database record and no admin view.
+2. ~~No Supabase credentials.~~ **Resolved.** Persistence is live and verified above. There is still
+   no admin view for reading leads — the team currently sees them via WhatsApp only.
 3. **Not deployed.** This repository does not serve `myskinwise.com`. Nothing built here is reachable
    by a customer yet.
 
@@ -123,7 +148,7 @@ The adapter is production-ready pending credentials:
 | Environment | Verdict |
 |---|---|
 | Development | ✅ Ready |
-| Staging | ✅ Ready |
-| Production | ❌ **Not ready** — no persistence, not deployed, not verified in production |
+| Staging | ✅ Ready — persistence, RLS and failure degradation all verified |
+| Production | ⚠️ **Code ready, not launchable** — needs credential rotation, deployment, and an admin view for the team to read leads |
 
 Do not switch production CTAs to `/skin-check` until migration Phase F conditions are met.
