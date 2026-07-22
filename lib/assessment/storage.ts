@@ -55,14 +55,19 @@ export function getAssessmentStorage(): AssessmentStorage {
     Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
     Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // When credentials arrive, construct the Supabase adapter here. Kept as
-  // an explicit branch so the absence of a database is visible in code
-  // review rather than buried in a try/catch.
   if (hasSupabase) {
-    // TODO(client-credentials): implement SupabaseAssessmentStorage once
-    // real project credentials exist. Deliberately not stubbed with a
-    // fake client — a storage layer that appears to work but does not is
-    // the exact bug this file exists to prevent.
+    // Required lazily so @supabase/supabase-js — and, more importantly,
+    // the service role key path — is never pulled into a bundle that has
+    // no database configured.
+    //
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { SupabaseAssessmentStorage } = require("@/lib/assessment/supabase-storage");
+    const supabase: AssessmentStorage = new SupabaseAssessmentStorage(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+    instance = supabase;
+    return supabase;
   }
 
   instance = new UnconfiguredStorage();
