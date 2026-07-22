@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { submitAssessmentSchema } from "@/lib/assessment/schema";
 import { getAssessmentStorage } from "@/lib/assessment/storage";
 import { buildRegimenOutline } from "@/lib/assessment/recommend";
+import { clientKey, submitLimiter } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -24,10 +25,31 @@ export const runtime = "nodejs";
  * hands the user to WhatsApp with their answers summarised. The user is
  * never shown a success screen for a lead that reached nobody.
  */
+/** Refuse bodies far larger than any real assessment before parsing them. */
+const MAX_BODY_BYTES = 64 * 1024;
+
 export async function POST(request: Request) {
+  const limit = await submitLimiter.check(clientKey(request));
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { status: "rate_limited", retryAfter: limit.retryAfter },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
+
+  const declared = Number(request.headers.get("content-length") ?? 0);
+  if (declared > MAX_BODY_BYTES) {
+    return NextResponse.json({ status: "invalid", errors: { _: ["Request too large"] } }, { status: 413 });
+  }
+
   let payload: unknown;
   try {
-    payload = await request.json();
+    const raw = await request.text();
+    // content-length is client-supplied, so check the real size too.
+    if (raw.length > MAX_BODY_BYTES) {
+      return NextResponse.json({ status: "invalid", errors: { _: ["Request too large"] } }, { status: 413 });
+    }
+    payload = JSON.parse(raw);
   } catch {
     return NextResponse.json(
       { status: "invalid", errors: { _: ["Malformed request body"] } },
