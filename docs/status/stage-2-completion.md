@@ -43,19 +43,24 @@ result above was taken against a server confirmed to serve the current build.
 
 ---
 
-## Known issue — not fixed, not hidden
+## Resolved — the "stale validation message" was a test defect, not an app defect
 
-**Validation message can persist after the user answers.** On the first question, if the user tries
-to continue without answering and then answers, the "Please choose an answer" message can remain
-visible even though the answer is accepted and progress is unblocked.
+An earlier revision of this document reported that the validation message could persist after the
+user answered. **That was wrong, and the correction matters more than the original claim.**
 
-- **Impact:** cosmetic and confusing, not blocking. The user can complete the assessment.
-- **Investigated:** `setAnswer` clears error state unconditionally, and the fix is present in the
-  running build, yet the alert still renders. Something else re-renders it; the cause was not
-  identified before Stage 2 closed.
-- **Test status:** `tests/e2e/skin-check.spec.ts` asserts the functional requirement (the user can
-  proceed) and documents this gap in a comment rather than weakening the assertion silently.
-- **Recommended:** fix before the native funnel takes production traffic (migration Phase F).
+Root cause, found by probing the live DOM rather than reasoning about the component: Next.js renders
+a permanently-present, empty `role="alert"` element (the route announcer). The test asserted
+`getByRole("alert").toHaveCount(0)`, which can therefore never pass — it was matching Next's
+announcer, not the error message. The application was clearing the error correctly the whole time.
+
+Measured: 2 alerts after a failed continue, 1 after answering — the survivor having empty text and
+no class, i.e. the announcer.
+
+The test now asserts on the message text itself and verifies it disappears the moment a valid answer
+is selected. 10/10 passing.
+
+Lesson recorded for future work: `getByRole("alert")` is unreliable as a count assertion in a
+Next.js App Router app. Assert on content.
 
 ---
 

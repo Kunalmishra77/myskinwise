@@ -56,27 +56,24 @@ test.describe("Skin Check assessment", () => {
   test("blocks continuing past a required question and keeps prior answers", async ({ page }) => {
     await page.getByRole("button", { name: NEXT }).click();
 
-    const error = page.getByRole("alert").first();
+    // Match the message itself, not `role="alert"` broadly: Next.js renders
+    // a permanently-present, empty route announcer with role="alert", so a
+    // bare getByRole("alert") count never reaches zero and will look like a
+    // stale-error bug that does not exist.
+    const error = page.getByText(/choose an answer/i);
     await expect(error).toBeVisible();
-    await expect(error).toContainText(/choose an answer/i);
 
     // Still on the first question — it did not advance.
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/most like to work on/i);
 
-    // Answering lets the user proceed — the functional requirement.
+    // Answering clears the message immediately and unblocks progress.
     await page.locator('fieldset button[aria-pressed]').first().click();
+    await expect(error).toHaveCount(0);
+
     await page.getByRole("button", { name: NEXT }).click();
     await expect(page.getByRole("heading", { level: 1 })).not.toContainText(
       /most like to work on/i,
     );
-
-    // KNOWN ISSUE, deliberately not asserted: the validation message can
-    // remain on screen after the user answers, even though answering is
-    // accepted and progress is unblocked. `setAnswer` clears the error
-    // state, so something else re-renders it; the cause was not identified
-    // before Stage 2 closed. Recorded in docs/status/stage-2-completion.md.
-    // Asserting toHaveCount(0) here would fail, so this is left as a gap
-    // rather than a silently weakened assertion.
   });
 
   // Flow 2
