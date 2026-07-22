@@ -73,12 +73,13 @@ export function AssessmentFlow() {
 
   function setAnswer(id: string, value: string | string[]) {
     setAnswers((prev) => ({ ...prev, [id]: value }));
-    setErrors((prev) => {
-      if (!prev[id]) return prev;
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
+    // Clear every error, not just this field's. Answering the concern
+    // question rebuilds the whole step list, so the question that raised an
+    // error can be a different object by the time this runs — keying the
+    // cleanup on `id` left a stale "please choose an answer" visible above
+    // an answer the user had just given. One question is on screen at a
+    // time, so there is never another error worth preserving.
+    setErrors({});
   }
 
   function goNext() {
