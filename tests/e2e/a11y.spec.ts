@@ -14,6 +14,14 @@ const ROUTES = [
   "/refund-and-cancellation",
   "/skin-check",
   "/me",
+  "/concerns",
+  "/learn",
+  "/ingredients",
+  "/ingredients/niacinamide",
+  "/ingredients/retinol",
+  "/skin-types",
+  "/skin-types/oily",
+  "/skin-types/sensitive",
 ] as const;
 
 for (const route of ROUTES) {
