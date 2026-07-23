@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, MessageCircle } from "lucide-react";
+import { Menu, MessageCircle, Sparkles } from "lucide-react";
 import { SITE, waHref } from "@/config/site";
 import { IMAGES } from "@/content/assets";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,13 @@ export function TopBar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/assistant"
+            aria-label="Ask the Skinwise assistant"
+            className="inline-flex size-10 items-center justify-center rounded-full text-ink transition hover:bg-blush"
+          >
+            <Sparkles aria-hidden="true" className="size-5" />
+          </Link>
           <a
             href={waHref(SITE.whatsapp.e164)}
             target="_blank"
