@@ -5,6 +5,7 @@ import { resolveCustomerContext } from "@/lib/ai/context";
 import { getSttProvider } from "@/lib/voice/stt";
 import { getTtsProvider } from "@/lib/voice/tts";
 import { clientKey, MemoryRateLimiter } from "@/lib/rate-limit";
+import { logEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 
@@ -101,6 +102,7 @@ export async function POST(request: Request) {
   // 3. The SAME orchestrator as text: inbound safety -> grounded model ->
   // outbound safety -> CTA.
   const messages: ChatTurn[] = [...body.history, { role: "user", content: transcript }];
+  void logEvent("voice_used");
   const outcome = await respond(messages, context);
 
   // 4. TTS of the FINAL text (never raw model output). Best-effort: a TTS

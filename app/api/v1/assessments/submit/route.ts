@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { submitAssessmentSchema } from "@/lib/assessment/schema";
 import { getAssessmentStorage } from "@/lib/assessment/storage";
+import { logEvent } from "@/lib/analytics";
 import { buildRegimenOutline } from "@/lib/assessment/recommend";
 import { clientKey, submitLimiter } from "@/lib/rate-limit";
 
@@ -74,11 +75,15 @@ export async function POST(request: Request) {
   const result = await storage.save(parsed.data);
 
   if (result.ok) {
+    void logEvent("skin_check_completed", { concern: parsed.data.concern });
+    void logEvent("skin_check_stored");
     return NextResponse.json(
       { status: "stored", assessmentId: result.assessment.id, outline },
       { status: 201 },
     );
   }
 
+  void logEvent("skin_check_completed", { concern: parsed.data.concern });
+  void logEvent("skin_check_fallback", { reason: result.reason });
   return NextResponse.json({ status: "fallback", reason: result.reason, outline }, { status: 200 });
 }

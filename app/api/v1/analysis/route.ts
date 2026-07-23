@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAnalysisStore, type ImageInput } from "@/lib/analysis/storage";
 import { clientKey, MemoryRateLimiter } from "@/lib/rate-limit";
+import { logEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 
@@ -89,12 +90,14 @@ export async function POST(request: Request) {
   });
 
   if (result.ok) {
+    void logEvent("analyzer_completed");
     return NextResponse.json(
       { status: "completed", reference: result.reference, observation: result.observation },
       { status: 201 },
     );
   }
 
+  void logEvent("analyzer_failed", { reason: result.reason });
   if (result.reason === "quality_failed") {
     return NextResponse.json(
       { status: "quality_failed", reference: result.reference, message: REASON_MESSAGE.quality_failed },

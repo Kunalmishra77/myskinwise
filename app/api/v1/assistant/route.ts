@@ -3,6 +3,7 @@ import { z } from "zod";
 import { respond, type ChatTurn } from "@/lib/ai/assistant";
 import { resolveCustomerContext } from "@/lib/ai/context";
 import { clientKey, MemoryRateLimiter } from "@/lib/rate-limit";
+import { logEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
     analysisReference: parsed.data.analysisReference,
   });
 
+  void logEvent("assistant_used");
   const outcome = await respond(parsed.data.messages as ChatTurn[], context);
   return NextResponse.json({ status: "ok", ...outcome });
 }

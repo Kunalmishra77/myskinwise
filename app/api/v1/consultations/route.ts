@@ -4,6 +4,7 @@ import { getConsultationStorage } from "@/lib/consultation/storage";
 import { buildConsultationHandoff } from "@/lib/consultation/whatsapp";
 import { contactSchema } from "@/lib/assessment/schema";
 import { clientKey, submitLimiter } from "@/lib/rate-limit";
+import { logEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 
@@ -76,6 +77,8 @@ export async function POST(request: Request) {
   );
 
   if (result.ok) {
+    void logEvent("consultation_requested");
+    void logEvent("whatsapp_handoff", { surface: "consultation" });
     return NextResponse.json(
       {
         status: "created",
