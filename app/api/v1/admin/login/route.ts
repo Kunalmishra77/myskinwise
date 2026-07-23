@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: "invalid" }, { status: 401 });
   }
 
-  const value = issueSessionValue();
+  const value = await issueSessionValue();
   if (!value) {
     return NextResponse.json({ status: "not_configured" }, { status: 500 });
   }

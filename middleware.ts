@@ -11,13 +11,13 @@ import { ADMIN_COOKIE, isValidSession } from "@/lib/admin/auth";
  * session cookie; API calls get a 401, page requests get redirected to the
  * login screen.
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isLogin = pathname === "/admin/login" || pathname === "/api/v1/admin/login";
   if (isLogin) return NextResponse.next();
 
-  const authed = isValidSession(request.cookies.get(ADMIN_COOKIE)?.value);
+  const authed = await isValidSession(request.cookies.get(ADMIN_COOKIE)?.value);
   if (authed) return NextResponse.next();
 
   if (pathname.startsWith("/api/")) {
