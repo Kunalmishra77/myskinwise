@@ -81,6 +81,19 @@ export class SupabaseAssessmentStorage implements AssessmentStorage {
         if (error) return { ok: false, reason: "failed" };
       }
 
+      // Link a prior Skin Analyzer run to this assessment, if one was
+      // referenced. Best-effort: a failed link must not fail the whole
+      // submission — the analysis is supplementary to the answers. Only
+      // links an as-yet-unlinked analysis, so a reference cannot be used to
+      // steal an analysis already attached elsewhere.
+      if (input.analysisReference) {
+        await this.client
+          .from("skin_analyses")
+          .update({ assessment_id: assessment.id, lead_id: lead.id })
+          .eq("reference", input.analysisReference)
+          .is("assessment_id", null);
+      }
+
       const { error: outlineError } = await this.client
         .from("regimen_recommendations")
         .insert({

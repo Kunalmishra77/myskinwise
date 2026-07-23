@@ -13,6 +13,17 @@ export type CustomerContext = {
   skinType?: string | null;
   consultationStatus?: string;
   hasPublishedRegimen?: boolean;
+  /**
+   * Customer-safe summary of a completed Skin Analyzer run. Only ever
+   * feature labels + certainty + the quality limitation — the same fields
+   * the customer already saw on their own result screen. Never storage
+   * paths, signed URLs, image ids, expert notes or a diagnosis.
+   */
+  analysis?: {
+    imageQuality: string;
+    features: { label: string; certainty: string }[];
+    limitations: string;
+  };
 };
 
 export type AssistantOutcome =
@@ -95,6 +106,15 @@ function systemPrompt(context?: CustomerContext): string {
   if (context?.skinType) contextLines.push(`- Their skin type: ${context.skinType}`);
   if (context?.consultationStatus) contextLines.push(`- Consultation status: ${context.consultationStatus}`);
   if (context?.hasPublishedRegimen) contextLines.push(`- They have a published routine from a Skinwise expert.`);
+  if (context?.analysis) {
+    const feats = context.analysis.features.map((f) => `${f.label} (${f.certainty})`).join(", ") || "nothing clearly visible";
+    contextLines.push(
+      `- Their Skin Analyzer photo showed (VISIBLE characteristics only, NOT a diagnosis): ${feats}. Image quality: ${context.analysis.imageQuality}. ${context.analysis.limitations}`,
+    );
+    contextLines.push(
+      `  When they ask about their photo analysis, describe these visible characteristics only. NEVER turn them into a condition name (never say acne/rosacea/eczema/melasma). Point them to the Skin Check and a Skinwise expert for anything more.`,
+    );
+  }
 
   return `You are the Skinwise AI assistant on the Skinwise website. You help customers understand their skin, learn about skincare, and find the right next step with Skinwise.
 

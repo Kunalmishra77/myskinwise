@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { ConsultationDetail } from "@/lib/expert/storage";
+import { FEATURE_LABELS, CERTAINTY_LABELS } from "@/lib/ai/vision-schema";
 
 const EXPERT_ID_HINT = "Select from experts table"; // single seeded expert for now
 
@@ -118,6 +119,62 @@ export function Workspace({ detail }: { detail: ConsultationDetail }) {
         <p role="status" className="mt-4 rounded-2xl bg-blush p-3 text-sm text-ink">
           {msg}
         </p>
+      )}
+
+      {/* AI Skin Analyzer — INPUT to the expert's review, never a verdict.
+          Photos load through an authorised admin endpoint that redirects to a
+          short-lived signed URL, so no storage path or URL is in this page. */}
+      {detail.analysis && (
+        <section className="mt-8 rounded-3xl border-2 border-dashed border-rose-ink/20 p-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-xl font-semibold text-ink">AI photo observations</h2>
+            <span className="text-xs text-ink-soft">
+              {detail.analysis.modelVersion ?? "AI"} · {new Date(detail.analysis.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-ink-soft">
+            AI-assisted, non-diagnostic. This is input for your review — not a diagnosis and not your
+            verdict.
+          </p>
+
+          {detail.analysis.imageIds.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-3">
+              {detail.analysis.imageIds.map((imgId) => (
+                // eslint-disable-next-line @next/next/no-img-element -- authorised admin endpoint, signed-URL redirect
+                <img
+                  key={imgId}
+                  src={`/api/v1/admin/photo/${imgId}`}
+                  alt="Customer skin photo"
+                  className="h-48 w-auto rounded-2xl border border-ink/10 object-cover"
+                />
+              ))}
+            </div>
+          )}
+
+          {detail.analysis.status !== "completed" && (
+            <p className="mt-4 rounded-xl bg-champagne/40 p-3 text-sm text-ink">
+              Analysis status: {detail.analysis.status.replace("_", " ")}. Observations may be limited.
+            </p>
+          )}
+
+          {detail.analysis.observation && detail.analysis.observation.features.length > 0 ? (
+            <ul className="mt-4 flex flex-col gap-2">
+              {detail.analysis.observation.features.map((f, i) => (
+                <li key={i} className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-2">
+                  <span className="text-ink">{FEATURE_LABELS[f.feature]}</span>
+                  <span className="rounded-full bg-blush px-2.5 py-1 text-xs font-semibold text-rose-ink">
+                    {CERTAINTY_LABELS[f.certainty]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-ink-soft">No clear features were observed.</p>
+          )}
+          {detail.analysis.observation?.limitations && (
+            <p className="mt-3 text-xs text-ink-soft">{detail.analysis.observation.limitations}</p>
+          )}
+        </section>
       )}
 
       {/* Skin Check */}

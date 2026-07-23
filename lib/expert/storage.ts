@@ -36,6 +36,21 @@ export type ConsultationDetail = ConsultationRow & {
   review: { notes: string | null; verdict: string | null; agreedWithOutline: boolean | null; expertId: string } | null;
   regimen: RegimenDetail | null;
   order: { id: string; status: string } | null;
+  /**
+   * The linked Skin Analyzer run, if any. AI observations are shown to the
+   * expert as INPUT to their review, never as a verdict. Image ids are
+   * opaque — the workspace fetches each photo through an authorised admin
+   * endpoint that mints a short-lived signed URL, so no storage path or URL
+   * is ever embedded here.
+   */
+  analysis: {
+    reference: string;
+    status: string;
+    modelVersion: string | null;
+    createdAt: string;
+    imageIds: string[];
+    observation: import("@/lib/ai/vision-schema").Observation | null;
+  } | null;
 };
 
 export type RegimenItemInput = {
@@ -152,6 +167,36 @@ export class ExpertStore {
       .eq("consultation_id", id)
       .maybeSingle();
 
+    // Linked Skin Analyzer run, joined via the consultation's assessment.
+    let analysis: ConsultationDetail["analysis"] = null;
+    const { data: analysisRow } = await this.db
+      .from("skin_analyses")
+      .select("id, reference, status, model_version, created_at")
+      .eq("assessment_id", c.assessment_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (analysisRow) {
+      const { data: images } = await this.db
+        .from("skin_analysis_images")
+        .select("id")
+        .eq("analysis_id", analysisRow.id);
+      const { data: obs } = await this.db
+        .from("skin_analysis_observations")
+        .select("observations")
+        .eq("analysis_id", analysisRow.id)
+        .maybeSingle();
+      analysis = {
+        reference: analysisRow.reference,
+        status: analysisRow.status,
+        modelVersion: analysisRow.model_version,
+        createdAt: analysisRow.created_at,
+        imageIds: (images ?? []).map((i) => i.id),
+        observation:
+          (obs?.observations as import("@/lib/ai/vision-schema").Observation | undefined) ?? null,
+      };
+    }
+
     return {
       id: c.id,
       reference: c.reference,
@@ -176,7 +221,28 @@ export class ExpertStore {
         : null,
       regimen,
       order: orderRow ? { id: orderRow.id, status: orderRow.status } : null,
+      analysis,
     };
+  }
+
+  /**
+   * Mints a short-lived signed URL for one analysis image — the expert photo
+   * view's only way to see a photo. The caller (an admin route) is already
+   * behind the auth middleware, so this trusts that gate; it still verifies
+   * the image id resolves to a real stored object, and the URL it returns
+   * expires in two minutes and is never persisted.
+   */
+  async signImageUrl(imageId: string, expiresInSeconds = 120): Promise<string | null> {
+    const { data: image } = await this.db
+      .from("skin_analysis_images")
+      .select("storage_path")
+      .eq("id", imageId)
+      .maybeSingle();
+    if (!image) return null;
+    const { data } = await this.db.storage
+      .from("skin-photos")
+      .createSignedUrl(image.storage_path, expiresInSeconds);
+    return data?.signedUrl ?? null;
   }
 
   async assignExpert(consultationId: string, expertId: string): Promise<boolean> {

@@ -62,6 +62,12 @@ export const submitAssessmentSchema = z.object({
   consent: consentSchema,
   /** Opaque client session id, used to correlate progress saves. */
   sessionId: z.string().uuid().optional(),
+  /**
+   * If the customer ran the Skin Analyzer first, its reference links that
+   * analysis to this assessment, so an expert opening the resulting
+   * consultation sees the photo and observations alongside the answers.
+   */
+  analysisReference: z.string().regex(/^SW-[A-HJ-NP-Z2-9]{8}$/).optional(),
 });
 
 export type SubmitAssessmentInput = z.infer<typeof submitAssessmentSchema>;

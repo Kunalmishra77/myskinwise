@@ -4,6 +4,8 @@ import { respond, type CustomerContext, type ChatTurn } from "@/lib/ai/assistant
 import { getCustomerStore } from "@/lib/consultation/customer";
 import { contactSchema } from "@/lib/assessment/schema";
 import { clientKey, MemoryRateLimiter } from "@/lib/rate-limit";
+import { getAnalysisStore } from "@/lib/analysis/storage";
+import { FEATURE_LABELS } from "@/lib/ai/vision-schema";
 
 export const runtime = "nodejs";
 
@@ -26,6 +28,10 @@ const bodySchema = z.object({
   // conversation.
   reference: z.string().regex(/^SW-[A-HJ-NP-Z2-9]{8}$/).optional(),
   phone: z.string().optional(),
+  // Optional Skin Analyzer reference. The analyzer runs without an account,
+  // so its reference is the bearer token for its own (already customer-safe)
+  // observation — the same model the customer used to view their result.
+  analysisReference: z.string().regex(/^SW-[A-HJ-NP-Z2-9]{8}$/).optional(),
 });
 
 export async function POST(request: Request) {
@@ -67,6 +73,28 @@ export async function POST(request: Request) {
           hasPublishedRegimen: Boolean(view.regimen),
         };
       }
+    }
+  }
+
+  // Attach a completed Skin Analyzer observation, if referenced. getByReference
+  // returns ONLY the customer-safe observation (feature/certainty/note/
+  // limitations) — no storage path, signed URL, image id or internal field
+  // exists on that object, so nothing private can reach the model. A wrong or
+  // unknown reference simply yields no context.
+  if (parsed.data.analysisReference) {
+    const view = await getAnalysisStore().getByReference(parsed.data.analysisReference);
+    if (view?.status === "completed" && view.observation) {
+      const o = view.observation;
+      context = {
+        ...(context ?? {}),
+        analysis: {
+          imageQuality: o.image_quality,
+          features: o.features
+            .filter((f) => f.certainty !== "unclear")
+            .map((f) => ({ label: FEATURE_LABELS[f.feature], certainty: f.certainty })),
+          limitations: o.limitations,
+        },
+      };
     }
   }
 
