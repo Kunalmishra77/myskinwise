@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Send, Sparkles } from "lucide-react";
+import { Send, Sparkles, Mic } from "lucide-react";
 import { SITE, waHref } from "@/config/site";
 import { cn } from "@/lib/utils";
 
@@ -116,6 +116,13 @@ export function AssistantChat() {
                 </li>
               ))}
             </ul>
+            <Link
+              href="/voice"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-rose-ink"
+            >
+              <Mic aria-hidden="true" className="size-4" />
+              Prefer to talk? Use the voice assistant
+            </Link>
           </div>
         ) : (
           <ul className="flex flex-col gap-4">
