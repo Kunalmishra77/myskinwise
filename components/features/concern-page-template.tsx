@@ -43,7 +43,7 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
         image={IMAGES.heroModel}
         heading={content.hero.heading}
         subheading={content.hero.subheading}
-        ctas={[{ label: "Analyse your skin", href: `/quiz/${content.slug}`, variant: "primary" }]}
+        ctas={[{ label: "Analyse your skin", href: "/skin-check", variant: "primary" }]}
       />
 
       <Section className="bg-surface">
