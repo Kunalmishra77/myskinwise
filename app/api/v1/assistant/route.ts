@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { respond, type CustomerContext, type ChatTurn } from "@/lib/ai/assistant";
-import { getCustomerStore } from "@/lib/consultation/customer";
-import { contactSchema } from "@/lib/assessment/schema";
+import { respond, type ChatTurn } from "@/lib/ai/assistant";
+import { resolveCustomerContext } from "@/lib/ai/context";
 import { clientKey, MemoryRateLimiter } from "@/lib/rate-limit";
-import { getAnalysisStore } from "@/lib/analysis/storage";
-import { FEATURE_LABELS } from "@/lib/ai/vision-schema";
 
 export const runtime = "nodejs";
 
@@ -56,47 +53,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: "invalid", errors: parsed.error.flatten() }, { status: 400 });
   }
 
-  // Resolve customer context ONLY when a valid reference + phone pair is
-  // given and ownership checks out. A guessed reference alone yields nothing,
-  // and the context returned is already the customer-safe view (no internal
-  // notes, verdict or ids) — the assistant never receives anything the
-  // customer could not already see themselves.
-  let context: CustomerContext | undefined;
-  if (parsed.data.reference && parsed.data.phone) {
-    const phone = contactSchema.shape.phone.safeParse(parsed.data.phone);
-    const store = getCustomerStore();
-    if (phone.success && store) {
-      const view = await store.lookup(parsed.data.reference, phone.data);
-      if (view) {
-        context = {
-          consultationStatus: view.status,
-          hasPublishedRegimen: Boolean(view.regimen),
-        };
-      }
-    }
-  }
-
-  // Attach a completed Skin Analyzer observation, if referenced. getByReference
-  // returns ONLY the customer-safe observation (feature/certainty/note/
-  // limitations) — no storage path, signed URL, image id or internal field
-  // exists on that object, so nothing private can reach the model. A wrong or
-  // unknown reference simply yields no context.
-  if (parsed.data.analysisReference) {
-    const view = await getAnalysisStore().getByReference(parsed.data.analysisReference);
-    if (view?.status === "completed" && view.observation) {
-      const o = view.observation;
-      context = {
-        ...(context ?? {}),
-        analysis: {
-          imageQuality: o.image_quality,
-          features: o.features
-            .filter((f) => f.certainty !== "unclear")
-            .map((f) => ({ label: FEATURE_LABELS[f.feature], certainty: f.certainty })),
-          limitations: o.limitations,
-        },
-      };
-    }
-  }
+  // Customer-safe context via the shared resolver — the SAME privacy
+  // boundary the voice agent uses. A guessed reference or wrong phone yields
+  // nothing; nothing internal (notes, verdict, storage paths, ids) can reach
+  // the model.
+  const context = await resolveCustomerContext({
+    reference: parsed.data.reference,
+    phone: parsed.data.phone,
+    analysisReference: parsed.data.analysisReference,
+  });
 
   const outcome = await respond(parsed.data.messages as ChatTurn[], context);
   return NextResponse.json({ status: "ok", ...outcome });
