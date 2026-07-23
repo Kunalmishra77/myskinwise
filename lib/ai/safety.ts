@@ -72,7 +72,12 @@ export type RiskLevel = "none" | "escalate";
 const ESCALATION_PATTERNS: RegExp[] = [
   /\b(severe|extreme|unbearable|worst)\b.{0,20}\b(pain|painful|acne|swelling|reaction)\b/i,
   /\b(infected|infection|pus|oozing|bleeding|abscess|boil)\b/i,
-  /\b(allergic reaction|anaphyla|hives all over|face swelling|swollen (lips|eyes|throat)|difficulty breathing)\b/i,
+  /\b(allergic reaction|anaphyla|hives all over)\b/i,
+  // Airway/facial swelling — the emergency signs. Matches "swollen face",
+  // "face is badly swollen", "swollen lips/eyes/throat/tongue".
+  /\b(swollen|swelling)\b.{0,20}\b(face|lips?|eyes?|throat|tongue)\b/i,
+  /\b(face|lips?|eyes?|throat|tongue)\b.{0,20}\b(swollen|swelling)\b/i,
+  /\b(difficulty breathing|can.?t breathe|cannot breathe|trouble breathing|hard to breathe|struggling to breathe)\b/i,
   /\b(rapidly|suddenly) (worse|worsening|spreading)\b/i,
   /\b(burn(ing|t)?|chemical burn|blister)\b/i,
   /\bfever\b.{0,20}\b(rash|skin)\b/i,

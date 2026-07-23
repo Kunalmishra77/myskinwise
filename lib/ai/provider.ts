@@ -83,12 +83,81 @@ class AnthropicProvider implements AiProvider {
   }
 }
 
+/**
+ * OpenAI Chat Completions via fetch — no SDK dependency, mirroring the
+ * Anthropic adapter so the orchestrator, grounding and safety layers see an
+ * identical interface and stay untouched.
+ *
+ * gpt-4.1-mini is the model: a grounded product-Q&A assistant does not need
+ * a frontier model, and 4.1-mini is the current cost-efficient tier that is
+ * available on the funded account (gpt-5-mini rejects the classic
+ * parameters). The exact id is overridable via OPENAI_MODEL for when the
+ * account gains access to a newer mini tier, without a code change.
+ *
+ * The grounded Skinwise system prompt arrives here already assembled and is
+ * passed as the system message — the model receives exactly what the
+ * orchestrator built, no more. The key is read from the environment and
+ * never leaves the server.
+ */
+class OpenAiProvider implements AiProvider {
+  private readonly model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+  constructor(private readonly apiKey: string) {}
+
+  isConfigured() {
+    return true;
+  }
+
+  async complete(system: string, messages: ChatTurn[]): Promise<CompletionResult> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20_000);
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          max_tokens: 700,
+          messages: [
+            { role: "system", content: system },
+            ...messages.map((m) => ({ role: m.role, content: m.content })),
+          ],
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) return { ok: false, reason: "failed" };
+      const data = (await res.json()) as {
+        choices?: { message?: { content?: string } }[];
+      };
+      const text = data.choices?.[0]?.message?.content?.trim();
+      if (!text) return { ok: false, reason: "failed" };
+      return { ok: true, text };
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") return { ok: false, reason: "timeout" };
+      return { ok: false, reason: "failed" };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+}
+
 let instance: AiProvider | null = null;
 
+/**
+ * Provider selection, in priority order: OpenAI (the funded account), then
+ * Anthropic, then a graceful unconfigured fallback. Both real adapters are
+ * kept — switching provider is an environment change, not a code change.
+ */
 export function getAiProvider(): AiProvider {
   if (instance) return instance;
-  const key = process.env.ANTHROPIC_API_KEY;
-  instance = key ? new AnthropicProvider(key) : new UnconfiguredProvider();
+  const openai = process.env.OPENAI_API_KEY;
+  const anthropic = process.env.ANTHROPIC_API_KEY;
+  if (openai) instance = new OpenAiProvider(openai);
+  else if (anthropic) instance = new AnthropicProvider(anthropic);
+  else instance = new UnconfiguredProvider();
   return instance;
 }
 

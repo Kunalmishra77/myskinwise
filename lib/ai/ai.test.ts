@@ -13,6 +13,10 @@ describe("safety — inbound risk", () => {
       "my skin is infected and oozing pus",
       "my lips are swollen and I have difficulty breathing",
       "the spot is bleeding and spreading rapidly",
+      // Emergency phrasings that an earlier pattern set missed:
+      "my face is badly swollen and I can't breathe properly",
+      "my throat feels swollen",
+      "I'm struggling to breathe after using it",
     ]) {
       expect(assessRisk(m), m).toBe("escalate");
     }
