@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Camera, ImageUp, ShieldCheck, X } from "lucide-react";
+import { ArrowLeft, Camera, ImageUp, X } from "lucide-react";
 import { assessImageQuality } from "@/lib/analysis/quality-gate";
-import { FEATURE_LABELS, CERTAINTY_LABELS, type Observation } from "@/lib/ai/vision-schema";
+import { type Observation } from "@/lib/ai/vision-schema";
 import { Button } from "@/components/ui/button";
 import { CheckVsScan } from "@/components/features/check-vs-scan";
+import { ScanResult } from "@/app/skin-check/analyzer/scan-result";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 const POLICY_VERSION = "2026-07-23";
@@ -112,10 +113,13 @@ export function Analyzer() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="flex items-center gap-2 px-4 py-4">
-        <Link href="/skin-check" aria-label="Back" className="-ml-2 inline-flex size-10 items-center justify-center rounded-full text-ink transition hover:bg-blush">
+        {/* Back to home, not to the Skin Check. The Scanner is its own
+            experience; sending someone "back" into the questionnaire is a
+            large part of why the two read as one thing. */}
+        <Link href="/" aria-label="Back" className="-ml-2 inline-flex size-11 items-center justify-center rounded-full text-ink transition hover:bg-blush">
           <ArrowLeft aria-hidden="true" className="size-5" />
         </Link>
-        <span className="font-body text-sm font-semibold text-ink-soft">Skin Analyzer</span>
+        <span className="font-body text-sm font-semibold text-ink-soft">AI Skin Scanner</span>
       </header>
 
       <input
@@ -209,7 +213,9 @@ export function Analyzer() {
           </div>
         )}
 
-        {stage === "result" && observation && <Result observation={observation} onRestart={reset} />}
+        {stage === "result" && observation && (
+          <ScanResult observation={observation} photo={preview?.dataUrl ?? null} onRestart={reset} />
+        )}
 
         {(stage === "quality" || stage === "error") && (
           <div className="pt-8">
@@ -225,62 +231,6 @@ export function Analyzer() {
             </div>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function Result({ observation, onRestart }: { observation: Observation; onRestart: () => void }) {
-  const shown = observation.features.filter((f) => f.certainty !== "unclear");
-  return (
-    <div>
-      <Eyebrow index="02">What the AI noticed</Eyebrow>
-      <h1 className="mt-4 font-display text-display font-semibold text-ink">A few things stood out.</h1>
-      <p className="mt-3 text-sm text-ink-soft">
-        These are visible characteristics only — not a diagnosis, and a photo can&rsquo;t tell the
-        whole story. A Skinwise expert can.
-      </p>
-
-      {shown.length > 0 ? (
-        <ul className="mt-6 flex flex-col gap-3">
-          {shown.map((f, i) => (
-            <li key={i} className="rounded-2xl bg-surface p-4 shadow-soft">
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-semibold text-ink">{FEATURE_LABELS[f.feature]}</span>
-                <span className="rounded-full bg-blush px-2.5 py-1 text-xs font-semibold text-rose-ink">
-                  {CERTAINTY_LABELS[f.certainty]}
-                </span>
-              </div>
-              {f.note && <p className="mt-1.5 text-sm text-ink-soft">{f.note}</p>}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-6 rounded-2xl bg-surface p-4 text-ink-soft shadow-soft">
-          Nothing stood out clearly from this photo. That&rsquo;s common — a Skin Check tells us far
-          more than a single image can.
-        </p>
-      )}
-
-      {observation.recommend_professional && (
-        <div className="mt-4 flex gap-3 rounded-2xl border-l-4 border-rose-ink bg-surface p-4">
-          <ShieldCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-rose-ink" />
-          <p className="text-sm text-ink">
-            Some of what&rsquo;s visible is worth having a person look at. We&rsquo;d suggest a Skinwise
-            expert — or a doctor if it&rsquo;s bothering you.
-          </p>
-        </div>
-      )}
-
-      <p className="mt-5 text-xs text-ink-soft">{observation.limitations}</p>
-
-      <div className="mt-8 flex flex-col gap-3">
-        <Button size="lg" asChild>
-          <Link href="/skin-check">Get a personalised Skin Check</Link>
-        </Button>
-        <Button size="lg" variant="outline" onClick={onRestart}>
-          Try another photo
-        </Button>
       </div>
     </div>
   );

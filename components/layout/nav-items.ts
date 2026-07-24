@@ -1,4 +1,4 @@
-import { Home, Camera, MessageCircle, ScanFace, User, type LucideIcon } from "lucide-react";
+import { Home, Camera, MessageCircle, Mic, User, type LucideIcon } from "lucide-react";
 import { SITE } from "@/config/site";
 
 export type BottomNavItem = {
@@ -13,29 +13,27 @@ export type BottomNavItem = {
 };
 
 /**
- * Five tabs.
+ * Five tabs, with the Skin Scanner centred and raised as the primary action.
  *
- * This was four, on the reasoning that a fifth costs ~15% of each touch
- * target's width at 320px and there was no fifth destination worth that. The
- * arithmetic still holds — five tabs at 320px is 64px each, comfortably past
- * the 44px minimum — but the premise did not: an audit of the deployed site
- * found the Skin Analyzer had zero inbound links from any page and the voice
- * agent had one, so two of the four primary features were undiscoverable on a
- * phone. A fifth destination is now clearly worth it.
+ * The centre slot used to be the Skin Check. That was the single biggest
+ * source of product confusion: the Scanner and the Skin Check are different
+ * experiences — one reads a photo, the other asks questions — and the most
+ * prominent button on a phone led to the questionnaire. Someone hunting for
+ * "the AI scanner" pressed the big centre button and got a form, which reads
+ * as the scanner being a questionnaire.
  *
- * What went and what stayed. "Concerns" left the bar: it is content browsing
- * rather than a product action, and the home page already links every concern
- * several times. "Scan" and "Ask" replace it, which puts all four primary
- * features — Skin Check, Analyzer, assistant and (via the assistant) voice —
- * one thumb-tap away.
+ * Centre is now Scan, because it is the product's most distinctive action and
+ * the easiest target to reach one-handed. Voice sits immediately left of it as
+ * the second-most prominent action. The Skin Check is not demoted out of the
+ * product — it is one tap from the Scanner screen, the home page and the menu
+ * — it simply no longer impersonates the Scanner.
  *
- * "Skin Check" stays in the middle and raised. Centre is the easiest place to
- * reach one-handed, and it is still the only route that reaches an expert.
+ * Five tabs at 320px is 64px each, comfortably past the 44px minimum.
  */
 export const BOTTOM_NAV: BottomNavItem[] = [
   { label: "Home", href: "/", icon: Home },
-  { label: "Scan", href: "/skin-check/analyzer", icon: Camera },
-  { label: "Skin Check", href: "/skin-check", icon: ScanFace, primary: true },
+  { label: "Voice", href: "/voice", icon: Mic },
+  { label: "Scan", href: "/skin-check/analyzer", icon: Camera, primary: true },
   { label: "Ask", href: "/assistant", icon: MessageCircle },
   { label: "Me", href: "/me", icon: User },
 ];

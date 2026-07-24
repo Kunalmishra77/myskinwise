@@ -62,7 +62,35 @@ test.describe("app shell", () => {
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
+
+    /*
+     * The panel must actually cover the viewport, not merely exist.
+     *
+     * This assertion is here because `toBeVisible()` alone shipped a broken
+     * menu to production. The drawer is mounted inside <header>, which has
+     * `backdrop-blur-xl`; a backdrop-filter establishes a containing block for
+     * `position: fixed` descendants, so `fixed inset-0` resolved against the
+     * 56px-tall header. The drawer opened at 390x56, tucked behind the header,
+     * and to a user the menu button did nothing — while the test passed,
+     * because a 56px sliver is still "visible".
+     */
+    const box = await dialog.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box, "drawer has no box").not.toBeNull();
+    expect(
+      box!.height,
+      `drawer is ${Math.round(box!.height)}px tall in a ${viewport!.height}px viewport — it is being clipped by an ancestor`,
+    ).toBeGreaterThan(viewport!.height * 0.8);
+
     await expect(dialog.getByRole("link", { name: "Home" })).toBeVisible();
+
+    // The four product actions are the reason the menu exists on a phone.
+    // Matched by href rather than by name: each tile's accessible name is the
+    // label plus its description ("Skin Scanner AI reads your photo"), so an
+    // exact name match is brittle in a way the destination is not.
+    for (const href of ["/skin-check/analyzer", "/skin-check", "/voice", "/assistant"]) {
+      await expect(dialog.locator(`a[href="${href}"]`).first()).toBeVisible();
+    }
 
     // Focus must land inside the dialog, not stay on the page behind it.
     await expect(dialog.getByRole("button", { name: "Close menu" })).toBeFocused();
@@ -93,11 +121,11 @@ test.describe("app shell", () => {
     // Every tab must clear the 44px minimum touch target. `exact` matters:
     // an inexact "Me" also matches "Home".
     //
-    // Five tabs, not four. "Concerns" left the bar and "Scan" and "Ask"
-    // joined it, because an audit found the Skin Analyzer had no inbound
-    // links anywhere on the site and the voice agent had one — two of the
-    // four primary features were unreachable on a phone. See nav-items.ts.
-    for (const name of ["Home", "Scan", "Skin Check", "Ask", "Me"]) {
+    // Five tabs, with Scan centred as the primary action and Voice second.
+    // The centre slot used to be the Skin Check, which meant the most
+    // prominent button on a phone led to the questionnaire — the main reason
+    // the Scanner and the Skin Check read as one feature. See nav-items.ts.
+    for (const name of ["Home", "Voice", "Scan", "Ask", "Me"]) {
       const box = await bottomNav.getByRole("link", { name, exact: true }).boundingBox();
       expect(box, `${name} tab has no box`).not.toBeNull();
       expect(box!.height, `${name} tab is under 44px tall`).toBeGreaterThanOrEqual(44);
