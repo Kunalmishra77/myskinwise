@@ -99,11 +99,50 @@ export function AssistantChat() {
             <span className="flex size-14 items-center justify-center rounded-2xl bg-blush text-rose-ink">
               <Sparkles aria-hidden="true" className="size-7" />
             </span>
-            <h1 className="mt-5 font-display text-3xl font-semibold text-ink">Ask Skinwise</h1>
+            <h1 className="mt-5 font-display text-3xl font-semibold text-ink">
+              Talk to Skinwise AI
+            </h1>
             <p className="mt-2 max-w-sm text-ink-soft">
               Questions about ingredients, concerns or routines — I&rsquo;ll help, and point you to a
               real expert when it matters.
             </p>
+
+            {/*
+              Text and voice presented as two peer choices rather than a chat
+              box with a link buried under it. The voice agent previously had
+              exactly one entry point on the entire site — a small text link
+              here, which also disappeared the moment a conversation started.
+              Someone who prefers speaking had no way to discover that they
+              could.
+            */}
+            <div className="mt-7 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex flex-col items-start rounded-3xl border-2 border-rose-ink/25 bg-surface p-5 text-left">
+                <span className="flex size-10 items-center justify-center rounded-xl bg-blush text-rose-ink">
+                  <Send aria-hidden="true" className="size-5" />
+                </span>
+                <h2 className="mt-3 font-display text-lg font-semibold text-ink">Text</h2>
+                <p className="mt-1 text-sm text-ink-soft">
+                  Ask your skincare questions by typing. Start below.
+                </p>
+              </div>
+
+              <Link
+                href="/voice"
+                className="group flex flex-col items-start rounded-3xl bg-rose-ink p-5 text-left text-white shadow-soft transition-shadow hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
+              >
+                <span className="flex size-10 items-center justify-center rounded-xl bg-white/15">
+                  <Mic aria-hidden="true" className="size-5" />
+                </span>
+                <h2 className="mt-3 font-display text-lg font-semibold">Voice</h2>
+                <p className="mt-1 text-sm text-white/85">
+                  Talk naturally with Skinwise AI, hands-free.
+                </p>
+                <span className="mt-3 text-sm font-semibold underline underline-offset-4 group-hover:no-underline">
+                  Start talking
+                </span>
+              </Link>
+            </div>
+
             <ul className="mt-8 flex w-full flex-col gap-2">
               {SUGGESTIONS.map((s) => (
                 <li key={s}>
@@ -116,13 +155,6 @@ export function AssistantChat() {
                 </li>
               ))}
             </ul>
-            <Link
-              href="/voice"
-              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-rose-ink"
-            >
-              <Mic aria-hidden="true" className="size-4" />
-              Prefer to talk? Use the voice assistant
-            </Link>
           </div>
         ) : (
           <ul className="flex flex-col gap-4">
@@ -185,6 +217,19 @@ export function AssistantChat() {
             placeholder="Ask about your skin…"
             className="max-h-32 flex-1 resize-none rounded-2xl border border-ink/15 bg-surface px-4 py-3 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink"
           />
+          {/*
+            Switching to voice has to stay reachable mid-conversation, not
+            only from the empty state. Someone who starts typing on the move
+            is exactly the person who then wants to speak instead.
+          */}
+          <Link
+            href="/voice"
+            aria-label="Switch to talking with Skinwise AI"
+            title="Talk instead"
+            className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-ink/15 bg-surface text-rose-ink transition hover:border-rose-ink/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink"
+          >
+            <Mic aria-hidden="true" className="size-5" />
+          </Link>
           <button
             type="submit"
             disabled={busy || !input.trim()}

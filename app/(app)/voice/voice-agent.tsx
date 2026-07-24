@@ -299,7 +299,7 @@ export function VoiceAgent() {
               {state === "speaking" && "Speaking… tap mic to interrupt"}
               {state === "error" && "Tap to try again"}
             </p>
-            <button onClick={() => setTextMode(true)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-rose-ink">
+            <button onClick={() => setTextMode(true)} className="inline-flex min-h-11 items-center gap-1.5 py-1 text-sm font-semibold text-rose-ink">
               <Keyboard aria-hidden="true" className="size-4" />
               Type instead
             </button>

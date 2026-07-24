@@ -10,6 +10,7 @@ import { contactSchema } from "@/lib/assessment/schema";
 import type { RegimenOutline } from "@/lib/assessment/recommend";
 import { buildFallbackMessage, buildReference } from "@/lib/assessment/whatsapp";
 import { productsForConcern } from "@/content/products";
+import { CheckVsScan } from "@/components/features/check-vs-scan";
 import { ProductCard } from "@/components/features/product-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -33,7 +34,7 @@ function WhyPanel({ why }: { why: string }) {
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1.5 rounded-full text-sm font-semibold text-rose-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-full py-1 text-sm font-semibold text-rose-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
       >
         Why we ask
         <ChevronDown aria-hidden="true" className={cn("size-4 transition-transform", open && "rotate-180")} />
@@ -545,6 +546,15 @@ export function AssessmentFlow() {
               onChange={(e) => setAnswer(current.followUp!.id, e.target.value)}
               className="mt-2 w-full rounded-2xl border border-ink/15 bg-surface px-4 py-3 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink"
             />
+          </div>
+        )}
+
+        {/* First question only. Someone deciding whether to start needs to
+            know the photo analyzer exists and how it differs; someone three
+            questions deep does not need a competing route. */}
+        {index === 0 && (
+          <div className="mt-10">
+            <CheckVsScan current="skin-check" />
           </div>
         )}
       </div>

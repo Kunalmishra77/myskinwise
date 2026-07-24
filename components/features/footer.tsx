@@ -60,11 +60,11 @@ export function Footer() {
                 className="h-8 w-auto"
               />
             </Link>
-            <ul className="flex flex-col gap-2 text-sm text-ink/80">
+            <ul className="flex flex-col text-sm text-ink/80">
               <li>
                 <a
                   href={telHref(SITE.phones.general.e164)}
-                  className="inline-flex items-center gap-2 hover:text-rose-ink"
+                  className="inline-flex min-h-11 items-center gap-2 py-1 hover:text-rose-ink"
                 >
                   <Phone aria-hidden="true" className="size-4" />
                   {SITE.phones.general.label}: {SITE.phones.general.display}
@@ -73,7 +73,7 @@ export function Footer() {
               <li>
                 <a
                   href={telHref(SITE.phones.product.e164)}
-                  className="inline-flex items-center gap-2 hover:text-rose-ink"
+                  className="inline-flex min-h-11 items-center gap-2 py-1 hover:text-rose-ink"
                 >
                   <Phone aria-hidden="true" className="size-4" />
                   {SITE.phones.product.label}: {SITE.phones.product.display}
@@ -82,7 +82,7 @@ export function Footer() {
               <li>
                 <a
                   href={`mailto:${SITE.email}`}
-                  className="inline-flex items-center gap-2 hover:text-rose-ink"
+                  className="inline-flex min-h-11 items-center gap-2 py-1 hover:text-rose-ink"
                 >
                   <Mail aria-hidden="true" className="size-4" />
                   {SITE.email}
@@ -94,13 +94,13 @@ export function Footer() {
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-rose-ink">
                 Reach Out
               </h2>
-              <ul className="flex flex-col gap-2 text-sm text-ink/80">
+              <ul className="flex flex-col text-sm text-ink/80">
                 <li>
                   <a
                     href={waHref(SITE.whatsapp.e164)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 hover:text-rose-ink"
+                    className="inline-flex min-h-11 items-center gap-2 py-1 hover:text-rose-ink"
                   >
                     <MessageCircle aria-hidden="true" className="size-4" />
                     WhatsApp: {SITE.whatsapp.display}
@@ -109,7 +109,7 @@ export function Footer() {
                 <li>
                   <a
                     href={telHref(SITE.phones.general.e164)}
-                    className="inline-flex items-center gap-2 hover:text-rose-ink"
+                    className="inline-flex min-h-11 items-center gap-2 py-1 hover:text-rose-ink"
                   >
                     <Phone aria-hidden="true" className="size-4" />
                     Customer Care: {SITE.phones.general.display}
@@ -118,7 +118,7 @@ export function Footer() {
                 <li>
                   <a
                     href={`mailto:${SITE.email}`}
-                    className="inline-flex items-center gap-2 hover:text-rose-ink"
+                    className="inline-flex min-h-11 items-center gap-2 py-1 hover:text-rose-ink"
                   >
                     <Mail aria-hidden="true" className="size-4" />
                     {SITE.email}
@@ -132,10 +132,10 @@ export function Footer() {
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-rose-ink">
               Visit Links
             </h2>
-            <ul className="flex flex-col gap-2 text-sm text-ink/80">
+            <ul className="flex flex-col text-sm text-ink/80">
               {visitLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="hover:text-rose-ink">
+                  <Link href={link.href} className="inline-flex min-h-11 items-center py-1 hover:text-rose-ink">
                     {link.label}
                   </Link>
                 </li>
@@ -180,7 +180,7 @@ export function Footer() {
           <ul className="flex flex-wrap gap-4">
             {legalLinks.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="hover:text-rose-ink">
+                <Link href={link.href} className="inline-flex min-h-11 items-center py-1 hover:text-rose-ink">
                   {link.label}
                 </Link>
               </li>

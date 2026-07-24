@@ -40,7 +40,7 @@ export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
                   {item.label}
                 </span>
               ) : (
-                <Link href={item.href} className="transition hover:text-rose-ink">
+                <Link href={item.href} className="inline-flex min-h-11 items-center transition hover:text-rose-ink">
                   {item.label}
                 </Link>
               )}

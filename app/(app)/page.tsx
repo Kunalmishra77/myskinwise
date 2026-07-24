@@ -7,6 +7,7 @@ import { IMAGES } from "@/content/assets";
 import { CONCERNS } from "@/content/concerns";
 import { INGREDIENT_LIST } from "@/content/ingredients";
 import { SKIN_TYPE_LIST } from "@/content/skin-types";
+import { StartPaths } from "@/components/features/start-paths";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Reveal } from "@/components/ui/reveal";
@@ -126,7 +127,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2 — CONCERNS. Horizontal scroll on mobile so cards stay thumb-sized
+      {/* 2 — WHAT YOU CAN DO HERE. Immediately below the hero, because an
+          audit found the Skin Analyzer had no inbound links anywhere on the
+          site and the voice agent had one. A visitor could not discover two of
+          the four primary features without guessing a URL. */}
+      <StartPaths />
+
+      {/* 3 — CONCERNS. Horizontal scroll on mobile so cards stay thumb-sized
           rather than shrinking to fit three across a 320px screen. */}
       <section className="mt-20 lg:mt-28" aria-labelledby="concerns-heading">
         <div className="mx-auto w-full max-w-6xl px-5">

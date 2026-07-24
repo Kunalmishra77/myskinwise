@@ -22,8 +22,28 @@ import { BOTTOM_NAV } from "@/components/layout/nav-items";
  * which AppShell applies as bottom padding to <main>, so no page needs to
  * know this bar exists.
  */
+/**
+ * The single tab that owns the current route.
+ *
+ * A plain `startsWith` breaks as soon as one tab's path is a prefix of
+ * another's: `/skin-check/analyzer` starts with `/skin-check`, so both the
+ * Scan tab and the Skin Check tab would light up at once and the bar would
+ * lie about where you are. Longest match wins, and a prefix only counts when
+ * it ends at a path boundary — otherwise `/skin-check-old` would match
+ * `/skin-check`.
+ */
+function activeHref(pathname: string): string | null {
+  let best: string | null = null;
+  for (const { href } of BOTTOM_NAV) {
+    const matches = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+    if (matches && (best === null || href.length > best.length)) best = href;
+  }
+  return best;
+}
+
 export function BottomNav() {
   const pathname = usePathname();
+  const current = activeHref(pathname);
 
   return (
     <nav
@@ -38,8 +58,7 @@ export function BottomNav() {
     >
       <ul className="mx-auto flex h-16 max-w-md items-stretch justify-around px-2">
         {BOTTOM_NAV.map((item) => {
-          const isActive =
-            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const isActive = current === item.href;
           const Icon = item.icon;
 
           if (item.primary) {

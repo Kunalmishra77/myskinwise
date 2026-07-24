@@ -6,6 +6,7 @@ import { ArrowLeft, Camera, ImageUp, ShieldCheck, X } from "lucide-react";
 import { assessImageQuality } from "@/lib/analysis/quality-gate";
 import { FEATURE_LABELS, CERTAINTY_LABELS, type Observation } from "@/lib/ai/vision-schema";
 import { Button } from "@/components/ui/button";
+import { CheckVsScan } from "@/components/features/check-vs-scan";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 const POLICY_VERSION = "2026-07-23";
@@ -153,9 +154,13 @@ export function Analyzer() {
                 <Camera aria-hidden="true" className="size-4" />
                 Take or choose a photo
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/skin-check">Skip the photo, do the Skin Check</Link>
-              </Button>
+            </div>
+
+            {/* Says plainly how the two assessments differ, and keeps the
+                no-photo route visible for anyone who will not photograph
+                their face. */}
+            <div className="mt-8">
+              <CheckVsScan current="analyzer" />
             </div>
           </div>
         )}

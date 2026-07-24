@@ -21,11 +21,31 @@ export const SITE = {
   social: { instagram: "" }, // TODO(client-confirm)
   copyright: "© 2025 Razorbill Private Limited. All Rights Reserved.",
 };
+/*
+ * `Skin AI` groups the four primary product features under one header item.
+ *
+ * Before this, the header carried only marketing destinations, and an audit
+ * of the deployed site found the Skin Analyzer had zero inbound links from
+ * any page while the voice agent had one. Neither appeared in any navigation.
+ * They are grouped rather than listed flat because five top-level items plus
+ * four feature links does not fit a header, and because they genuinely are
+ * one family: different ways to have your skin looked at.
+ */
 SITE.nav = [
   { label: "Home", href: "/" },
-  { label: "Our Expertise", href: "/about-us" },
+  {
+    label: "Skin AI",
+    href: "#",
+    children: [
+      { label: "Skin Check", href: "/skin-check" },
+      { label: "AI Skin Analyzer", href: "/skin-check/analyzer" },
+      { label: "AI Assistant", href: "/assistant" },
+      { label: "Talk to Skinwise AI", href: "/voice" },
+    ],
+  },
   { label: "Skin Problem", href: "#", children: SITE.concerns.map(c => ({ label: c.label, href: `/${c.slug}` })) },
   { label: "Formulations", href: "/products" },
+  { label: "Our Expertise", href: "/about-us" },
   { label: "Contact", href: "/contact-us" },
 ];
 export const telHref = (e164: string) => `tel:${e164.replace(/\s/g, "")}`;
