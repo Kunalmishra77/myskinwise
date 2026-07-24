@@ -4,8 +4,25 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { ConsultationDetail } from "@/lib/expert/storage";
 import { FEATURE_LABELS, CERTAINTY_LABELS } from "@/lib/ai/vision-schema";
+import { PRODUCTS, matchFormulation } from "@/content/products";
 
 const EXPERT_ID_HINT = "Select from experts table"; // single seeded expert for now
+
+/**
+ * Tells the expert whether a formulation reference resolves to a catalogue
+ * product. A matched reference means the customer's regimen shows the real
+ * bottle; an unmatched one still saves fine and renders as plain text, which
+ * is correct for a bespoke compound but worth knowing was not a typo.
+ */
+function FormulationMatch({ value }: { value: string }) {
+  if (!value.trim()) return null;
+  const product = matchFormulation(value);
+  return product ? (
+    <p className="mt-1 text-xs text-ink-soft">Matched: {product.name}</p>
+  ) : (
+    <p className="mt-1 text-xs text-ink-soft">Custom formulation — no product image will be shown</p>
+  );
+}
 
 async function action(body: object): Promise<{ ok: boolean; data: Record<string, unknown> }> {
   const res = await fetch("/api/v1/admin/actions", {
@@ -266,11 +283,32 @@ export function Workspace({ detail }: { detail: ConsultationDetail }) {
               <option value="pm">PM</option>
               <option value="both">AM + PM</option>
             </select>
-            <input placeholder="formulation ref" value={it.formulationRef} onChange={(e) => setItem(idx, { formulationRef: e.target.value })} className="rounded-lg border border-ink/15 px-2 py-2 text-sm" />
+            <div>
+              {/*
+                A datalist rather than a select: experts compound to order, so
+                free text has to keep working. The catalogue is offered as
+                autocompletion, and the line below reports whether what they
+                typed actually resolves — which is what decides whether the
+                customer sees a product photo or bare text on their regimen.
+              */}
+              <input
+                placeholder="formulation ref"
+                list="skinwise-formulations"
+                value={it.formulationRef}
+                onChange={(e) => setItem(idx, { formulationRef: e.target.value })}
+                className="w-full rounded-lg border border-ink/15 px-2 py-2 text-sm"
+              />
+              <FormulationMatch value={it.formulationRef} />
+            </div>
             <input placeholder="instructions" value={it.instructions} onChange={(e) => setItem(idx, { instructions: e.target.value })} className="rounded-lg border border-ink/15 px-2 py-2 text-sm" />
             <input placeholder="frequency" value={it.frequency} onChange={(e) => setItem(idx, { frequency: e.target.value })} className="rounded-lg border border-ink/15 px-2 py-2 text-sm" />
           </div>
         ))}
+        <datalist id="skinwise-formulations">
+          {PRODUCTS.map((p) => (
+            <option key={p.slug} value={p.name} />
+          ))}
+        </datalist>
         <button onClick={() => setItems((p) => [...p, { timeOfDay: "am", formulationRef: "", instructions: "", frequency: "" }])} className="mt-3 text-sm font-semibold text-rose-ink">
           + Add item
         </button>

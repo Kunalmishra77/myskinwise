@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { CustomerConsultationView } from "@/lib/consultation/customer";
+import { RegimenProduct } from "@/components/features/regimen-product";
 
 const STATUS_COPY: Record<string, { label: string; body: string }> = {
   requested: {
@@ -79,7 +80,15 @@ export function ConsultationLookup() {
                   <span className="rounded-full bg-blush px-2.5 py-1 text-xs font-semibold uppercase text-rose-ink">
                     {item.timeOfDay === "both" ? "AM + PM" : item.timeOfDay.toUpperCase()}
                   </span>
-                  <p className="mt-2 font-semibold text-ink">{item.formulationRef}</p>
+                  {/*
+                    Shows the actual bottle when the expert's reference names a
+                    catalogue product, and falls back to plain text when it
+                    doesn't — experts compound to order, so not every reference
+                    is a catalogue item.
+                  */}
+                  <div className="mt-2">
+                    <RegimenProduct formulationRef={item.formulationRef} />
+                  </div>
                   {item.instructions && <p className="mt-1 text-sm text-ink-soft">{item.instructions}</p>}
                   {item.frequency && <p className="mt-0.5 text-sm text-ink-soft">{item.frequency}</p>}
                 </li>

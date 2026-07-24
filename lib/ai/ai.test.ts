@@ -61,8 +61,29 @@ describe("grounding", () => {
     expect(kb).toContain("Niacinamide");
     expect(kb).toContain("Acne");
     expect(kb).toContain("Oily skin");
-    // Grounded in the real business model — no catalogue.
-    expect(kb).toMatch(/no fixed product catalogue|custom-compounded/i);
+  });
+
+  it("grounds the assistant in the real product catalogue", () => {
+    // This assertion used to check the opposite — that there was NO catalogue.
+    // That was true until the client supplied the packaging for nine real
+    // formulations. Both halves of the model now have to hold: a published
+    // range exists, AND each one is still customised per person.
+    const kb = knowledgeBase();
+    expect(kb).toContain("Customised Anti-Acne Cleanser");
+    expect(kb).toContain("Customised Eye Lyte Cream");
+    expect(kb).toMatch(/customised for the individual customer/i);
+  });
+
+  it("never lets the assistant invent a price", () => {
+    // Only two labels carry a legible MRP. The other seven must reach the
+    // model as "confirmed at consultation", or it will helpfully make one up.
+    const kb = knowledgeBase();
+    expect(kb).toContain("₹1299");
+    expect(kb).toContain("₹899");
+    expect(kb).toMatch(/price is confirmed at consultation rather than estimating/i);
+    // No other rupee figure may appear anywhere in the base.
+    const prices = new Set(kb.match(/₹\d[\d,]*/g) ?? []);
+    expect([...prices].sort()).toEqual(["₹1299", "₹899"]);
   });
 
   it("fits comfortably in a single prompt (well under a RAG threshold)", () => {

@@ -1,0 +1,6 @@
+# Source material for the product catalogue: ~30MB of packaging PDFs that
+# scripts/build-product-images.mjs turns into public/products/. They are
+# committed because they are the source of truth for both the imagery and the
+# label data transcribed into content/products, but nothing at runtime or in
+# `next build` reads them, so they should not be uploaded on every deploy.
+Assets/

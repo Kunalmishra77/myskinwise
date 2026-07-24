@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE } from "@/config/site";
 import { INGREDIENT_SLUGS } from "@/content/ingredients";
 import { SKIN_TYPE_SLUGS } from "@/content/skin-types";
+import { PRODUCTS } from "@/content/products";
 
 /**
  * Every route is derived from the data that defines it rather than
@@ -20,12 +21,14 @@ const routes = [
   "concerns",
   "ingredients",
   "skin-types",
+  "products",
   "privacy-policy",
   "terms-and-conditions",
   "refund-and-cancellation",
   ...SITE.concerns.map((c) => c.slug),
   ...INGREDIENT_SLUGS.map((slug) => `ingredients/${slug}`),
   ...SKIN_TYPE_SLUGS.map((slug) => `skin-types/${slug}`),
+  ...PRODUCTS.map((p) => `products/${p.slug}`),
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

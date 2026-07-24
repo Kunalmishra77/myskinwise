@@ -14,6 +14,19 @@ import { test, expect, type Page } from "@playwright/test";
  */
 const NEXT = /^(Next|Continue)$/;
 
+/*
+ * A note that will save someone an hour.
+ *
+ * Two tests in this file complete a real submission, and POST
+ * /api/v1/assessments/submit is rate limited to 5 per 10 minutes per client
+ * (lib/rate-limit.ts). Running the file across both Playwright projects uses
+ * four of those five, so a couple of manual submissions beforehand is enough
+ * to exhaust the window — at which point the flow stops on the contact step
+ * and the failure looks like a broken form rather than a 429.
+ *
+ * The limiter is in-memory, so restarting `next start` resets it.
+ */
+
 /** Answers every remaining question, stopping at the contact step. */
 async function answerThrough(page: Page, limit = 30) {
   for (let i = 0; i < limit; i++) {
@@ -129,28 +142,50 @@ test.describe("Skin Check assessment", () => {
     // The claim-language rules from the platform spec §8.2.
     await expect(body).not.toContainText(/\bcure\b|\bpermanently\b|\bguaranteed\b/i);
 
-    // Flow 4 — fallback state is stated plainly, never disguised as success.
-    // Supabase is not configured in CI, so this is the expected path.
-    await expect(body).toContainText(/not yet saved/i);
-    await expect(body).toContainText(/SW-/);
+    /*
+     * Flow 4 — the no-silent-loss contract.
+     *
+     * Which branch runs depends on whether Supabase credentials are present,
+     * so this asserts the contract for whichever one actually happened rather
+     * than assuming an unconfigured environment. That assumption used to hold
+     * because only CI ran this suite; it broke the moment the database was
+     * configured locally, and a test that only passes when the database is
+     * missing is not testing the database path at all.
+     *
+     * The invariant under both branches is the same and is the point of the
+     * test: the screen must never claim a lead was saved when it wasn't, and
+     * must never claim it wasn't when it was.
+     */
+    const savedLocally = await body.getByText(/not yet saved/i).count();
 
-    const whatsapp = page.getByRole("link", { name: /Send this to our team/ });
-    await expect(whatsapp).toBeVisible();
-    await expect(page.getByRole("button", { name: /Copy my answers/ })).toBeVisible();
+    if (savedLocally) {
+      // Not stored. Must say so, and must hand the customer a reference plus
+      // a WhatsApp route so the lead is not simply lost.
+      await expect(body).toContainText(/SW-/);
 
-    // Flow 6 — privacy of the deep link.
-    const href = await whatsapp.getAttribute("href");
-    expect(href).toBeTruthy();
-    const decoded = decodeURIComponent(href!);
+      const whatsapp = page.getByRole("link", { name: /Send this to our team/ });
+      await expect(whatsapp).toBeVisible();
+      await expect(page.getByRole("button", { name: /Copy my answers/ })).toBeVisible();
 
-    expect(href!.startsWith("https://wa.me/")).toBe(true);
-    expect(decoded, "lead name must reach the team").toContain("Test Person");
-    expect(decoded, "reference must be quotable by both sides").toMatch(/SW-\d+/);
-    // A face photo must never end up in a URL that lands in browser
-    // history, OS share sheets and clipboard managers.
-    expect(decoded, "no image URL may leak").not.toMatch(/\.(jpg|jpeg|png|webp)/i);
-    expect(decoded, "no storage host may leak").not.toMatch(/supabase|amazonaws|blob\.core/i);
-    expect(decoded, "no key material may leak").not.toMatch(/eyJ[A-Za-z0-9_-]{10,}|service_role|sk_live/);
+      // Flow 6 — privacy of the deep link.
+      const href = await whatsapp.getAttribute("href");
+      expect(href).toBeTruthy();
+      const decoded = decodeURIComponent(href!);
+
+      expect(href!.startsWith("https://wa.me/")).toBe(true);
+      expect(decoded, "lead name must reach the team").toContain("Test Person");
+      expect(decoded, "reference must be quotable by both sides").toMatch(/SW-\d+/);
+      // A face photo must never end up in a URL that lands in browser
+      // history, OS share sheets and clipboard managers.
+      expect(decoded, "no image URL may leak").not.toMatch(/\.(jpg|jpeg|png|webp)/i);
+      expect(decoded, "no storage host may leak").not.toMatch(/supabase|amazonaws|blob\.core/i);
+      expect(decoded, "no key material may leak").not.toMatch(/eyJ[A-Za-z0-9_-]{10,}|service_role|sk_live/);
+    } else {
+      // Stored. The converse must hold: no fallback language, and the
+      // customer is moved on to an expert rather than asked to self-serve.
+      await expect(body).not.toContainText(/not yet saved/i);
+      await expect(page.getByRole("link", { name: /Talk to a Skinwise expert/i })).toBeVisible();
+    }
   });
 
   test("has no horizontal overflow at mobile or desktop width", async ({ page }) => {

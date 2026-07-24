@@ -25,6 +25,7 @@ SITE.nav = [
   { label: "Home", href: "/" },
   { label: "Our Expertise", href: "/about-us" },
   { label: "Skin Problem", href: "#", children: SITE.concerns.map(c => ({ label: c.label, href: `/${c.slug}` })) },
+  { label: "Formulations", href: "/products" },
   { label: "Contact", href: "/contact-us" },
 ];
 export const telHref = (e164: string) => `tel:${e164.replace(/\s/g, "")}`;

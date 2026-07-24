@@ -2,6 +2,7 @@ import { CONCERNS } from "@/content/concerns";
 import { INGREDIENT_LIST } from "@/content/ingredients";
 import { SKIN_TYPE_LIST } from "@/content/skin-types";
 import { FAQS } from "@/content/faqs";
+import { PRODUCTS } from "@/content/products";
 import { SITE } from "@/config/site";
 
 /**
@@ -24,8 +25,27 @@ function build(): string {
 
   parts.push("# Skinwise knowledge base");
   parts.push(
-    `Skinwise is an Indian personalised-skincare brand. Customers complete a free Skin Check; a qualified human expert reviews it and designs a custom-compounded routine. Formulations are made per customer — there is NO fixed product catalogue, no SKUs, and no public prices. Contact: WhatsApp ${SITE.whatsapp.display}, email ${SITE.email}.`,
+    `Skinwise is an Indian personalised-skincare brand. Customers complete a free Skin Check; a qualified human expert reviews it and designs a routine. Skinwise publishes a range of base formulations (listed below), and each one is then customised for the individual customer — so a customer can be told which formulation an expert is likely to build from, but never the exact contents of their own bottle before an expert has reviewed them. Contact: WhatsApp ${SITE.whatsapp.display}, email ${SITE.email}.`,
   );
+
+  parts.push("\n## Formulations (the ONLY products that exist — never invent another)");
+  parts.push(
+    "Describe these only as written here. Ingredient lists are as printed on the label. Only two products have a published price; for every other one, say the price is confirmed at consultation rather than estimating a figure.",
+  );
+  for (const p of PRODUCTS) {
+    const price =
+      p.mrp !== null
+        ? `₹${p.mrp}${p.netQuantity ? ` for ${p.netQuantity}` : ""}`
+        : "price confirmed at consultation";
+    const actives = p.ingredientsPartial
+      ? `${p.ingredients.join(", ")} (list abridged — the full list must be confirmed with the team)`
+      : p.ingredients.join(", ");
+    parts.push(
+      `### ${p.name} (${p.tagline})\nRoutine step: ${p.step}. ${p.description}\n${
+        p.directions ? `Directions: ${p.directions}\n` : ""
+      }Key actives: ${actives}.\nPrice: ${price}.\nPage: /products/${p.slug}`,
+    );
+  }
 
   parts.push("\n## Concerns Skinwise works with");
   for (const c of Object.values(CONCERNS)) {

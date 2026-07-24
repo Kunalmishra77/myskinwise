@@ -9,6 +9,8 @@ import type { Question } from "@/content/assessment/types";
 import { contactSchema } from "@/lib/assessment/schema";
 import type { RegimenOutline } from "@/lib/assessment/recommend";
 import { buildFallbackMessage, buildReference } from "@/lib/assessment/whatsapp";
+import { productsForConcern } from "@/content/products";
+import { ProductCard } from "@/components/features/product-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -255,6 +257,33 @@ export function AssessmentFlow() {
               {outline.guidance.map((g) => (
                 <li key={g} className="text-ink-soft">
                   {g}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/*
+          The formulations an expert would typically build from for this
+          concern. Deliberately framed as "may build from", not "your routine":
+          nobody has reviewed this person yet, and the actual compound is the
+          expert's decision. Suppressed entirely when the answers point to
+          seeing a doctor — leading with products there would be crass.
+        */}
+        {!outline.recommendProfessional && concern && productsForConcern(concern).length > 0 && (
+          <section className="mt-8">
+            <h2 className="font-display text-2xl font-semibold text-ink">
+              Formulations an expert may build from
+            </h2>
+            <p className="mt-2 text-ink-soft">
+              These are our base formulations for {outline.concernLabel.toLowerCase()}. Each one is
+              customised for the person it&rsquo;s made for, so yours is decided after an expert
+              reviews your answers.
+            </p>
+            <ul className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+              {productsForConcern(concern).map((product) => (
+                <li key={product.slug}>
+                  <ProductCard product={product} />
                 </li>
               ))}
             </ul>
