@@ -32,7 +32,91 @@ const securityHeaders = [
   },
 ];
 
+/**
+ * WordPress → Next.js 301s for the cutover.
+ *
+ * Every source below was enumerated from the live WordPress sitemap
+ * (`https://myskinwise.com/wp-sitemap.xml`) on 2026-07-24, not guessed, and
+ * each is mapped to the destination that matches what the visitor was
+ * actually looking for. A blanket redirect to `/` would preserve the domain's
+ * authority while destroying the intent behind every ranked URL and every
+ * running ad, so nothing here is a catch-all.
+ *
+ * Paths that already exist natively under the same name (/about-us, /acne,
+ * /pigmentation, /other-issues, /contact-us and the three legal pages) are
+ * deliberately absent: they need no redirect, only the DNS switch.
+ *
+ * Two groups are worth explaining.
+ *
+ * The `*-form-quiz` pages were the WordPress lead funnel. They have been
+ * broken for some time — verified repeatedly as HTTP 200 serving zero form
+ * elements — which is precisely why the native Skin Check exists. They point
+ * at it.
+ *
+ * The WooCommerce group (cart, checkout, the advance-payment product, and the
+ * appointment payment page) has no equivalent by design: online payment was
+ * removed from scope in favour of a WhatsApp handoff. Sending that traffic to
+ * a checkout that does not exist would be worse than sending it to the
+ * consultation request, which is the step those pages were trying to reach.
+ */
+const LEGACY_REDIRECTS: { source: string; destination: string }[] = [
+  // The WordPress lead funnel → the native assessment.
+  { source: "/acne-form-quiz", destination: "/skin-check" },
+  { source: "/pigmentation-form-quiz", destination: "/skin-check" },
+  { source: "/other-issues-form-quiz", destination: "/skin-check" },
+
+  // Concern-scoped product listings → the formulation catalogue. There is no
+  // per-concern filter on /products yet, so these land on the full catalogue
+  // rather than a URL that would 404 or show an empty state.
+  { source: "/acne-product", destination: "/products" },
+  { source: "/pigmentation-product", destination: "/products" },
+  { source: "/other-issues-product", destination: "/products" },
+  { source: "/product-category/acne", destination: "/products" },
+  { source: "/product-category/pigmentation", destination: "/products" },
+  { source: "/product/:slug", destination: "/products" },
+
+  // WooCommerce checkout flow → consultation request (payments are out of
+  // scope; the handoff is WhatsApp).
+  { source: "/cart", destination: "/consultation" },
+  { source: "/checkout", destination: "/consultation" },
+  { source: "/book-appointment-payment-page", destination: "/consultation" },
+
+  // A dated duplicate of the Other Issues page.
+  { source: "/other-issues-all-skin-care-19-june", destination: "/other-issues" },
+
+  // WordPress defaults and leftovers carrying no intent worth preserving.
+  { source: "/hello-world", destination: "/" },
+  { source: "/category/uncategorized", destination: "/" },
+  { source: "/for-testing", destination: "/" },
+
+  // WordPress plumbing that should never have been indexed and must not 404
+  // noisily once the domain moves.
+  { source: "/wp-admin/:path*", destination: "/" },
+  { source: "/wp-login.php", destination: "/" },
+];
+
 const nextConfig: NextConfig = {
+  async redirects() {
+    /*
+     * `statusCode: 301` rather than `permanent: true`, which emits a 308.
+     *
+     * Search engines treat 308 as equivalent to 301, so this is not an SEO
+     * correctness issue. It is a recognition issue: 301 is the status every
+     * crawler, ad platform and migration audit tool understands without
+     * qualification, and this is exactly the migration those tools will be
+     * pointed at. There is nothing to gain from 308's method preservation
+     * here — every one of these URLs is a GET from a search result or an ad.
+     *
+     * Note that a legacy URL with WordPress's trailing slash takes two hops:
+     * Next normalises `/x/` to `/x` with its own 308 first, then this 301
+     * fires. Both are permanent and the chain is followed and passed through,
+     * so it costs one extra round trip and no ranking signal.
+     */
+    // `permanent` and `statusCode` are mutually exclusive in Next's Redirect
+    // type — passing both is a type error, not a precedence question.
+    return LEGACY_REDIRECTS.map((r) => ({ ...r, statusCode: 301 }));
+  },
+
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
