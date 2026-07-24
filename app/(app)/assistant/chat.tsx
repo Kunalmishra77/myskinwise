@@ -134,7 +134,7 @@ export function AssistantChat() {
                   <Mic aria-hidden="true" className="size-5" />
                 </span>
                 <h2 className="mt-3 font-display text-lg font-semibold">Voice</h2>
-                <p className="mt-1 text-sm text-white/85">
+                <p className="mt-1 text-sm text-white">
                   Talk naturally with Skinwise AI, hands-free.
                 </p>
                 <span className="mt-3 text-sm font-semibold underline underline-offset-4 group-hover:no-underline">

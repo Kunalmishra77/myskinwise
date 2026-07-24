@@ -92,7 +92,12 @@ test.describe("app shell", () => {
 
     // Every tab must clear the 44px minimum touch target. `exact` matters:
     // an inexact "Me" also matches "Home".
-    for (const name of ["Home", "Concerns", "Skin Check", "Me"]) {
+    //
+    // Five tabs, not four. "Concerns" left the bar and "Scan" and "Ask"
+    // joined it, because an audit found the Skin Analyzer had no inbound
+    // links anywhere on the site and the voice agent had one — two of the
+    // four primary features were unreachable on a phone. See nav-items.ts.
+    for (const name of ["Home", "Scan", "Skin Check", "Ask", "Me"]) {
       const box = await bottomNav.getByRole("link", { name, exact: true }).boundingBox();
       expect(box, `${name} tab has no box`).not.toBeNull();
       expect(box!.height, `${name} tab is under 44px tall`).toBeGreaterThanOrEqual(44);

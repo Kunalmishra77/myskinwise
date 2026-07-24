@@ -89,13 +89,13 @@ export function StartPaths() {
 
                 <span
                   className={`mt-5 text-xs font-semibold uppercase tracking-wide ${
-                    primary ? "text-white/75" : "text-rose-ink"
+                    primary ? "text-white" : "text-rose-ink"
                   }`}
                 >
                   {eyebrow}
                 </span>
                 <h3 className="mt-1.5 font-display text-2xl font-semibold">{title}</h3>
-                <p className={`mt-3 flex-1 text-sm ${primary ? "text-white/85" : "text-ink-soft"}`}>
+                <p className={`mt-3 flex-1 text-sm ${primary ? "text-white" : "text-ink-soft"}`}>
                   {body}
                 </p>
 
