@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readSession } from "@/lib/admin/auth";
 import { z } from "zod";
 import { getExpertStore } from "@/lib/expert/storage";
 
@@ -15,12 +16,12 @@ export const runtime = "nodejs";
  */
 
 const bodySchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("assign"), consultationId: z.string().uuid(), expertId: z.string().uuid() }),
+  z.object({ type: z.literal("assign"), consultationId: z.string().uuid(), expertId: z.string().uuid().optional() }),
   z.object({
     type: z.literal("review"),
     consultationId: z.string().uuid(),
     assessmentId: z.string().uuid(),
-    expertId: z.string().uuid(),
+    expertId: z.string().uuid().optional(),
     verdict: z.string().min(1).max(4000),
     notes: z.string().max(8000).optional(),
     agreedWithOutline: z.boolean().optional(),
@@ -29,7 +30,7 @@ const bodySchema = z.discriminatedUnion("type", [
     type: z.literal("regimen"),
     consultationId: z.string().uuid(),
     assessmentId: z.string().uuid(),
-    expertId: z.string().uuid(),
+    expertId: z.string().uuid().optional(),
     durationDays: z.number().int().refine((n) => [15, 30, 45].includes(n)).optional(),
     customerSummary: z.string().max(4000).optional(),
     followUp: z.string().max(2000).optional(),
@@ -45,14 +46,26 @@ const bodySchema = z.discriminatedUnion("type", [
       .min(1)
       .max(12),
   }),
-  z.object({ type: z.literal("publishRegimen"), regimenId: z.string().uuid(), consultationId: z.string().uuid(), expertId: z.string().uuid() }),
-  z.object({ type: z.literal("createOrder"), consultationId: z.string().uuid(), regimenId: z.string().uuid(), expertId: z.string().uuid() }),
-  z.object({ type: z.literal("orderStatus"), orderId: z.string().uuid(), status: z.string(), expertId: z.string().uuid() }),
+  z.object({ type: z.literal("publishRegimen"), regimenId: z.string().uuid(), consultationId: z.string().uuid(), expertId: z.string().uuid().optional() }),
+  z.object({ type: z.literal("createOrder"), consultationId: z.string().uuid(), regimenId: z.string().uuid(), expertId: z.string().uuid().optional() }),
+  z.object({ type: z.literal("orderStatus"), orderId: z.string().uuid(), status: z.string(), expertId: z.string().uuid().optional() }),
 ]);
 
 export async function POST(request: Request) {
   const store = getExpertStore();
   if (!store) return NextResponse.json({ status: "not_configured" }, { status: 503 });
+
+  /*
+   * The acting expert comes from the signed session, never from the request
+   * body. Previously the client supplied `expertId`, which meant any
+   * authenticated team member could attribute a verdict, a published regimen
+   * or an order to a colleague — and the audit log would record it as fact.
+   * Middleware has already rejected an invalid cookie by this point; reading
+   * it again here is what turns "someone on the team" into "this person".
+   */
+  const session = await readSession(request.headers.get("cookie")?.match(/sw_admin=([^;]+)/)?.[1]);
+  if (!session) return NextResponse.json({ status: "unauthorised" }, { status: 401 });
+  const expertId = session.expertId;
 
   let payload: unknown;
   try {
@@ -69,11 +82,11 @@ export async function POST(request: Request) {
 
   switch (body.type) {
     case "assign": {
-      const ok = await store.assignExpert(body.consultationId, body.expertId);
+      const ok = await store.assignExpert(body.consultationId, expertId);
       return NextResponse.json({ status: ok ? "ok" : "failed" }, { status: ok ? 200 : 409 });
     }
     case "review": {
-      const ok = await store.saveReview(body.consultationId, body.assessmentId, body.expertId, {
+      const ok = await store.saveReview(body.consultationId, body.assessmentId, expertId, {
         verdict: body.verdict,
         notes: body.notes,
         agreedWithOutline: body.agreedWithOutline,
@@ -81,7 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: ok ? "ok" : "failed" }, { status: ok ? 200 : 500 });
     }
     case "regimen": {
-      const id = await store.createRegimen(body.consultationId, body.assessmentId, body.expertId, {
+      const id = await store.createRegimen(body.consultationId, body.assessmentId, expertId, {
         durationDays: body.durationDays,
         customerSummary: body.customerSummary,
         followUp: body.followUp,
@@ -91,15 +104,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: id ? "ok" : "failed", regimenId: id }, { status: id ? 201 : 409 });
     }
     case "publishRegimen": {
-      const ok = await store.publishRegimen(body.regimenId, body.consultationId, body.expertId);
+      const ok = await store.publishRegimen(body.regimenId, body.consultationId, expertId);
       return NextResponse.json({ status: ok ? "ok" : "failed" }, { status: ok ? 200 : 409 });
     }
     case "createOrder": {
-      const id = await store.createOrder(body.consultationId, body.regimenId, body.expertId);
+      const id = await store.createOrder(body.consultationId, body.regimenId, expertId);
       return NextResponse.json({ status: id ? "ok" : "failed", orderId: id }, { status: id ? 201 : 500 });
     }
     case "orderStatus": {
-      const ok = await store.updateOrderStatus(body.orderId, body.status, body.expertId);
+      const ok = await store.updateOrderStatus(body.orderId, body.status, expertId);
       return NextResponse.json({ status: ok ? "ok" : "failed" }, { status: ok ? 200 : 400 });
     }
   }

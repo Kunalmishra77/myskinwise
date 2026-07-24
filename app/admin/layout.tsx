@@ -1,12 +1,19 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { ADMIN_COOKIE, readSession } from "@/lib/admin/auth";
+import { SignOut } from "@/app/admin/sign-out";
 
 /**
  * Internal workspace shell. Sits outside the (app) route group so it never
  * carries the customer navigation, and every route beneath it is already
  * gated by middleware.ts before it renders.
  */
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  // Middleware has already gated every route below this, so a session is
+  // present on any page that renders. Read here purely to show whose name is
+  // attached to the actions taken in this console.
+  const session = await readSession((await cookies()).get(ADMIN_COOKIE)?.value);
   return (
     <div className="min-h-dvh bg-warm">
       <header className="border-b border-ink/10 bg-surface">
@@ -25,6 +32,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               Orders
             </Link>
           </nav>
+          {session && <SignOut name={session.name} />}
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-5 py-8">{children}</main>

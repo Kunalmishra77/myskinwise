@@ -43,3 +43,4 @@ b.log
 # Playwright MCP scratch output (snapshots/screenshots from interactive runs)
 /.playwright-mcp/
 diag.mjs
+.admin-credentials.txt
