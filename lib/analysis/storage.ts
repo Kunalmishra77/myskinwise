@@ -59,7 +59,12 @@ class SupabaseAnalysisStore implements AnalysisStore {
           status: "analyzing",
           consent_image_analysis: true,
           policy_version: policyVersion,
-          consented_at: new Date(0).toISOString(),
+          // Must be the moment consent was actually given. This was
+          // `new Date(0)`, which stamped every consent record 1 Jan 1970 —
+          // and under the DPDP Act the timestamp is the point of the record.
+          // An audit asking "when did this person agree to face-photo
+          // analysis" would have received the epoch for every customer.
+          consented_at: new Date().toISOString(),
         })
         .select("id")
         .single();

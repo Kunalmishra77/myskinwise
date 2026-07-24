@@ -24,6 +24,39 @@ class UnconfiguredStt implements SpeechToTextProvider {
   }
 }
 
+/**
+ * Filename extension to send with the upload, derived from the browser's
+ * MIME type.
+ *
+ * This matters more than it looks. The OpenAI transcription endpoint infers
+ * the container from the uploaded filename, so an extension that disagrees
+ * with the bytes is rejected outright.
+ *
+ * The previous version mapped only webm and mp4 and defaulted everything
+ * else to "wav", which meant an mp3 or ogg clip was uploaded as `clip.wav`
+ * and failed every time. That default was exactly backwards: this provider
+ * exists as the fallback for browsers whose recording format is unusual, so
+ * unusual formats are the ones it most needs to get right. Caught by sending
+ * real audio/mpeg through the deployed endpoint.
+ *
+ * Every extension below is one the API accepts. An unrecognised type falls
+ * back to webm, the format the overwhelming majority of MediaRecorder
+ * implementations actually produce.
+ */
+function extensionFor(mimeType: string): string {
+  const type = mimeType.toLowerCase();
+  // Order matters: check "mpeg" before "mp4" would misfire on neither, but
+  // "mp4" must be checked before the generic "mp" families to stay readable.
+  if (type.includes("webm")) return "webm";
+  if (type.includes("ogg") || type.includes("oga")) return "ogg";
+  if (type.includes("wav")) return "wav";
+  if (type.includes("flac")) return "flac";
+  if (type.includes("m4a")) return "m4a";
+  if (type.includes("mp4")) return "mp4";
+  if (type.includes("mpeg") || type.includes("mp3") || type.includes("mpga")) return "mp3";
+  return "webm";
+}
+
 /** OpenAI transcription (gpt-4o-mini-transcribe), server-only key. */
 class OpenAiStt implements SpeechToTextProvider {
   private readonly model = process.env.OPENAI_STT_MODEL || "gpt-4o-mini-transcribe";
@@ -37,7 +70,7 @@ class OpenAiStt implements SpeechToTextProvider {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 20_000);
     try {
-      const ext = mimeType.includes("webm") ? "webm" : mimeType.includes("mp4") ? "mp4" : "wav";
+      const ext = extensionFor(mimeType);
       const form = new FormData();
       form.append("model", this.model);
       form.append("file", new Blob([new Uint8Array(audio)], { type: mimeType }), `clip.${ext}`);
@@ -70,6 +103,9 @@ export function getSttProvider(): SpeechToTextProvider {
   instance = key ? new OpenAiStt(key) : new UnconfiguredStt();
   return instance;
 }
+
+/** Test seam for the extension mapping. */
+export const __extensionForTest = extensionFor;
 
 export function __setSttProvider(next: SpeechToTextProvider | null) {
   instance = next;

@@ -246,12 +246,16 @@ export class ExpertStore {
   }
 
   async assignExpert(consultationId: string, expertId: string): Promise<boolean> {
-    const { error } = await this.db
+    // Same two faults as publishRegimen: an epoch timestamp, and a status
+    // guard whose non-match was reported as success. Assigning an already
+    // in-review consultation used to return true having changed nothing.
+    const { data, error } = await this.db
       .from("consultations")
-      .update({ expert_id: expertId, status: "in_review", assigned_at: new Date(0).toISOString() })
+      .update({ expert_id: expertId, status: "in_review", assigned_at: new Date().toISOString() })
       .eq("id", consultationId)
-      .in("status", ["requested", "scheduled"]);
-    if (error) return false;
+      .in("status", ["requested", "scheduled"])
+      .select("id");
+    if (error || !data || data.length === 0) return false;
     await this.audit("expert.assigned", consultationId, expertId);
     return true;
   }
@@ -331,12 +335,29 @@ export class ExpertStore {
   }
 
   async publishRegimen(regimenId: string, consultationId: string, expertId: string): Promise<boolean> {
-    const { error } = await this.db
+    /*
+     * Two bugs lived in this update, both found by publishing a real regimen
+     * against production during the audit.
+     *
+     * `published_at` was being set to `new Date(0)` — the Unix epoch — so
+     * every published regimen recorded as published on 1 January 1970. It is
+     * the field an expert would sort a queue by and the one that answers
+     * "when did this customer actually get their routine".
+     *
+     * More seriously, the `status = draft` guard is what makes publishing
+     * idempotent, but without checking how many rows it matched, a publish
+     * that changed nothing still returned true. Publishing an already
+     * published regimen — or one in any other state — reported success to
+     * the expert while doing nothing at all. `.select()` makes the update
+     * report the rows it actually touched, so "published" now means it.
+     */
+    const { data, error } = await this.db
       .from("regimens")
-      .update({ status: "published", published_at: new Date(0).toISOString() })
+      .update({ status: "published", published_at: new Date().toISOString() })
       .eq("id", regimenId)
-      .eq("status", "draft");
-    if (error) return false;
+      .eq("status", "draft")
+      .select("id");
+    if (error || !data || data.length === 0) return false;
     await this.db.from("consultations").update({ status: "regimen_created" }).eq("id", consultationId);
     await this.audit("regimen.published", consultationId, expertId, { regimen_id: regimenId });
     return true;

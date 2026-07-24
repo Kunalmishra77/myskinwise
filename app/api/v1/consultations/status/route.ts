@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCustomerStore } from "@/lib/consultation/customer";
 import { contactSchema } from "@/lib/assessment/schema";
-import { clientKey, submitLimiter } from "@/lib/rate-limit";
+import { clientKey, lookupLimiter } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -19,7 +19,7 @@ const lookupSchema = z.object({
  * cannot confirm which references exist.
  */
 export async function POST(request: Request) {
-  const limit = await submitLimiter.check(clientKey(request));
+  const limit = await lookupLimiter.check(clientKey(request));
   if (!limit.allowed) {
     return NextResponse.json({ status: "rate_limited", retryAfter: limit.retryAfter }, { status: 429 });
   }

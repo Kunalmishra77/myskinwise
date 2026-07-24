@@ -71,6 +71,26 @@ export class MemoryRateLimiter implements RateLimiter {
 export const submitLimiter: RateLimiter = new MemoryRateLimiter(5, 10 * 60 * 1000);
 
 /**
+ * Thirty lookups per IP per ten minutes, for reads.
+ *
+ * Reads were previously sharing `submitLimiter`, which is sized for writes:
+ * a returning customer opening their regimen, refreshing once, and coming
+ * back after lunch would exhaust five attempts and be told "rate_limited"
+ * for ten minutes on their own consultation. Found by hitting it during the
+ * production audit — the limiter is genuinely indistinguishable from the
+ * feature being broken, because the page simply refuses to show a regimen
+ * the customer is entitled to see.
+ *
+ * A status lookup creates no row, sends no message and costs one indexed
+ * query, so the write budget was never the right one. It still needs *a*
+ * limit, because the endpoint takes a reference and a phone number and an
+ * unbounded one would let someone grind through candidate pairs; thirty per
+ * ten minutes is comfortably above real use and nowhere near enough to
+ * brute-force an 8-character reference from a 32-symbol alphabet.
+ */
+export const lookupLimiter: RateLimiter = new MemoryRateLimiter(30, 10 * 60 * 1000);
+
+/**
  * Best-effort client IP.
  *
  * `x-forwarded-for` is client-controlled and trivially spoofed, so this is
