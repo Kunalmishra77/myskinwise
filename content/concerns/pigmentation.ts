@@ -43,6 +43,15 @@ export const pigmentation: ConcernContent = {
   ],
   types: [
     {
+      // TODO(client-legal): "Melasma" names a clinical condition. Using it to
+      // describe something the routine treats sits closer to a drug claim than
+      // a cosmetic one, and it is adjacent to "Leucoderma", a named entry in
+      // the Drugs & Magic Remedies (Objectionable Advertisements) Act schedule.
+      // Deliberately NOT rewritten unilaterally: the term is genuinely useful
+      // to readers and carries real search intent, and the verbatim schedule
+      // text could not be retrieved from indiacode.nic.in (403) to confirm the
+      // boundary. Indian counsel should rule on whether educational use is
+      // acceptable and whether treatment-adjacent framing must change.
       name: "Melasma",
       body: "Patchy brown or grayish spots, usually on the face, triggered by hormones or sun exposure.",
     },

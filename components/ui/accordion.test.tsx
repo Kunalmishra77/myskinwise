@@ -48,3 +48,26 @@ it("allows multiple panels open at once when allowMultiple is set", async () => 
   expect(btnA).toHaveAttribute("aria-expanded", "true");
   expect(btnB).toHaveAttribute("aria-expanded", "true");
 });
+
+// Carried over from the second Accordion implementation this component
+// replaced. A collapsed panel stays mounted so aria-controls always
+// resolves, which means it must be actively removed from the a11y tree and
+// the tab order — otherwise screen-reader users hear answers to questions
+// that look closed.
+it("hides a collapsed panel from assistive tech via aria-hidden and inert", () => {
+  render(<Accordion items={[{ id: "solo", question: "Q1", answer: "A1" }]} />);
+  const panel = screen.getByText("A1").closest('[role="region"]');
+  expect(panel).toHaveAttribute("aria-hidden", "true");
+  expect(panel).toHaveAttribute("inert");
+});
+
+it("renders a plus/minus toggle when toggleIcon is plusminus", async () => {
+  const { container } = render(
+    <Accordion items={[{ id: "solo", question: "Q1", answer: "A1" }]} toggleIcon="plusminus" />,
+  );
+  expect(container.querySelector(".lucide-plus")).not.toBeNull();
+  expect(container.querySelector(".lucide-chevron-down")).toBeNull();
+
+  await userEvent.click(screen.getByRole("button", { name: "Q1" }));
+  expect(container.querySelector(".lucide-minus")).not.toBeNull();
+});

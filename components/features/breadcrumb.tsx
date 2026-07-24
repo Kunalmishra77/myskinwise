@@ -29,7 +29,7 @@ export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
   };
 
   return (
-    <nav aria-label="Breadcrumb" className="text-sm text-muted">
+    <nav aria-label="Breadcrumb" className="text-sm text-ink-soft">
       <ol className="flex flex-wrap items-center gap-2">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
@@ -40,7 +40,7 @@ export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
                   {item.label}
                 </span>
               ) : (
-                <Link href={item.href} className="transition hover:text-accent-ink">
+                <Link href={item.href} className="transition hover:text-rose-ink">
                   {item.label}
                 </Link>
               )}

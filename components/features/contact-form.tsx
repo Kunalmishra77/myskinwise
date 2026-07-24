@@ -8,7 +8,7 @@ import { SITE } from "@/config/site";
 import { contactSchema, submitContactStub, type ContactInput } from "@/lib/validation/contact";
 
 const fieldClasses =
-  "w-full rounded-lg border border-ink/20 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink/40 focus-visible:outline-2 focus-visible:outline-offset-2";
+  "w-full rounded-lg border border-ink/20 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2";
 
 /**
  * Contact form: RHF + Zod validation, stubbed submit (no backend yet).
@@ -99,7 +99,7 @@ export function ContactForm() {
         {isSubmitting ? "Sending…" : "Send message"}
       </Button>
 
-      <p className="text-center text-sm text-ink/60">
+      <p className="text-center text-sm text-ink-soft">
         Prefer email?{" "}
         <a href={`mailto:${SITE.email}`} className="underline hover:text-ink">
           Email us directly

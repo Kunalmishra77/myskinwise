@@ -109,7 +109,14 @@ export const acne: ConcernContent = {
     },
     {
       title: "Root Cause Treatment",
-      body: "The product works on the root cause of acne to clear it permanently.",
+      // TODO(client-confirm): claim rewrite pending sign-off. The sourced
+      // copy read "works on the root cause of acne to clear it permanently".
+      // A permanent-cure claim for a cosmetic product is the exact category
+      // ASCI acted on across 500+ beauty brands in 2025-26, and "cure"
+      // language also risks reclassifying a cosmetic as a drug under the
+      // Drugs & Cosmetics Act. Rewritten to describe what the routine does
+      // without promising permanence. See the platform architecture spec §8.2.
+      body: "Your routine targets what is driving your breakouts, not just the surface — so your skin has the best chance to stay clear with continued care.",
     },
     {
       title: "Continuous Support & Care",

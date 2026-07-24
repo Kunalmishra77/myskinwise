@@ -34,7 +34,7 @@ export function IngredientScience({ groups, heading }: IngredientScienceProps) {
     id: slugify(group.tabLabel),
     label: group.tabLabel,
     content: (
-      <ul className="list-disc space-y-2 pl-5 text-sm text-muted">
+      <ul className="list-disc space-y-2 pl-5 text-sm text-ink-soft">
         {group.items.map((item, index) => (
           <li key={`${group.tabLabel}-${index}`}>{item}</li>
         ))}

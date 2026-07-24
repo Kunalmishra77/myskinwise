@@ -84,9 +84,9 @@ export function Tabs({ tabs, className, ...props }: TabsProps) {
                 "-mb-px border-b-2 border-transparent px-1 py-2 text-sm font-medium transition-colors",
                 // `text-ink` (not `accent-ink`) for the active label keeps
                 // contrast unambiguously safe across every background these
-                // tabs render on; `border-accent` still carries the rose
+                // tabs render on; `border-rose` still carries the rose
                 // brand color as the active indicator.
-                isActive ? "border-accent text-ink" : "border-transparent text-muted",
+                isActive ? "border-rose text-ink" : "border-transparent text-ink-soft",
               )}
             >
               {tab.label}

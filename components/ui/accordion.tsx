@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { motion } from "framer-motion";
+import { ChevronDown, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/lib/use-media-query";
 
 export interface AccordionItem {
   id: string;
@@ -13,24 +14,45 @@ export interface AccordionItem {
 
 export interface AccordionProps extends React.HTMLAttributes<HTMLDivElement> {
   items: AccordionItem[];
-  /** Allow more than one panel to be open at once. Defaults to single-open. */
+  /** Allow more than one panel open at once. Defaults to single-open. */
   allowMultiple?: boolean;
+  /**
+   * Toggle affordance. "chevron" (default) suits dense content lists;
+   * "plusminus" reads as more deliberate and suits editorial FAQ blocks.
+   */
+  toggleIcon?: "chevron" | "plusminus";
 }
 
-export function Accordion({ items, allowMultiple = false, className, ...props }: AccordionProps) {
-  // Salts every derived DOM id so multiple <Accordion> instances on the same
-  // page (e.g. Task 19's causes + two FAQ sections) never collide even if
-  // their `items` share the same caller-supplied `id` values.
+/**
+ * Accordion with an animated height collapse (instant under
+ * prefers-reduced-motion).
+ *
+ * Every panel stays permanently mounted rather than being unmounted while
+ * collapsed, so `aria-controls`/`aria-labelledby` always resolve to a real
+ * element. Collapsed panels are removed from the accessibility tree and the
+ * tab order with `aria-hidden` + `inert`, while the height animation
+ * handles the visual collapse — animating a panel that screen readers can
+ * still reach, or unmounting one that ARIA still points at, are the two
+ * usual ways this component goes wrong.
+ */
+export function Accordion({
+  items,
+  allowMultiple = false,
+  toggleIcon = "chevron",
+  className,
+  ...props
+}: AccordionProps) {
+  // Salts every derived DOM id so multiple <Accordion> instances on one
+  // page never collide, even when their items share caller-supplied ids.
   const uid = React.useId();
   const [openIds, setOpenIds] = React.useState<Set<string>>(() => new Set());
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   const toggle = (id: string) => {
     setOpenIds((prev) => {
       if (prev.has(id)) {
-        // Closing an already-open item: start from the untouched previous
-        // set (not a cleared one) so single-open mode can collapse without
-        // side effects.
+        // Start from the untouched previous set, not a cleared one, so
+        // single-open mode can collapse without side effects.
         const collapsed = new Set(prev);
         collapsed.delete(id);
         return collapsed;
@@ -57,30 +79,33 @@ export function Accordion({ items, allowMultiple = false, className, ...props }:
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 onClick={() => toggle(item.id)}
-                className="flex w-full items-center justify-between gap-4 py-3 text-left font-medium text-ink transition-colors hover:text-accent-ink"
+                className="flex w-full items-center justify-between gap-4 py-4 text-left font-display text-lg font-medium text-ink transition-colors hover:text-rose-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
               >
                 <span>{item.question}</span>
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-full bg-blush text-accent-ink transition-colors",
-                    isOpen && "bg-accent-ink text-white",
+                    "flex size-8 shrink-0 items-center justify-center rounded-full bg-blush text-rose-ink transition-colors",
+                    isOpen && "bg-rose-ink text-white",
                   )}
                 >
-                  <ChevronDown
-                    className={cn("size-4 transition-transform duration-200", isOpen && "rotate-180")}
-                  />
+                  {toggleIcon === "plusminus" ? (
+                    isOpen ? (
+                      <Minus className="size-4" />
+                    ) : (
+                      <Plus className="size-4" />
+                    )
+                  ) : (
+                    <ChevronDown
+                      className={cn(
+                        "size-4 transition-transform duration-200",
+                        isOpen && "rotate-180",
+                      )}
+                    />
+                  )}
                 </span>
               </button>
             </h3>
-            {/*
-              Permanently mounted (never unmounted) so `aria-controls`/
-              `aria-labelledby` always resolve to a real element, even while
-              collapsed. Hidden from assistive tech via `aria-hidden` +
-              `inert` (removes it from the a11y tree and from tab order)
-              while a `height` collapse — animated unless the user prefers
-              reduced motion — hides it visually.
-            */}
             <motion.div
               id={panelId}
               role="region"
@@ -89,10 +114,10 @@ export function Accordion({ items, allowMultiple = false, className, ...props }:
               inert={!isOpen}
               initial={false}
               animate={{ height: isOpen ? "auto" : 0 }}
-              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2, ease: "easeInOut" }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.25, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="pb-4 pt-1 text-muted">{item.answer}</div>
+              <div className="pb-5 pt-1 font-body text-ink-soft">{item.answer}</div>
             </motion.div>
           </div>
         );

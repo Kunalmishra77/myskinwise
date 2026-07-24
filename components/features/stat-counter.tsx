@@ -81,7 +81,7 @@ export function StatCounter({ value, suffix = "", label }: StatCounterProps) {
         {display}
         {suffix}
       </span>
-      <span className="text-sm text-muted">{label}</span>
+      <span className="text-sm text-ink-soft">{label}</span>
     </div>
   );
 }

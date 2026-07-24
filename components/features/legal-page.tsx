@@ -27,10 +27,10 @@ export function LegalPage({ title, path, sections, notice }: LegalPageProps) {
   return (
     <Section className="pb-0">
       <Breadcrumb items={[{ label: "Home", href: "/" }, { label: title, href: path }]} />
-      <h1 className="mt-6 font-serif text-4xl font-semibold text-ink md:text-5xl">{title}</h1>
+      <h1 className="mt-6 font-display text-4xl font-semibold text-ink md:text-5xl">{title}</h1>
 
       {notice && (
-        <div className="mt-6 rounded-2xl border border-accent/30 bg-accent/10 p-4 text-sm text-ink">
+        <div className="mt-6 rounded-2xl border border-rose/30 bg-rose/10 p-4 text-sm text-ink">
           {notice}
         </div>
       )}
@@ -43,7 +43,7 @@ export function LegalPage({ title, path, sections, notice }: LegalPageProps) {
             )}
             <div className={section.heading ? "mt-3 flex flex-col gap-4" : "flex flex-col gap-4"}>
               {section.body.split("\n\n").map((paragraph, paragraphIndex) => (
-                <p key={paragraphIndex} className="text-base text-muted">
+                <p key={paragraphIndex} className="text-base text-ink-soft">
                   {paragraph}
                 </p>
               ))}

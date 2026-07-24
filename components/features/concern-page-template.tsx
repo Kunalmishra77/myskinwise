@@ -43,12 +43,12 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
         image={IMAGES.heroModel}
         heading={content.hero.heading}
         subheading={content.hero.subheading}
-        ctas={[{ label: "Analyse your skin", href: `/quiz/${content.slug}`, variant: "primary" }]}
+        ctas={[{ label: "Analyse your skin", href: "/skin-check", variant: "primary" }]}
       />
 
       <Section className="bg-surface">
         <h2 className="text-2xl font-semibold text-ink md:text-3xl">{content.whatIs.title}</h2>
-        <p className="mt-4 text-lg text-muted">{content.whatIs.body}</p>
+        <p className="mt-4 text-lg text-ink-soft">{content.whatIs.body}</p>
       </Section>
 
       {/*
@@ -82,7 +82,7 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
             <Card key={type.name}>
               <CardBody>
                 <h3 className="text-lg font-semibold text-ink">{type.name}</h3>
-                <p className="mt-2 text-sm text-muted">{type.body}</p>
+                <p className="mt-2 text-sm text-ink-soft">{type.body}</p>
               </CardBody>
             </Card>
           ))}
@@ -104,7 +104,7 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
           {content.scienceSteps.map((step) => (
             <div key={step.title}>
               <h3 className="text-lg font-semibold text-ink">{step.title}</h3>
-              <p className="mt-2 text-sm text-muted">{step.body}</p>
+              <p className="mt-2 text-sm text-ink-soft">{step.body}</p>
             </div>
           ))}
         </div>

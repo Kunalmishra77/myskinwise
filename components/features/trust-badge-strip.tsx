@@ -31,7 +31,7 @@ function BadgeDot() {
  */
 export function TrustBadgeStrip({ badges }: TrustBadgeStripProps) {
   return (
-    <div className="overflow-hidden bg-accent-ink py-3">
+    <div className="overflow-hidden bg-rose-ink py-3">
       <div role="list" aria-label="Trust badges" className="marquee flex w-max items-center gap-x-3">
         {badges.map((badge) => (
           <span key={badge} className="flex items-center gap-x-3">

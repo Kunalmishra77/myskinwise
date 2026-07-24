@@ -1,19 +1,33 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import "./globals.css";
 import { SITE } from "@/config/site";
 import { organizationSchema } from "@/config/seo";
 import { JsonLd } from "@/components/features/json-ld";
 
-const serif = Fraunces({
+/*
+ * Two families, not four. Fraunces and Inter were loaded here alongside
+ * these two while the homepage rebuild ran on its own parallel design
+ * system; consolidating onto one palette (see app/globals.css) makes them
+ * dead weight, so they are gone.
+ *
+ * The CSS variables are named `-family` to keep them distinct from the
+ * Tailwind theme tokens that consume them (`--font-display` /
+ * `--font-body` in @theme). Pointing a theme token at a next/font variable
+ * of the same name would be self-referential.
+ */
+const display = Cormorant_Garamond({
   subsets: ["latin"],
-  variable: "--font-serif",
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-display-family",
   display: "swap",
 });
 
-const sans = Inter({
+const body = Manrope({
   subsets: ["latin"],
-  variable: "--font-sans",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-body-family",
   display: "swap",
 });
 
@@ -31,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${serif.variable} ${sans.variable} h-full antialiased`}
+      className={`${display.variable} ${body.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <JsonLd data={organizationSchema} />

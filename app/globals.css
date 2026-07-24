@@ -1,73 +1,102 @@
 @import "tailwindcss";
 
+/*
+ * =====================================================================
+ * Skinwise design tokens — the single source of truth.
+ *
+ * This file previously carried TWO palettes: the marketing site's
+ * (--color-canvas/accent/muted..., Fraunces + Inter) and the homepage
+ * rebuild's `hp-`-prefixed set (--color-hp-warm/rose/ink..., Cormorant +
+ * Manrope). The prefix existed only to stop the two colliding while the
+ * homepage was built in parallel. They are now merged into one unprefixed
+ * set — see docs/superpowers/specs/2026-07-21-subproject-0-foundation-design.md
+ * §4.1 for which fork won each decision and why.
+ *
+ * Do not add a second palette. If a surface needs a colour that isn't
+ * here, add it here.
+ * =====================================================================
+ */
+
 @theme {
   /*
-   * Skinwise brand palette (matched from myskinwise.com screenshots — soft
-   * pink + botanical, friendly premium consumer-beauty — not the earlier
-   * cream/editorial direction).
+   * Tailwind ships a default `rose-50..rose-950` ramp whose hues are much
+   * redder than the Skinwise brand rose. Clearing that namespace means
+   * `bg-rose-500` is a build error rather than a plausible-looking wrong
+   * pink, so the three brand roses below are the only roses available.
    */
-  --color-canvas: #fdecef;
+  --color-rose-*: initial;
+
+  /* --- Surfaces ------------------------------------------------------ */
+  /* Warm off-white page canvas. Set on <body>. */
+  --color-warm: #fbfaf7;
+  /* Cards, sheets, the nav bar — anything raised above the canvas. */
   --color-surface: #ffffff;
-  /*
-   * Soft rose-tint band used for alternating section backgrounds (see
-   * `Section`'s `tone="blush"`) and for card/pill fills that need to read
-   * as "pink" without the full CTA saturation. Distinct from
-   * `--color-canvas` (#fdecef, a near-white blush) — this is a visibly
-   * deeper dusty pink so bands read as an intentional rhythm rather than a
-   * rounding error.
-   */
-  --color-blush: #f8dde3;
-  /*
-   * Medium rose-pink used for CTA/button backgrounds paired with dark text,
-   * decorative icon fills, borders and hover tints. White text directly on
-   * `--color-accent` only clears ~3:1 (fails WCAG AA's 4.5:1 for normal
-   * text) — anywhere text sits *on* a rose fill, use `--color-accent-ink`
-   * instead (see Button `primary`, TrustBadgeStrip).
-   */
-  --color-accent: #ec6a93;
-  /*
-   * Darker rose "ink" companion to --color-accent, used wherever text/icons
-   * or filled backgrounds need to reach WCAG AA (4.5:1): headings/eyebrows
-   * in rose, button fills with white text, icons on white. Verified via
-   * relative-luminance contrast math: ~6.5:1 on white, ~5.7:1 on
-   * `--color-canvas`, ~5.1:1 on `--color-blush` — safe margin over 4.5:1 on
-   * every surface token it's paired with.
-   */
-  --color-accent-ink: #a8305d;
-  --color-ink: #201720;
-  --color-muted: #6b5a62;
-  /* Dark charcoal band for the "Powered by data" stats strip. */
-  --color-charcoal: #3c3a3b;
-
-  --color-gray-50: #fafafa;
-  --color-gray-100: #f4f4f5;
-  --color-gray-200: #e4e4e7;
-  --color-gray-300: #d4d4d8;
-  --color-gray-400: #a1a1aa;
-  --color-gray-500: #71717a;
-  --color-gray-600: #52525b;
-  --color-gray-700: #3f3f46;
-  --color-gray-800: #27272a;
-  --color-gray-900: #18181b;
-
-  --font-serif: var(--font-serif);
-  --font-sans: var(--font-sans);
+  /* Soft rose band for alternating section rhythm and pill/chip fills. */
+  --color-blush: #fceef2;
+  /* Warm neutral accent band, pairs with rose without competing with it. */
+  --color-champagne: #f1e5d2;
+  /* Muted green, used sparingly for "safe/natural" signals. */
+  --color-sage: #8fa187;
+  /* Deep plum-brown for dark sections and the footer. */
+  --color-plum: #231619;
 
   /*
-   * Layered "soft" shadow for resting premium surfaces (Card, hero image
-   * frame, floating chips) and a stronger "lift" shadow for hover/elevated
-   * states. Two layers each: a tight near-neutral shadow for definition +
-   * a broad, low-opacity rose-tinted far shadow, so elevated surfaces glow
-   * softly pink rather than a generic drop shadow.
+   * --- Text -----------------------------------------------------------
+   * Exactly two text colours, both AA-safe on every surface token above:
+   *   ink      #241C19  16.73:1 on white
+   *   ink-soft #6E645F   5.75:1 on white
+   *
+   * There used to be a third, `ink-mute` (#8A807B). It was removed rather
+   * than fixed. It measured 3.85:1 on white — a real AA failure that axe
+   * caught on the homepage — and the darkest value that would pass on
+   * white, warm AND blush is around #756C67, which lands at 5.13:1. That
+   * is visually indistinguishable from ink-soft's 5.75:1, so the token
+   * bought a third tier that does not exist perceptually while costing a
+   * genuine accessibility bug. Use ink-soft for secondary text.
+   *
+   * Do NOT reach for `text-ink/60` to get a lighter tone either: composited
+   * over white that is #7C7775 at 4.42:1, and over blush 4.26:1 — both
+   * fail. `text-ink/70` (6.18:1 on white) is the lowest safe opacity step.
    */
-  --shadow-soft: 0 1px 2px rgba(32, 23, 32, 0.05), 0 14px 40px -20px rgba(168, 48, 93, 0.28);
-  --shadow-lift: 0 8px 10px -6px rgba(32, 23, 32, 0.16), 0 24px 60px -20px rgba(168, 48, 93, 0.4);
+  --color-ink: #241c19;
+  --color-ink-soft: #6e645f;
 
   /*
-   * Editorial type scale. Fluid via clamp() so the hero display size and
-   * section headings scale smoothly between mobile and wide desktop
-   * instead of jumping at breakpoints. Tight leading + slightly negative
-   * tracking is what gives large headings their premium feel.
+   * --- Rose ramp -----------------------------------------------------
+   * Three steps, because contrast forces it. Verified with the WCAG
+   * relative-luminance formula; both the marketing and homepage builds
+   * independently derived the same constraint, so it is load-bearing:
+   *
+   *   white on rose      (#E0819A) ~2.70:1  FAILS AA at every size.
+   *                                         Large display accents and
+   *                                         decorative fills only, or
+   *                                         dark text placed on top of it
+   *                                         (ink-on-rose is ~6.2:1, safe).
+   *   white on rose-deep (#C05E78) ~4.11:1  Fails normal-text AA (4.5:1).
+   *                                         Large/bold text only (18.66px+
+   *                                         regular, 24px+ bold).
+   *   white on rose-ink  (#A8506A) ~5.22:1  PASSES AA. This is the rose to
+   *                                         use for body-size text and for
+   *                                         any button fill carrying white
+   *                                         text.
+   *
+   * rose-ink does NOT clear AA on champagne (~4.2:1) or as a foreground on
+   * plum (~3.4:1). Use `ink` or the lighter `rose` on those surfaces —
+   * see the `tone` prop on Eyebrow.
+   */
+  --color-rose: #e0819a;
+  --color-rose-deep: #c05e78;
+  --color-rose-ink: #a8506a;
+
+  /* --- Type ---------------------------------------------------------- */
+  --font-display: var(--font-display-family);
+  --font-body: var(--font-body-family);
+
+  /*
+   * Fluid editorial scale. clamp() rather than per-breakpoint jumps, so
+   * headings scale smoothly between a 320px phone and a wide desktop.
+   * Tight leading and slightly negative tracking are what make large
+   * headings read as premium rather than merely big.
    */
   --text-display: clamp(2.5rem, 5.5vw, 4.25rem);
   --text-display--line-height: 1.05;
@@ -75,16 +104,38 @@
   --text-h2: clamp(1.9rem, 3.6vw, 2.9rem);
   --text-h2--line-height: 1.15;
   --text-h2--letter-spacing: -0.02em;
+
+  /*
+   * --- Elevation -----------------------------------------------------
+   * Two layers each: a tight near-neutral shadow for edge definition, plus
+   * a broad low-opacity rose-tinted shadow so raised surfaces glow warmly
+   * instead of reading as a generic grey drop shadow. `lift` is the
+   * hover/elevated state.
+   */
+  --shadow-soft: 0 1px 2px rgba(36, 28, 25, 0.04), 0 24px 54px rgba(120, 70, 80, 0.12);
+  --shadow-lift: 0 10px 20px -8px rgba(36, 28, 25, 0.14), 0 32px 70px -16px rgba(120, 70, 80, 0.32);
+
+  /* --- Motion -------------------------------------------------------- */
+  --animate-marquee: marquee 32s linear infinite;
+
+  /* --- Layout -------------------------------------------------------- */
+  /*
+   * Height of the fixed mobile bottom navigation. Exposed as a token so
+   * page content can reserve space for it (see the `body` rule below)
+   * without any component hardcoding the number.
+   */
+  --spacing-bottom-nav: 4rem;
 }
 
 body {
-  background: var(--color-canvas);
+  background: var(--color-warm);
   color: var(--color-ink);
-  font-family: var(--font-sans);
-  /* Editorial body copy: 17px/1.7 rather than the 16px UA default. Utility
-     classes like text-sm/text-lg still win where used (Tailwind's text-*
-     utilities set their own line-height), so this only affects otherwise
-     unstyled body text. */
+  font-family: var(--font-body);
+  /*
+   * Editorial body copy at 17px/1.7 rather than the 16px UA default.
+   * Tailwind's text-* utilities set their own size and line-height, so
+   * this only affects otherwise-unstyled body text.
+   */
   font-size: 1.0625rem;
   line-height: 1.7;
 }
@@ -93,7 +144,7 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -105,6 +156,11 @@ h4 {
   }
 }
 
+/*
+ * ---------------------------------------------------------------------
+ * Keyframes
+ */
+
 @keyframes marquee {
   from {
     transform: translateX(0);
@@ -114,6 +170,16 @@ h4 {
   }
 }
 
+/*
+ * ---------------------------------------------------------------------
+ * Component classes
+ */
+
+/*
+ * Pure-CSS marquee, used by TrustBadgeStrip so that component can stay a
+ * server component with no JS. The `animate-marquee` utility covers the
+ * same animation for client components (see the Marquee primitive).
+ */
 .marquee {
   animation: marquee 24s linear infinite;
 }
@@ -125,18 +191,33 @@ h4 {
 }
 
 /*
- * Botanical leaf line-art motif — the harvested brand asset
- * (public/images/brand/leaf-motif.png) used as a subtle decorative texture
- * behind hero sections and banners, matching the reference site's
- * pink-on-pink leaf pattern.
+ * Section eyebrow: small uppercase wide-tracked Manrope label, optionally
+ * prefixed with an italic serif index number by the Eyebrow component.
+ * `--dark` swaps to the lighter rose for the plum section, where rose-ink
+ * itself falls to ~3.4:1 — see the rose ramp contrast notes above.
+ */
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--color-rose-ink);
+}
+
+.eyebrow--dark {
+  color: var(--color-rose);
+}
+
+/*
+ * Botanical leaf line-art motif — a harvested brand asset used as subtle
+ * decorative texture behind hero sections, matching the brand's pink-on-pink
+ * leaf pattern.
  *
- * Usage: an absolutely-positioned, `aria-hidden="true"` element (the
- * decoration carries no information, so it must stay out of the a11y tree)
- * sized by the caller, e.g.:
- *   <div aria-hidden="true" className="leaf-motif absolute inset-0" />
- * `pointer-events-none` is baked in here (not left to callers) so the
- * decoration can never intercept clicks/taps meant for real content
- * underneath it.
+ * Usage: an absolutely-positioned, aria-hidden element sized by the caller.
+ * `pointer-events: none` is baked in here rather than left to call sites, so
+ * the decoration can never intercept taps meant for content beneath it.
  */
 .leaf-motif {
   pointer-events: none;

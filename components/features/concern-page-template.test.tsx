@@ -3,11 +3,13 @@ import { ConcernPageTemplate } from "./concern-page-template";
 import { CONCERNS } from "@/content/concerns";
 
 describe("ConcernPageTemplate", () => {
-  it("links the hero 'Analyse your skin' CTA to /quiz/pigmentation for the pigmentation page", () => {
+  it("links the hero 'Analyse your skin' CTA to the working /skin-check funnel", () => {
+    // Previously pointed at /quiz/[concern], a placeholder — the concern
+    // pages must send users into the real native Skin Check.
     render(<ConcernPageTemplate content={CONCERNS.pigmentation} />);
     expect(screen.getByRole("link", { name: "Analyse your skin" })).toHaveAttribute(
       "href",
-      "/quiz/pigmentation",
+      "/skin-check",
     );
   });
 
@@ -25,11 +27,11 @@ describe("ConcernPageTemplate", () => {
     expect(screen.queryByRole("heading", { name: /reasons of/i })).not.toBeInTheDocument();
   });
 
-  it("still links the hero CTA to /quiz/other-issues for the other-issues page", () => {
+  it("links the CTA to /skin-check for other-issues too", () => {
     render(<ConcernPageTemplate content={CONCERNS["other-issues"]} />);
     expect(screen.getByRole("link", { name: "Analyse your skin" })).toHaveAttribute(
       "href",
-      "/quiz/other-issues",
+      "/skin-check",
     );
   });
 });

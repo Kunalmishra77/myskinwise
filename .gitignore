@@ -33,3 +33,9 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# Local asset archives (large binaries, not source)
+Assets.zip
+
+# build log
+b.log

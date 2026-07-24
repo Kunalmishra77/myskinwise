@@ -12,6 +12,21 @@ const ROUTES = [
   "/privacy-policy",
   "/terms-and-conditions",
   "/refund-and-cancellation",
+  "/skin-check",
+  "/me",
+  "/concerns",
+  "/learn",
+  "/ingredients",
+  "/ingredients/niacinamide",
+  "/ingredients/retinol",
+  "/skin-types",
+  "/skin-types/oily",
+  "/skin-types/sensitive",
+  // Stage 4-6 customer AI surfaces.
+  "/skin-check/analyzer",
+  "/assistant",
+  "/voice",
+  "/consultation",
 ] as const;
 
 for (const route of ROUTES) {

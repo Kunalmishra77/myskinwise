@@ -1,41 +1,54 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export type ButtonVariant = "primary" | "secondary" | "outline" | "whatsapp";
+export type ButtonVariant = "primary" | "dark" | "glass" | "outline" | "whatsapp";
+export type ButtonSize = "sm" | "md" | "lg";
 
 const baseClasses =
-  "rounded-full px-6 py-3 font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 inline-flex items-center justify-center gap-2";
+  "inline-flex items-center justify-center gap-2 rounded-full font-body font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2 focus-visible:ring-offset-warm disabled:pointer-events-none disabled:opacity-50";
 
+const sizeClasses: Record<ButtonSize, string> = {
+  sm: "px-5 py-2.5 text-sm",
+  md: "px-7 py-3.5 text-[15px]",
+  lg: "px-9 py-4 text-base",
+};
+
+/*
+ * Contrast, verified with the WCAG relative-luminance formula (the full
+ * ramp is documented against the tokens in app/globals.css):
+ *   white on rose      (#E0819A) ~2.70:1 — fails AA at every size
+ *   white on rose-deep (#C05E78) ~4.11:1 — fails normal-text AA
+ *   white on rose-ink  (#A8506A) ~5.22:1 — passes AA
+ * So the solid rose primary fills with `rose-ink`, never the raw `rose`
+ * token, whenever it carries white text.
+ *
+ * `whatsapp` keeps WhatsApp's recognisable brand green but pairs it with
+ * dark ink rather than white: white on #25D366 is only ~2:1, while
+ * ink-on-green clears ~9:1.
+ */
 const variantClasses: Record<ButtonVariant, string> = {
-  // `accent` (#ec6a93, the brand's rose-pink CTA color) with white text is
-  // only ~3:1 — fails WCAG AA (4.5:1) for normal text. `accent-ink`, the
-  // darker rose token (see globals.css), clears ~6.5:1 against white and
-  // keeps the same rose family, so it's used as the resting background
-  // instead; hover deepens further to `ink` for a clear, on-brand pressed
-  // state. Rounded-full + soft shadow gives the friendly, pill-shaped CTA
-  // look from the reference brand.
-  primary: "bg-accent-ink text-white shadow-soft hover:bg-ink hover:shadow-lift",
-  secondary: "bg-ink text-white",
-  outline: "border border-ink/20 text-ink hover:bg-ink/5",
-  // WhatsApp's brand green (#25D366) against white text is only ~2:1.
-  // Keeping the brand green background but switching to dark `ink` text
-  // (~9:1) preserves the recognizable brand color while passing AA.
-  whatsapp: "bg-[#25D366] text-ink",
+  primary: "bg-rose-ink text-white shadow-soft hover:bg-rose-deep hover:shadow-lift",
+  dark: "bg-plum text-white shadow-soft hover:bg-ink hover:shadow-lift",
+  glass: "border border-white/50 bg-white/60 text-ink shadow-soft backdrop-blur-xl hover:bg-white/80",
+  outline: "border border-ink/20 text-ink hover:border-rose-ink/40 hover:bg-blush",
+  whatsapp: "bg-[#25D366] text-ink hover:brightness-95",
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   /**
-   * When true, renders the single child element instead of a <button>,
-   * merging className/props/ref onto it (a tiny local "Slot" — avoids
-   * pulling in @radix-ui/react-slot as a dependency).
+   * Render the single child element instead of a <button>, merging
+   * className/props/ref onto it (a tiny local "Slot" — avoids pulling in
+   * @radix-ui/react-slot as a dependency). Use to render an <a>/<Link>
+   * styled as a Button.
    */
   asChild?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "primary", asChild = false, children, ...props }, ref) => {
-    const classes = cn(baseClasses, variantClasses[variant], className);
+  ({ className, variant = "primary", size = "md", asChild = false, children, ...props }, ref) => {
+    const classes = cn(baseClasses, sizeClasses[size], variantClasses[variant], className);
 
     if (asChild) {
       if (!React.isValidElement(children)) {
