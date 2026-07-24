@@ -47,7 +47,11 @@ export function Hero({ image, heading, subheading, ctas, eyebrow, trustNote, tru
       tone="blush"
       className="relative overflow-hidden py-14 md:py-20"
       containerClassName={cn(
-        "relative grid grid-cols-1 items-center gap-12",
+        // `overflow-hidden` clips the decorative leaf motif, which is
+        // deliberately positioned outside the box (-right-6 -top-10). Without
+        // it the motif widened the document by 24px at 320px, and a purely
+        // decorative watermark must never create a horizontal scrollbar.
+        "relative grid grid-cols-1 items-center gap-12 overflow-hidden",
         image ? "lg:grid-cols-2 lg:gap-16" : "mx-auto max-w-3xl justify-items-center text-center",
       )}
     >

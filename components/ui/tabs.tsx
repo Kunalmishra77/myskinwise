@@ -59,7 +59,19 @@ export function Tabs({ tabs, className, ...props }: TabsProps) {
 
   return (
     <div className={cn(className)} {...props}>
-      <div role="tablist" className="flex gap-4 border-b border-ink/10">
+      {/*
+        Scrollable on narrow screens. A tab label as long as
+        "Post-Inflammatory Hyperpigmentation (PIH)" cannot fit a 320px
+        viewport, and without this the strip pushed the whole page 85px wide
+        — measured on /pigmentation at 320px. Scrolling the strip is the
+        correct trade: the labels are real medical terms and truncating them
+        would make the tabs unreadable.
+        `scrollbar-none` keeps it clean on desktop where it never scrolls.
+      */}
+      <div
+        role="tablist"
+        className="-mx-5 flex gap-4 overflow-x-auto border-b border-ink/10 px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0"
+      >
         {tabs.map((tab, index) => {
           const isActive = tab.id === activeId;
           const tabId = `tab-${uid}-${tab.id}`;
@@ -81,7 +93,7 @@ export function Tabs({ tabs, className, ...props }: TabsProps) {
               onClick={() => setActiveId(tab.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
               className={cn(
-                "-mb-px border-b-2 border-transparent px-1 py-2 text-sm font-medium transition-colors",
+                "-mb-px shrink-0 border-b-2 border-transparent px-1 py-2 text-sm font-medium transition-colors",
                 // `text-ink` (not `accent-ink`) for the active label keeps
                 // contrast unambiguously safe across every background these
                 // tabs render on; `border-rose` still carries the rose
