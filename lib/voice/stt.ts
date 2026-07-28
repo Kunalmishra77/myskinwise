@@ -95,10 +95,63 @@ class OpenAiStt implements SpeechToTextProvider {
   }
 }
 
+/**
+ * ElevenLabs Scribe — the preferred transcription when configured.
+ *
+ * The voice agent no longer leans on the browser's Web Speech API, which is
+ * effectively Chrome-only and unreliable. Every clip is now recorded with
+ * MediaRecorder and transcribed here, so Scribe is on the primary path, not a
+ * fallback. It handles Indian-accented English and Hindi well, which matters
+ * for this audience.
+ */
+class ElevenLabsStt implements SpeechToTextProvider {
+  private readonly model = process.env.ELEVENLABS_STT_MODEL || "scribe_v1";
+  constructor(private readonly apiKey: string) {}
+
+  isConfigured() {
+    return true;
+  }
+
+  async transcribe(audio: Buffer, mimeType: string): Promise<TranscriptionResult> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 25_000);
+    try {
+      const ext = extensionFor(mimeType);
+      const form = new FormData();
+      form.append("model_id", this.model);
+      form.append("file", new Blob([new Uint8Array(audio)], { type: mimeType }), `clip.${ext}`);
+
+      const res = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
+        method: "POST",
+        headers: { "xi-api-key": this.apiKey },
+        body: form,
+        signal: controller.signal,
+      });
+      if (!res.ok) return { ok: false, reason: "failed" };
+      const data = (await res.json()) as { text?: string };
+      const text = data.text?.trim();
+      if (!text) return { ok: false, reason: "empty" };
+      return { ok: true, text };
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") return { ok: false, reason: "timeout" };
+      return { ok: false, reason: "failed" };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}
+
 let instance: SpeechToTextProvider | null = null;
 
 export function getSttProvider(): SpeechToTextProvider {
   if (instance) return instance;
+  // ElevenLabs first, OpenAI Whisper as the fallback so transcription never
+  // silently breaks if the ElevenLabs key is absent on an environment.
+  const elevenKey = process.env.ELEVENLABS_API_KEY;
+  if (elevenKey) {
+    instance = new ElevenLabsStt(elevenKey);
+    return instance;
+  }
   const key = process.env.OPENAI_API_KEY;
   instance = key ? new OpenAiStt(key) : new UnconfiguredStt();
   return instance;

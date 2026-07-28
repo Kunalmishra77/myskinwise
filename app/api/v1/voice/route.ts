@@ -21,7 +21,9 @@ const turnSchema = z.object({ role: z.enum(["user", "assistant"]), content: z.st
 const bodySchema = z.object({
   // Prior turns for conversational context (stateless — the client holds the
   // history, nothing is persisted server-side).
-  history: z.array(turnSchema).max(12).default([]),
+  // Match the text assistant's window (20) so voice is no more
+  // forgetful than chat — the same brain, the same memory.
+  history: z.array(turnSchema).max(20).default([]),
   // EITHER a transcript (browser Web Speech API — the primary path) …
   transcript: z.string().min(1).max(2000).optional(),
   // … OR audio for the server STT fallback (iOS Safari etc.).
