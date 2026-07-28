@@ -58,7 +58,7 @@ export function TopBar() {
             width={IMAGES.logo.width}
             height={IMAGES.logo.height}
             priority
-            className="h-8 w-auto lg:h-9"
+            className="h-9 w-auto lg:h-11"
           />
         </Link>
 

@@ -4,8 +4,12 @@ export const IMAGES = {
   logo: {
     src: "/images/logo.png",
     alt: "Skinwise logo, a rose-pink script wordmark",
-    width: 313,
-    height: 177,
+    // The source art (Assets/skinwise_logo.png) carries ~35% transparent
+    // vertical padding, which made the wordmark render a third smaller than
+    // its box. scripts derive a trimmed header asset from it; these are the
+    // trimmed dimensions.
+    width: 314,
+    height: 133,
   },
   heroModel: {
     src: "/images/hero-model.jpg",
