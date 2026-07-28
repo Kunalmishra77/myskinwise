@@ -72,10 +72,11 @@ export function VoiceOverlay() {
 
   const overlay = open ? (
     <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true" aria-label="Skinwise voice assistant">
-      {/* Backdrop — tap to close and browse the site. */}
-      <button
-        type="button"
-        aria-label="Close voice assistant"
+      {/* Backdrop — tap to close and browse the site. Not a focusable
+          control (that would duplicate the labelled X and add a stray tab
+          stop); keyboard users close with Escape or the X. */}
+      <div
+        aria-hidden="true"
         onClick={() => setOpen(false)}
         className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
       />
