@@ -2,33 +2,27 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Camera, ImageUp, X } from "lucide-react";
+import { ArrowLeft, Camera, X } from "lucide-react";
 import { assessImageQuality } from "@/lib/analysis/quality-gate";
 import { type Observation } from "@/lib/ai/vision-schema";
 import { Button } from "@/components/ui/button";
+import { CameraCapture } from "@/components/analyzer/camera-capture";
 import { CheckVsScan } from "@/components/features/check-vs-scan";
 import { ScanResult } from "@/app/skin-check/analyzer/scan-result";
-import { Eyebrow } from "@/components/ui/eyebrow";
 
 const POLICY_VERSION = "2026-07-23";
 const MAX_BYTES = 8 * 1024 * 1024;
 
 type Stage = "intro" | "preview" | "analyzing" | "result" | "quality" | "error";
 
-async function fileToImage(file: File): Promise<HTMLImageElement> {
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    await new Promise((res, rej) => {
-      img.onload = res;
-      img.onerror = rej;
-      img.src = url;
-    });
-    return img;
-  } finally {
-    // Revoke after load; the dataURL below is what we keep.
-    setTimeout(() => URL.revokeObjectURL(url), 0);
-  }
+async function dataUrlToImage(dataUrl: string): Promise<HTMLImageElement> {
+  const img = new Image();
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = rej;
+    img.src = dataUrl;
+  });
+  return img;
 }
 
 function toBase64(dataUrl: string): string {
@@ -41,31 +35,26 @@ export function Analyzer() {
   const [consent, setConsent] = React.useState(false);
   const [observation, setObservation] = React.useState<Observation | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
-  const fileRef = React.useRef<HTMLInputElement>(null);
-
-  async function onPick(file: File | undefined) {
-    if (!file) return;
+  // Handles an image from either the live camera or an upload: validate,
+  // run the on-device quality gate, then move to the confirm step. A rejected
+  // photo leaves the user on the camera (which stays live) with a reason.
+  async function handleImage(dataUrl: string, type: string, bytes: number) {
     setMessage(null);
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(type)) {
       setMessage("Please choose a JPG, PNG or WebP image.");
       return;
     }
-    if (file.size > MAX_BYTES) {
+    if (bytes > MAX_BYTES) {
       setMessage("That image is over 8MB. Please choose a smaller one.");
       return;
     }
-    const img = await fileToImage(file);
+    const img = await dataUrlToImage(dataUrl);
     const verdict = assessImageQuality(img, img.naturalWidth, img.naturalHeight);
-    const dataUrl = await new Promise<string>((res) => {
-      const r = new FileReader();
-      r.onload = () => res(r.result as string);
-      r.readAsDataURL(file);
-    });
     if (!verdict.ok) {
       setMessage(verdict.message ?? "That photo won't work — please try another.");
       return;
     }
-    setPreview({ dataUrl, type: file.type, bytes: file.size });
+    setPreview({ dataUrl, type, bytes });
     setStage("preview");
   }
 
@@ -122,42 +111,18 @@ export function Analyzer() {
         <span className="font-body text-sm font-semibold text-ink-soft">AI Skin Scanner</span>
       </header>
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        capture="user"
-        hidden
-        onChange={(e) => onPick(e.target.files?.[0])}
-      />
-
       <div className="mx-auto w-full max-w-md flex-1 px-5 pb-16">
         {stage === "intro" && (
           <div>
-            <Eyebrow index="01">AI-assisted look</Eyebrow>
-            <h1 className="mt-4 font-display text-display font-semibold text-ink">A closer look at your skin.</h1>
-            <p className="mt-4 text-ink-soft">
-              Add a clear, front-facing photo in good light. Our AI describes what&rsquo;s{" "}
-              <em>visible</em> — shine, redness, texture, tone. It&rsquo;s a starting point, not a
-              diagnosis, and a Skinwise expert makes the real decisions.
+            <h1 className="font-display text-3xl font-semibold text-ink">Scan your skin.</h1>
+            <p className="mt-2 text-sm text-ink-soft">
+              Line your face up and capture a clear, well-lit photo. Our AI describes what&rsquo;s{" "}
+              <em>visible</em> — shine, redness, texture, tone — and marks the areas on your photo.
+              It&rsquo;s a starting point, not a diagnosis.
             </p>
 
-            <ul className="mt-6 flex flex-col gap-2 text-sm text-ink-soft">
-              {["Natural, even light", "Face centred and in focus", "No heavy makeup or filters"].map((t) => (
-                <li key={t} className="flex gap-2">
-                  <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-rose-ink" />
-                  {t}
-                </li>
-              ))}
-            </ul>
-
-            {message && <p role="alert" className="mt-5 rounded-2xl bg-champagne/50 p-3 text-sm text-ink">{message}</p>}
-
-            <div className="mt-8 flex flex-col gap-3">
-              <Button size="lg" onClick={() => fileRef.current?.click()}>
-                <Camera aria-hidden="true" className="size-4" />
-                Take or choose a photo
-              </Button>
+            <div className="mt-5">
+              <CameraCapture onCapture={handleImage} message={message} />
             </div>
 
             {/* Says plainly how the two assessments differ, and keeps the
@@ -198,9 +163,9 @@ export function Analyzer() {
               <Button size="lg" onClick={analyze} disabled={!consent}>
                 Analyse my photo
               </Button>
-              <Button size="lg" variant="outline" onClick={() => fileRef.current?.click()}>
-                <ImageUp aria-hidden="true" className="size-4" />
-                Choose a different photo
+              <Button size="lg" variant="outline" onClick={reset}>
+                <Camera aria-hidden="true" className="size-4" />
+                Retake or upload another
               </Button>
             </div>
           </div>

@@ -10,11 +10,16 @@ afterEach(() => {
 });
 
 describe("observation schema", () => {
+  const FACE_BOX = { x: 0, y: 0, width: 1, height: 1 };
+
   it("accepts a well-formed observation", () => {
     const ok = observationSchema.safeParse({
       face_visible: true,
       image_quality: "good",
-      features: [{ feature: "visible_redness", certainty: "observed", note: "some redness on the cheeks" }],
+      face_box: FACE_BOX,
+      features: [
+        { feature: "visible_redness", certainty: "observed", region: "right_cheek", note: "some redness on the cheeks" },
+      ],
       limitations: "only the central face is visible",
       recommend_professional: false,
     });
@@ -25,7 +30,20 @@ describe("observation schema", () => {
     const bad = observationSchema.safeParse({
       face_visible: true,
       image_quality: "good",
-      features: [{ feature: "has_acne", certainty: "observed", note: "x" }],
+      face_box: FACE_BOX,
+      features: [{ feature: "has_acne", certainty: "observed", region: "nose", note: "x" }],
+      limitations: "x",
+      recommend_professional: false,
+    });
+    expect(bad.success).toBe(false);
+  });
+
+  it("rejects an invented region not in the controlled vocabulary", () => {
+    const bad = observationSchema.safeParse({
+      face_visible: true,
+      image_quality: "good",
+      face_box: FACE_BOX,
+      features: [{ feature: "visible_redness", certainty: "observed", region: "left_eyeball", note: "x" }],
       limitations: "x",
       recommend_professional: false,
     });
@@ -36,6 +54,7 @@ describe("observation schema", () => {
     const bad = observationSchema.safeParse({
       face_visible: true,
       image_quality: "rosacea",
+      face_box: FACE_BOX,
       features: [],
       limitations: "x",
       recommend_professional: false,

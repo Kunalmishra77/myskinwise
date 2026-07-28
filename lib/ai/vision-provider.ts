@@ -37,7 +37,9 @@ HARD RULES:
 - Be conservative. If the image is blurry, dark, or the face is small/absent, say so in image_quality and face_visible, and return few or no features.
 - Never claim to cure, treat, heal, or guarantee anything.
 - Set recommend_professional = true ONLY if something visible looks like it genuinely warrants a person looking at it (e.g. widespread inflammation, something that looks painful or infected). You still must not name what it is.
-- notes must describe appearance only, e.g. "some shine across the forehead", never "this is oily skin caused by...".`;
+- notes must describe appearance only, e.g. "some shine across the forehead", never "this is oily skin caused by...".
+- face_box: give the face's bounding box in the image as fractions 0..1 (x,y = top-left corner, width,height = size). If the whole frame is the face, use x:0,y:0,width:1,height:1. Be approximate; this only positions a marker.
+- For each feature, set region to the coarse area it is MAINLY visible in, using image-relative sides (left = the left of the picture): forehead, left_cheek, right_cheek, nose, chin, under_eye_left, under_eye_right, jaw, or overall if it is spread across the face.`;
 
 class OpenAiVisionProvider implements ImageAnalysisProvider {
   private readonly model = process.env.OPENAI_VISION_MODEL || "gpt-4.1-mini";

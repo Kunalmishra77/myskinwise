@@ -1,28 +1,30 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { Mic, ShieldCheck } from "lucide-react";
 import { FEATURE_LABELS, CERTAINTY_LABELS, type Observation } from "@/lib/ai/vision-schema";
 import { Button } from "@/components/ui/button";
+import { FaceMarkers, type ShownFeature } from "@/components/analyzer/face-markers";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 /**
  * What the AI noticed, and what to do about it.
  *
  * Everything rendered here comes from the validated observation schema —
- * feature, certainty, the model's free-text note, image quality, limitations,
- * and the escalation flag. Nothing else exists, so nothing else is displayed.
+ * feature, certainty, region, the model's free-text note, image quality,
+ * limitations, and the escalation flag. Nothing else exists, so nothing else
+ * is displayed.
  *
- * Deliberately NOT built, despite being the obvious "advanced AI" flourish:
- * hotspot markers pinned to regions of the face. The schema carries no
- * coordinates. Every marker would therefore be a guess drawn on a photograph
- * of someone's face and presented as analysis, and a confident dot in the
- * wrong place is worse than no dot at all.
+ * The on-face markers (FaceMarkers) are anchored to the coarse REGION the
+ * model reports for each feature, not to pixel coordinates it does not have.
+ * A marker points at the area a characteristic tends to show, and the copy
+ * says exactly that — "areas we looked at", never "we detected X here". A
+ * confident dot in a precise-but-wrong place would be worse than an honest
+ * region marker.
  *
- * What is real and now shown: the submitted photo beside the findings, a
- * count of what was seen, image quality, certainty on every line, and a plain
- * "what this may mean" per feature. That last one is editorial copy keyed to
- * the controlled vocabulary — appearance-based, never naming a condition.
+ * "What this may mean" is editorial copy keyed to the controlled vocabulary —
+ * appearance-based, never naming a condition.
  */
 
 /**
@@ -67,8 +69,12 @@ export function ScanResult({
   photo: string | null;
   onRestart: () => void;
 }) {
-  const shown = observation.features.filter((f) => f.certainty !== "unclear");
+  // Keep the original index so a marker and its card refer to the same thing.
+  const shown: ShownFeature[] = observation.features
+    .map((f, index) => ({ ...f, index }))
+    .filter((f) => f.certainty !== "unclear");
   const clear = shown.filter((f) => f.certainty === "observed").length;
+  const [active, setActive] = React.useState<number | null>(null);
 
   return (
     <div>
@@ -76,63 +82,88 @@ export function ScanResult({
       <h1 className="mt-4 font-display text-display font-semibold text-ink">What the AI noticed.</h1>
 
       {/*
-        The photo that produced these findings, so the analysis is anchored to
-        something the person recognises. Rendered from the local data URL they
-        already hold in memory — the stored copy lives in a private bucket and
-        is never surfaced to the browser.
+        The submitted photo with a marker over each observation — the centre of
+        the experience. Rendered from the local data URL the browser already
+        holds; the stored copy lives in a private bucket and never reaches the
+        client. Markers point at the AREA a characteristic tends to show, not a
+        detected spot — see FaceMarkers.
       */}
-      {photo && (
-        <div className="mt-6 flex items-center gap-4 rounded-3xl bg-surface p-3 shadow-soft">
-          {/* eslint-disable-next-line @next/next/no-img-element -- local data URL, deliberately not routed through next/image */}
-          <img
-            src={photo}
-            alt="The photo you submitted"
-            className="size-24 shrink-0 rounded-2xl object-cover"
+      {photo && shown.length > 0 && (
+        <div className="mt-6">
+          <FaceMarkers
+            photo={photo}
+            observation={observation}
+            shown={shown}
+            active={active}
+            onSelect={setActive}
           />
-          <div className="min-w-0">
-            <p className="font-display text-2xl font-semibold text-ink">
-              {shown.length} observation{shown.length === 1 ? "" : "s"}
-            </p>
-            <p className="text-sm text-ink-soft">
-              {clear > 0 ? `${clear} clearly visible` : "None clearly visible"}
-            </p>
-            <p className="mt-1 text-xs text-ink-soft">{QUALITY_NOTE[observation.image_quality]}</p>
-          </div>
+          <p className="mt-2 text-center text-xs text-ink-soft">
+            Tap a marker to see what it is. Markers show the areas we looked at, not a diagnosis.
+          </p>
         </div>
       )}
 
-      <p className="mt-4 text-sm text-ink-soft">
-        These are visible characteristics only — an AI observation, not a medical diagnosis. A photo
-        cannot tell the whole story; a Skinwise expert can.
+      {photo && shown.length === 0 && (
+        <div className="mt-6 overflow-hidden rounded-3xl bg-plum shadow-soft">
+          {/* eslint-disable-next-line @next/next/no-img-element -- local data URL, deliberately not routed through next/image */}
+          <img src={photo} alt="The photo you submitted" className="aspect-[3/4] w-full object-cover" />
+        </div>
+      )}
+
+      <div className="mt-4 flex items-baseline justify-between gap-3">
+        <p className="font-display text-xl font-semibold text-ink">
+          {shown.length} observation{shown.length === 1 ? "" : "s"}
+        </p>
+        <p className="text-xs text-ink-soft">{QUALITY_NOTE[observation.image_quality]}</p>
+      </div>
+      <p className="mt-1 text-sm text-ink-soft">
+        {clear > 0 ? `${clear} clearly visible. ` : ""}These are visible characteristics only — an AI
+        observation, not a medical diagnosis. A photo cannot tell the whole story; a Skinwise expert
+        can.
       </p>
 
       {shown.length > 0 ? (
         <ul className="mt-6 flex flex-col gap-3">
-          {shown.map((f, i) => (
-            <li key={i} className="overflow-hidden rounded-2xl bg-surface shadow-soft">
-              <div className="flex items-start justify-between gap-3 px-4 pt-4">
-                <span className="font-display text-lg font-semibold text-ink">
-                  {FEATURE_LABELS[f.feature]}
-                </span>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                    f.certainty === "observed" ? "bg-rose-ink text-white" : "bg-blush text-rose-ink"
-                  }`}
+          {shown.map((f, i) => {
+            const isActive = active === f.index;
+            return (
+              <li
+                key={f.index}
+                className={`overflow-hidden rounded-2xl bg-surface shadow-soft ring-2 transition ${
+                  isActive ? "ring-rose-ink" : "ring-transparent"
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActive(isActive ? null : f.index)}
+                  className="flex w-full items-start justify-between gap-3 px-4 pt-4 text-left"
                 >
-                  {CERTAINTY_LABELS[f.certainty]}
-                </span>
-              </div>
-              {f.note && <p className="mt-1.5 px-4 text-sm text-ink-soft">{f.note}</p>}
-              {MAY_MEAN[f.feature] && (
-                <div className="mt-3 border-t border-ink/5 bg-blush/40 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-rose-ink">
-                    What this may mean
-                  </p>
-                  <p className="mt-1 text-sm text-ink-soft">{MAY_MEAN[f.feature]}</p>
-                </div>
-              )}
-            </li>
-          ))}
+                  <span className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-rose-ink text-xs font-semibold text-white">
+                      {i + 1}
+                    </span>
+                    {FEATURE_LABELS[f.feature]}
+                  </span>
+                  <span
+                    className={`mt-0.5 shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      f.certainty === "observed" ? "bg-rose-ink text-white" : "bg-blush text-rose-ink"
+                    }`}
+                  >
+                    {CERTAINTY_LABELS[f.certainty]}
+                  </span>
+                </button>
+                {f.note && <p className="mt-1.5 px-4 text-sm text-ink-soft">{f.note}</p>}
+                {MAY_MEAN[f.feature] && (
+                  <div className="mt-3 border-t border-ink/5 bg-blush/40 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-rose-ink">
+                      What this may mean
+                    </p>
+                    <p className="mt-1 text-sm text-ink-soft">{MAY_MEAN[f.feature]}</p>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="mt-6 rounded-2xl bg-surface p-4 text-ink-soft shadow-soft">
