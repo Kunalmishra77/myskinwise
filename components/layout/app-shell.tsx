@@ -2,6 +2,7 @@ import * as React from "react";
 import { TopBar } from "@/components/layout/top-bar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Footer } from "@/components/features/footer";
+import { VoiceOverlay } from "@/components/voice/voice-overlay";
 
 /**
  * The application shell: sticky header, page content, footer, and the
@@ -30,6 +31,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
       <Footer />
       <BottomNav />
+      {/* Floating voice assistant, available on every shell page. Portals to
+          <body>; not shown on /voice or the full-screen flows. */}
+      <VoiceOverlay />
     </>
   );
 }
