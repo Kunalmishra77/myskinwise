@@ -30,6 +30,10 @@ const bodySchema = z.object({
   // so its reference is the bearer token for its own (already customer-safe)
   // observation — the same model the customer used to view their result.
   analysisReference: z.string().regex(/^SW-[A-HJ-NP-Z2-9]{8}$/).optional(),
+  // Optional chosen concern, so the chat can run a focused, concern-specific
+  // conversation. Anonymous and safe — it only steers which questions and
+  // content the assistant draws on, never anything private.
+  concern: z.enum(["pigmentation", "acne", "other-issues"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -58,11 +62,18 @@ export async function POST(request: Request) {
   // boundary the voice agent uses. A guessed reference or wrong phone yields
   // nothing; nothing internal (notes, verdict, storage paths, ids) can reach
   // the model.
-  const context = await resolveCustomerContext({
+  const resolved = await resolveCustomerContext({
     reference: parsed.data.reference,
     phone: parsed.data.phone,
     analysisReference: parsed.data.analysisReference,
   });
+
+  // A concern chosen in the chat steers the conversation, unless the customer's
+  // own resolved data already carries one (their real concern wins).
+  const context =
+    parsed.data.concern && !resolved?.concern
+      ? { ...(resolved ?? {}), concern: parsed.data.concern }
+      : resolved;
 
   void logEvent("assistant_used");
   const outcome = await respond(parsed.data.messages as ChatTurn[], context);

@@ -9,12 +9,29 @@ import { cn } from "@/lib/utils";
 type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
 type Msg = { role: "user" | "assistant"; content: string; cta?: CtaKind | null };
 
-const SUGGESTIONS = [
-  "What does niacinamide do?",
-  "I have oily skin and breakouts — where do I start?",
-  "How is Skinwise different?",
-  "What's the difference between AM and PM routines?",
+type ConcernSlug = "acne" | "pigmentation" | "other-issues";
+
+/**
+ * The concern picker that makes the chat condition-specific. Choosing one
+ * sends an opening line AND tags every later message with the concern, so the
+ * server steers a focused conversation (concern-specific questions + content)
+ * rather than the same generic answers for everyone.
+ */
+const CONCERN_STARTERS: { slug: ConcernSlug; label: string; opener: string }[] = [
+  { slug: "acne", label: "Acne & breakouts", opener: "I'd like help with acne and breakouts." },
+  {
+    slug: "pigmentation",
+    label: "Pigmentation & dark spots",
+    opener: "I'd like help with pigmentation and dark spots.",
+  },
+  {
+    slug: "other-issues",
+    label: "Texture, dullness or fine lines",
+    opener: "I'd like help with texture, dullness or fine lines.",
+  },
 ];
+
+const GENERAL_SUGGESTIONS = ["What does niacinamide do?", "How is Skinwise different?"];
 
 const CTA_LABEL: Record<CtaKind, string> = {
   skin_check: "Start your Skin Check",
@@ -53,15 +70,20 @@ export function AssistantChat() {
   const [input, setInput] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [concern, setConcern] = React.useState<ConcernSlug | null>(null);
   const endRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, busy]);
 
-  async function send(text: string) {
+  async function send(text: string, chosenConcern?: ConcernSlug) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
+    // A concern chosen now applies to this message and every one after it;
+    // state updates async, so use the explicit value for this request.
+    const activeConcern = chosenConcern ?? concern;
+    if (chosenConcern) setConcern(chosenConcern);
     setError(null);
     const next: Msg[] = [...messages, { role: "user", content: trimmed }];
     setMessages(next);
@@ -73,6 +95,7 @@ export function AssistantChat() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           messages: next.map((m) => ({ role: m.role, content: m.content })),
+          ...(activeConcern ? { concern: activeConcern } : {}),
         }),
       });
       if (res.status === 429) {
@@ -143,18 +166,40 @@ export function AssistantChat() {
               </Link>
             </div>
 
-            <ul className="mt-8 flex w-full flex-col gap-2">
-              {SUGGESTIONS.map((s) => (
-                <li key={s}>
-                  <button
-                    onClick={() => send(s)}
-                    className="w-full rounded-2xl border border-ink/10 bg-surface px-4 py-3 text-left text-sm text-ink transition hover:border-rose-ink/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink"
-                  >
-                    {s}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {/* Concern picker — the heart of the condition-specific chat.
+                Choosing one starts a focused conversation for that concern. */}
+            <div className="mt-8 w-full text-left">
+              <p className="text-sm font-semibold text-ink">What would you like help with?</p>
+              <ul className="mt-3 flex w-full flex-col gap-2">
+                {CONCERN_STARTERS.map((c) => (
+                  <li key={c.slug}>
+                    <button
+                      onClick={() => send(c.opener, c.slug)}
+                      className="flex w-full items-center justify-between rounded-2xl border border-ink/10 bg-surface px-4 py-3.5 text-left text-sm font-medium text-ink transition hover:border-rose-ink/40 hover:bg-blush focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink"
+                    >
+                      {c.label}
+                      <span aria-hidden="true" className="text-rose-ink">
+                        &rarr;
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="mt-5 text-sm text-ink-soft">Or just ask anything:</p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {GENERAL_SUGGESTIONS.map((s) => (
+                  <li key={s}>
+                    <button
+                      onClick={() => send(s)}
+                      className="rounded-full border border-ink/10 bg-surface px-3.5 py-2 text-sm text-ink-soft transition hover:border-rose-ink/30 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink"
+                    >
+                      {s}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         ) : (
           <ul className="flex flex-col gap-4">
