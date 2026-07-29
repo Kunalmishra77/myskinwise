@@ -11,6 +11,18 @@ export const IMAGES = {
     width: 314,
     height: 133,
   },
+  scanShowcase: {
+    src: "/images/scan-showcase.jpg",
+    alt: "Woman with clear, healthy skin framing her eyes with her fingertips, looking up and smiling",
+    width: 1200,
+    height: 900,
+  },
+  skinCloseup: {
+    src: "/images/skin-closeup.jpg",
+    alt: "Close-up of facial skin texture",
+    width: 1000,
+    height: 1000,
+  },
   heroModel: {
     src: "/images/hero-model.jpg",
     alt: "Woman with clear, healthy, glowing skin smiling gently against a warm brown studio backdrop",

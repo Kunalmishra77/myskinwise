@@ -8,6 +8,8 @@ import { CONCERNS } from "@/content/concerns";
 import { INGREDIENT_LIST } from "@/content/ingredients";
 import { SKIN_TYPE_LIST } from "@/content/skin-types";
 import { StartPaths } from "@/components/features/start-paths";
+import { AnalyzerShowcase } from "@/components/features/analyzer-showcase";
+import { FeaturedFormulations } from "@/components/features/featured-formulations";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Reveal } from "@/components/ui/reveal";
@@ -133,7 +135,11 @@ export default function HomePage() {
           the four primary features without guessing a URL. */}
       <StartPaths />
 
-      {/* 3 — CONCERNS. Horizontal scroll on mobile so cards stay thumb-sized
+      {/* 3 — SKIN ANALYSIS showcase. The differentiator gets a section of its
+          own with real imagery, right after the feature choices. */}
+      <AnalyzerShowcase />
+
+      {/* 4 — CONCERNS. Horizontal scroll on mobile so cards stay thumb-sized
           rather than shrinking to fit three across a 320px screen. */}
       <section className="mt-20 lg:mt-28" aria-labelledby="concerns-heading">
         <div className="mx-auto w-full max-w-6xl px-5">
@@ -246,6 +252,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* PRODUCTS — a glimpse of the catalogue, linking through to shop. */}
+      <FeaturedFormulations />
 
       {/* 5 — SKIN CHECK CTA */}
       <section className="mt-20 lg:mt-28" aria-labelledby="skincheck-heading">
