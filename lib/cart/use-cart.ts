@@ -94,12 +94,24 @@ export const cartStore = {
   },
 };
 
+const EMPTY: string[] = [];
+
 export function useCart() {
-  const current = React.useSyncExternalStore(
-    cartStore.subscribe,
-    cartStore.snapshot,
-    () => [] as string[],
-  );
+  const stored = React.useSyncExternalStore(cartStore.subscribe, cartStore.snapshot, () => EMPTY);
+
+  /*
+   * Until mounted, report an empty cart — so the FIRST client render matches
+   * the server's (which has no localStorage), and only then switches to the
+   * real contents. Without this, a reload with items in the cart renders a
+   * different tree on the client than the server sent (a filled badge, an "in
+   * cart" button) and React throws a hydration error (#418). Every cart
+   * consumer gets this protection from one place.
+   */
+  const [mounted, setMounted] = React.useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  React.useEffect(() => setMounted(true), []);
+  const current = mounted ? stored : EMPTY;
+
   const products = current
     .map((s) => PRODUCTS_BY_SLUG.get(s as never))
     .filter((p): p is Product => Boolean(p));
@@ -107,11 +119,13 @@ export function useCart() {
     slugs: current,
     products,
     count: current.length,
+    // `has` reflects the mounted view too, so buttons don't flip state during
+    // hydration.
+    has: (slug: string) => (mounted ? cartStore.has(slug) : false),
     add: cartStore.add,
     addMany: cartStore.addMany,
     remove: cartStore.remove,
     clear: cartStore.clear,
-    has: cartStore.has,
   };
 }
 
