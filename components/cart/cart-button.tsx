@@ -8,6 +8,7 @@ import { ShoppingBag, X, Trash2, MessageCircle } from "lucide-react";
 import { SITE, waHref } from "@/config/site";
 import { primaryProductImage } from "@/content/products";
 import { useCart, buildOrderMessage } from "@/lib/cart/use-cart";
+import { useT } from "@/lib/i18n/provider";
 
 /**
  * The header cart: a button with a live count, and its own drawer.
@@ -23,6 +24,7 @@ import { useCart, buildOrderMessage } from "@/lib/cart/use-cart";
  */
 export function CartButton() {
   const { products, count, remove, clear } = useCart();
+  const t = useT();
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
@@ -56,7 +58,7 @@ export function CartButton() {
             />
             <div className="absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-warm shadow-lift">
               <div className="flex items-center justify-between border-b border-ink/10 px-5 py-4">
-                <h2 className="font-display text-lg font-semibold text-ink">Your cart</h2>
+                <h2 className="font-display text-lg font-semibold text-ink">{t("cart.title")}</h2>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
@@ -70,13 +72,13 @@ export function CartButton() {
               <div className="flex-1 overflow-y-auto px-5 py-4">
                 {products.length === 0 ? (
                   <div className="pt-10 text-center">
-                    <p className="text-ink-soft">Your cart is empty.</p>
+                    <p className="text-ink-soft">{t("cart.empty")}</p>
                     <Link
                       href="/products"
                       onClick={() => setOpen(false)}
                       className="mt-4 inline-flex text-sm font-semibold text-rose-ink"
                     >
-                      Browse formulations
+                      {t("cart.browse")}
                     </Link>
                   </div>
                 ) : (
@@ -97,7 +99,7 @@ export function CartButton() {
                               {p.name}
                             </Link>
                             <p className="text-sm text-ink-soft">
-                              {p.mrp !== null ? `₹${p.mrp.toLocaleString("en-IN")}` : "Price confirmed on WhatsApp"}
+                              {p.mrp !== null ? `₹${p.mrp.toLocaleString("en-IN")}` : t("cart.priceOnWhatsapp")}
                             </p>
                           </div>
                           <button
@@ -117,10 +119,7 @@ export function CartButton() {
 
               {products.length > 0 && (
                 <div className="border-t border-ink/10 px-5 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-                  <p className="mb-3 text-xs text-ink-soft">
-                    Skinwise formulations are compounded per customer, so our team confirms the final
-                    price and arranges payment over WhatsApp.
-                  </p>
+                  <p className="mb-3 text-xs text-ink-soft">{t("cart.note")}</p>
                   <a
                     href={orderHref}
                     target="_blank"
@@ -128,14 +127,14 @@ export function CartButton() {
                     className="flex w-full items-center justify-center gap-2 rounded-full bg-rose-ink px-6 py-3.5 font-semibold text-white"
                   >
                     <MessageCircle aria-hidden="true" className="size-5" />
-                    Order on WhatsApp
+                    {t("cta.orderWhatsapp")}
                   </a>
                   <button
                     type="button"
                     onClick={clear}
                     className="mt-2 w-full text-center text-sm font-medium text-ink-soft"
                   >
-                    Clear cart
+                    {t("cart.clear")}
                   </button>
                 </div>
               )}

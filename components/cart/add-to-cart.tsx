@@ -2,6 +2,7 @@
 
 import { Check, Plus } from "lucide-react";
 import { useCart } from "@/lib/cart/use-cart";
+import { useT } from "@/lib/i18n/provider";
 
 /**
  * Add a single product to the cart. Reflects whether it is already in, so the
@@ -17,6 +18,7 @@ export function AddToCartButton({
   size?: "lg" | "sm";
 }) {
   const { has, add, remove } = useCart();
+  const t = useT();
   const inCart = has(slug);
 
   const base =
@@ -38,12 +40,12 @@ export function AddToCartButton({
       {inCart ? (
         <>
           <Check aria-hidden="true" className={size === "lg" ? "size-5" : "size-4"} />
-          In cart
+          {t("cta.inCart")}
         </>
       ) : (
         <>
           <Plus aria-hidden="true" className={size === "lg" ? "size-5" : "size-4"} />
-          Add to cart
+          {t("cta.addToCart")}
         </>
       )}
     </button>

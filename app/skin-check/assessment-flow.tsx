@@ -13,6 +13,7 @@ import { CheckVsScan } from "@/components/features/check-vs-scan";
 import { RecommendedCombo } from "@/components/products/recommended-combo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTContent } from "@/lib/i18n/use-content";
 
 const POLICY_VERSION = "2026-07-21";
 
@@ -56,6 +57,7 @@ export function AssessmentFlow() {
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
   const headingRef = React.useRef<HTMLHeadingElement>(null);
+  const tc = useTContent();
 
   const concern = typeof answers.concern === "string" ? answers.concern : null;
   const steps: Question[] = React.useMemo(
@@ -447,10 +449,10 @@ export function AssessmentFlow() {
           tabIndex={-1}
           className="font-display text-3xl font-semibold text-ink outline-none"
         >
-          {current.prompt}
+          {tc(current.prompt)}
         </h1>
         {current.optional && <p className="mt-2 text-sm text-ink-soft">Optional</p>}
-        <WhyPanel why={current.why} />
+        <WhyPanel why={tc(current.why)} />
 
         {errors[current.id] && (
           <p role="alert" className="mt-4 rounded-2xl bg-champagne/50 p-4 text-sm font-medium text-ink">
@@ -460,7 +462,7 @@ export function AssessmentFlow() {
 
         {current.kind === "text" ? (
           <textarea
-            aria-label={current.prompt}
+            aria-label={tc(current.prompt)}
             rows={5}
             value={typeof value === "string" ? value : ""}
             onChange={(e) => setAnswer(current.id, e.target.value)}
@@ -468,7 +470,7 @@ export function AssessmentFlow() {
           />
         ) : (
           <fieldset className="mt-6">
-            <legend className="sr-only">{current.prompt}</legend>
+            <legend className="sr-only">{tc(current.prompt)}</legend>
             <div className="flex flex-col gap-3">
               {(current.options ?? []).map((option) => {
                 const isSelected = selected.includes(option.value);
@@ -498,9 +500,9 @@ export function AssessmentFlow() {
                     )}
                   >
                     <span>
-                      <span className="block font-body font-semibold text-ink">{option.label}</span>
+                      <span className="block font-body font-semibold text-ink">{tc(option.label)}</span>
                       {option.hint && (
-                        <span className="mt-0.5 block text-sm text-ink-soft">{option.hint}</span>
+                        <span className="mt-0.5 block text-sm text-ink-soft">{tc(option.hint)}</span>
                       )}
                     </span>
                     <span
@@ -522,7 +524,7 @@ export function AssessmentFlow() {
         {current.followUp && selected.length > 0 && (
           <div className="mt-6">
             <label htmlFor="follow-up" className="font-body text-sm font-semibold text-ink">
-              {current.followUp.prompt}
+              {tc(current.followUp.prompt)}
             </label>
             <input
               id="follow-up"
@@ -546,7 +548,7 @@ export function AssessmentFlow() {
 
       <StickyBar>
         <Button size="lg" className="w-full" onClick={goNext}>
-          {index + 1 === steps.length ? "Continue" : "Next"}
+          {tc(index + 1 === steps.length ? "Continue" : "Next")}
         </Button>
       </StickyBar>
     </div>
