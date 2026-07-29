@@ -34,6 +34,8 @@ const bodySchema = z.object({
   // conversation. Anonymous and safe — it only steers which questions and
   // content the assistant draws on, never anything private.
   concern: z.enum(["pigmentation", "acne", "other-issues"]).optional(),
+  // Reply language. The client sends the active locale.
+  lang: z.enum(["en", "hi"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -76,6 +78,8 @@ export async function POST(request: Request) {
       : resolved;
 
   void logEvent("assistant_used");
-  const outcome = await respond(parsed.data.messages as ChatTurn[], context);
+  const outcome = await respond(parsed.data.messages as ChatTurn[], context, {
+    lang: parsed.data.lang,
+  });
   return NextResponse.json({ status: "ok", ...outcome });
 }

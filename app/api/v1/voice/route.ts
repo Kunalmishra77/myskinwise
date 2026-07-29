@@ -35,6 +35,8 @@ const bodySchema = z.object({
   analysisReference: z.string().regex(/^SW-[A-HJ-NP-Z2-9]{8}$/).optional(),
   // The client may decline audio (e.g. it will use browser TTS itself).
   wantAudio: z.boolean().default(true),
+  // Reply + speech language.
+  lang: z.enum(["en", "hi"]).optional(),
 });
 
 /**
@@ -105,15 +107,15 @@ export async function POST(request: Request) {
   // outbound safety -> CTA.
   const messages: ChatTurn[] = [...body.history, { role: "user", content: transcript }];
   void logEvent("voice_used");
-  const outcome = await respond(messages, context);
+  const outcome = await respond(messages, context, { lang: body.lang });
 
   // 4. TTS of the FINAL text (never raw model output). Best-effort: a TTS
   // failure still returns the text, and the client speaks it with the
-  // browser as a fallback.
+  // browser as a fallback. The language nudges pronunciation.
   let audioBase64: string | undefined;
   let audioMimeType: string | undefined;
   if (body.wantAudio) {
-    const speech = await getTtsProvider().speak(outcome.text);
+    const speech = await getTtsProvider().speak(outcome.text, body.lang);
     if (speech.ok) {
       audioBase64 = speech.audioBase64;
       audioMimeType = speech.mimeType;

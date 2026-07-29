@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { SITE, waHref } from "@/config/site";
 import { Button } from "@/components/ui/button";
+import { LanguageToggle } from "@/components/layout/language-toggle";
 
 /** Returns the focusable elements inside `container`, in DOM order. */
 function getFocusable(container: HTMLElement): HTMLElement[] {
@@ -98,15 +99,18 @@ export function Drawer({
         <span id={titleId} className="font-display text-xl italic text-ink">
           Menu
         </span>
-        <button
-          ref={closeButtonRef}
-          type="button"
-          aria-label="Close menu"
-          onClick={onClose}
-          className="inline-flex size-11 items-center justify-center rounded-full text-ink transition hover:bg-blush"
-        >
-          <X aria-hidden="true" className="size-6" />
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+          <button
+            ref={closeButtonRef}
+            type="button"
+            aria-label="Close menu"
+            onClick={onClose}
+            className="inline-flex size-11 items-center justify-center rounded-full text-ink transition hover:bg-blush"
+          >
+            <X aria-hidden="true" className="size-6" />
+          </button>
+        </div>
       </div>
 
       <nav

@@ -101,8 +101,10 @@
   --color-rose-ink: #a8506a;
 
   /* --- Type ---------------------------------------------------------- */
-  --font-display: var(--font-display-family);
-  --font-body: var(--font-body-family);
+  /* Devanagari is appended so Hindi glyphs fall through to Noto while Latin
+     stays in the brand families — the browser picks per glyph. */
+  --font-display: var(--font-display-family), var(--font-devanagari), serif;
+  --font-body: var(--font-body-family), var(--font-devanagari), sans-serif;
 
   /*
    * Fluid editorial scale. clamp() rather than per-breakpoint jumps, so

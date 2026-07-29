@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { unlockAudio, playClip, cancelPlayback, sharedAudioContext } from "@/lib/voice/audio-playback";
+import { useLocale } from "@/lib/i18n/provider";
 
 export type VoiceState = "idle" | "listening" | "transcribing" | "thinking" | "speaking" | "error";
 export type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
@@ -32,6 +33,7 @@ const MAX_TURN_MS = 20000; // hard cap on one spoken turn
 
 export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
   const autoListen = opts.autoListen ?? true;
+  const locale = useLocale();
 
   const [state, setState] = React.useState<VoiceState>("idle");
   const [turns, setTurns] = React.useState<VoiceTurn[]>([]);
@@ -91,7 +93,7 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
         const res = await fetch("/api/v1/voice", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ history, wantAudio: true, ...body }),
+          body: JSON.stringify({ history, wantAudio: true, lang: locale, ...body }),
         });
         if (res.status === 429) {
           setNote("You've spoken a lot just now — please wait a little while.");

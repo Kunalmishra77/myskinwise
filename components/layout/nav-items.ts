@@ -3,6 +3,7 @@ import { SITE } from "@/config/site";
 
 export type BottomNavItem = {
   label: string;
+  labelKey: import("@/lib/i18n/dictionary").MessageKey;
   href: string;
   icon: LucideIcon;
   /**
@@ -31,11 +32,11 @@ export type BottomNavItem = {
  * Five tabs at 320px is 64px each, comfortably past the 44px minimum.
  */
 export const BOTTOM_NAV: BottomNavItem[] = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Voice", href: "/voice", icon: Mic },
-  { label: "Scan", href: "/skin-check/analyzer", icon: Camera, primary: true },
-  { label: "Ask", href: "/assistant", icon: MessageCircle },
-  { label: "Me", href: "/me", icon: User },
+  { label: "Home", labelKey: "bottomNav.home", href: "/", icon: Home },
+  { label: "Voice", labelKey: "bottomNav.voice", href: "/voice", icon: Mic },
+  { label: "Scan", labelKey: "bottomNav.scan", href: "/skin-check/analyzer", icon: Camera, primary: true },
+  { label: "Ask", labelKey: "bottomNav.ask", href: "/assistant", icon: MessageCircle },
+  { label: "Me", labelKey: "bottomNav.me", href: "/me", icon: User },
 ];
 
 /** Desktop header links. Mirrors SITE.nav, which drives the drawer too. */

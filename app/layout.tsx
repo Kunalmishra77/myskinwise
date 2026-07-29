@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Manrope } from "next/font/google";
+import { Cormorant_Garamond, Manrope, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import { SITE } from "@/config/site";
 import { organizationSchema } from "@/config/seo";
 import { JsonLd } from "@/components/features/json-ld";
+import { LanguageProvider } from "@/lib/i18n/provider";
+import { getLocale } from "@/lib/i18n/server";
 
 /*
  * Two families, not four. Fraunces and Inter were loaded here alongside
@@ -31,25 +33,40 @@ const body = Manrope({
   display: "swap",
 });
 
+/*
+ * Devanagari for Hindi. Manrope and Cormorant are Latin-only, so without this
+ * every Hindi glyph would fall back to whatever the OS provides, which is
+ * inconsistent across devices. The font stack in globals.css lists this after
+ * the Latin families, so browsers pick it per-glyph — Latin text stays
+ * Manrope, Hindi text renders in Noto — with no locale conditional needed.
+ */
+const devanagari = Noto_Sans_Devanagari({
+  subsets: ["devanagari"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-devanagari",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: { default: "Skinwise", template: "%s | Skinwise" },
   description: "Skinwise — dermatologist-formulated, tailor-made skincare for pigmentation, acne, and other skin concerns.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
   return (
     <html
-      lang="en"
-      className={`${display.variable} ${body.variable} h-full antialiased`}
+      lang={locale}
+      className={`${display.variable} ${body.variable} ${devanagari.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <JsonLd data={organizationSchema} />
-        {children}
+        <LanguageProvider locale={locale}>{children}</LanguageProvider>
       </body>
     </html>
   );

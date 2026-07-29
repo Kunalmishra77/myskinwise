@@ -9,6 +9,7 @@ import { IMAGES } from "@/content/assets";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/layout/drawer";
 import { CartButton } from "@/components/cart/cart-button";
+import { LanguageToggle } from "@/components/layout/language-toggle";
 
 /**
  * Sticky app header.
@@ -88,6 +89,7 @@ export function TopBar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <LanguageToggle className="hidden sm:inline-flex" />
           <Link
             href="/assistant"
             aria-label="Ask the Skinwise assistant"

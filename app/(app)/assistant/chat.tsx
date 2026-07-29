@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Send, Sparkles, Mic } from "lucide-react";
 import { SITE, waHref } from "@/config/site";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/lib/i18n/provider";
 
 type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
 type Msg = { role: "user" | "assistant"; content: string; cta?: CtaKind | null };
@@ -72,6 +73,7 @@ export function AssistantChat() {
   const [error, setError] = React.useState<string | null>(null);
   const [concern, setConcern] = React.useState<ConcernSlug | null>(null);
   const endRef = React.useRef<HTMLDivElement>(null);
+  const locale = useLocale();
 
   React.useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -96,6 +98,7 @@ export function AssistantChat() {
         body: JSON.stringify({
           messages: next.map((m) => ({ role: m.role, content: m.content })),
           ...(activeConcern ? { concern: activeConcern } : {}),
+          lang: locale,
         }),
       });
       if (res.status === 429) {

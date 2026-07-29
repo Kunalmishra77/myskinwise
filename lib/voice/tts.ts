@@ -11,7 +11,8 @@ export type SpeechResult =
  */
 export interface TextToSpeechProvider {
   isConfigured(): boolean;
-  speak(text: string): Promise<SpeechResult>;
+  /** @param lang optional language hint ("hi" nudges Hindi pronunciation). */
+  speak(text: string, lang?: "en" | "hi"): Promise<SpeechResult>;
 }
 
 class UnconfiguredTts implements TextToSpeechProvider {
@@ -34,6 +35,8 @@ class OpenAiTts implements TextToSpeechProvider {
   }
 
   async speak(text: string): Promise<SpeechResult> {
+    // OpenAI TTS is English-centric; the lang hint is accepted by the
+    // interface but only ElevenLabs acts on it.
     // Hard cap the spoken length: voice replies must be short, and this also
     // caps cost per turn regardless of what the model returned.
     const input = text.slice(0, 700);
@@ -79,7 +82,7 @@ class ElevenLabsTts implements TextToSpeechProvider {
     return true;
   }
 
-  async speak(text: string): Promise<SpeechResult> {
+  async speak(text: string, lang?: "en" | "hi"): Promise<SpeechResult> {
     // Same hard cap as OpenAI: voice replies stay short, which also bounds
     // ElevenLabs cost per turn regardless of what the model returned.
     const input = text.slice(0, 700);
@@ -94,6 +97,9 @@ class ElevenLabsTts implements TextToSpeechProvider {
           body: JSON.stringify({
             text: input,
             model_id: this.model,
+            // language_code nudges pronunciation for the multilingual model,
+            // so Hindi is read as Hindi rather than transliterated English.
+            ...(lang ? { language_code: lang } : {}),
             // Slightly higher stability + similarity than the defaults: a
             // skincare assistant should sound calm and consistent, not
             // theatrical.

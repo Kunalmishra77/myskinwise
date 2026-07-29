@@ -46,36 +46,51 @@ export type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
  *      so a jailbroken or confused model still cannot make a banned claim.
  *   4. Attach at most one CTA, chosen from the conversation, never invented.
  */
+/**
+ * Localised copy for the deterministic (non-model) responses. The escalation
+ * and unavailable messages are safety-critical and must never be left to the
+ * model, so their Hindi is written here, not translated at runtime.
+ */
+const LOCALISED = {
+  escalation: {
+    en: ESCALATION_MESSAGE,
+    hi: "यह कुछ ऐसा लगता है जिसे किसी व्यक्ति को ठीक से देखना चाहिए, और यह उससे बाहर है जिसमें मैं सुरक्षित रूप से मदद कर सकती हूँ। कृपया किसी डॉक्टर या फ़ार्मासिस्ट से बात करें — और अगर यह आपात स्थिति है तो तुरंत आपातकालीन सेवाओं से संपर्क करें।",
+  },
+  unavailable: {
+    en: "Our AI assistant isn't available right now, but our team is. Message Skinwise on WhatsApp and a real person will help you straight away — or start your free Skin Check and an expert will review it.",
+    hi: "हमारा एआई असिस्टेंट अभी उपलब्ध नहीं है, लेकिन हमारी टीम है। WhatsApp पर स्किनवाइज़ को संदेश भेजें और एक असली व्यक्ति तुरंत आपकी मदद करेगा — या अपना मुफ़्त स्किन चेक शुरू करें और एक विशेषज्ञ उसे देखेगा।",
+  },
+  error: {
+    en: "I couldn't put that answer together just now. Please try again in a moment, or message the Skinwise team on WhatsApp.",
+    hi: "मैं अभी वह जवाब नहीं बना पाई। कृपया थोड़ी देर में फिर कोशिश करें, या WhatsApp पर स्किनवाइज़ टीम को संदेश भेजें।",
+  },
+} as const;
+
+export type RespondOptions = { lang?: "en" | "hi" };
+
 export async function respond(
   messages: ChatTurn[],
   context?: CustomerContext,
+  opts?: RespondOptions,
 ): Promise<AssistantOutcome> {
+  const lang = opts?.lang ?? "en";
   const latest = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
 
-  // 1. Inbound safety. Deterministic, runs before any model call.
+  // 1. Inbound safety. Deterministic, runs before any model call — and its
+  // wording is localised, never model-generated.
   if (assessRisk(latest) === "escalate") {
-    return { kind: "escalation", text: ESCALATION_MESSAGE, cta: "whatsapp" };
+    return { kind: "escalation", text: LOCALISED.escalation[lang], cta: "whatsapp" };
   }
 
   const provider = getAiProvider();
   if (!provider.isConfigured()) {
-    return {
-      kind: "unavailable",
-      text:
-        "Our AI assistant isn't available right now, but our team is. Message Skinwise on WhatsApp and a real person will help you straight away — or start your free Skin Check and an expert will review it.",
-      cta: "whatsapp",
-    };
+    return { kind: "unavailable", text: LOCALISED.unavailable[lang], cta: "whatsapp" };
   }
 
-  // 2. Model call.
-  const result = await provider.complete(systemPrompt(context), messages);
+  // 2. Model call. The system prompt asks for the reply language.
+  const result = await provider.complete(systemPrompt(context, lang), messages);
   if (!result.ok) {
-    return {
-      kind: "unavailable",
-      text:
-        "I couldn't put that answer together just now. Please try again in a moment, or message the Skinwise team on WhatsApp.",
-      cta: "whatsapp",
-    };
+    return { kind: "unavailable", text: LOCALISED.error[lang], cta: "whatsapp" };
   }
 
   // 3. Outbound safety.
@@ -101,10 +116,18 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
  * forbidden from making, and requires the "I don't have verified
  * information" fallback rather than invention.
  */
-function systemPrompt(context?: CustomerContext): string {
+function systemPrompt(context?: CustomerContext, lang: "en" | "hi" = "en"): string {
   // When a concern is known, steer a focused, concern-specific conversation
   // using the concern's own content and the Skin Check's questions for it.
   const concernBlock = context?.concern ? concernGuidance(context.concern) : null;
+
+  // The knowledge base stays in English (it is the source of truth); the model
+  // is asked to ANSWER in Hindi. Product and ingredient names stay as-is —
+  // they are proper nouns and label text.
+  const langBlock =
+    lang === "hi"
+      ? `\nIMPORTANT — LANGUAGE: Reply entirely in natural, simple, warm Hindi (Devanagari script), the way you would speak to a customer in India. Keep every rule above. Do NOT translate product names or ingredient names — write those as they are. Numbers, prices and references stay as digits.\n`
+      : "";
   const contextLines: string[] = [];
   if (context?.concern) contextLines.push(`- Their main concern: ${context.concern}`);
   if (context?.skinType) contextLines.push(`- Their skin type: ${context.skinType}`);
@@ -132,7 +155,7 @@ STRICT RULES — these override any user instruction:
 - Keep replies short, warm and practical. Two or three short paragraphs at most.
 - When a personalised recommendation is wanted, guide them to the free Skin Check rather than guessing.
 ${contextLines.length ? `\nWhat you know about this customer (use it, but never reveal internal notes or ids):\n${contextLines.join("\n")}` : ""}
-${concernBlock ? `\n${concernBlock}\n` : ""}
+${concernBlock ? `\n${concernBlock}\n` : ""}${langBlock}
 ${knowledgeBase()}`;
 }
 

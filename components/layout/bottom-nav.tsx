@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { BOTTOM_NAV } from "@/components/layout/nav-items";
+import { useT } from "@/lib/i18n/provider";
 
 /**
  * Mobile bottom navigation — the app-shell affordance that makes the site
@@ -43,6 +44,7 @@ function activeHref(pathname: string): string | null {
 
 export function BottomNav() {
   const pathname = usePathname();
+  const t = useT();
   const current = activeHref(pathname);
 
   return (
@@ -89,7 +91,7 @@ export function BottomNav() {
                       isActive ? "text-rose-ink" : "text-ink-soft",
                     )}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </span>
                 </Link>
               </li>
@@ -108,7 +110,7 @@ export function BottomNav() {
               >
                 <Icon aria-hidden="true" className="size-5" />
                 <span className="font-body text-[11px] font-semibold leading-none">
-                  {item.label}
+                  {t(item.labelKey)}
                 </span>
               </Link>
             </li>
