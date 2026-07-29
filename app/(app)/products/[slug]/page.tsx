@@ -11,6 +11,7 @@ import {
 import { Breadcrumb } from "@/components/features/breadcrumb";
 import { ProductCard } from "@/components/features/product-card";
 import { ProductGallery } from "@/components/features/product-gallery";
+import { AddToCartButton } from "@/components/cart/add-to-cart";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 export function generateStaticParams() {
@@ -127,17 +128,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </section>
 
           <div className="mt-8 flex flex-wrap gap-3">
+            <AddToCartButton slug={product.slug} />
             <Link
               href="/skin-check"
-              className="rounded-full bg-rose-ink px-6 py-3 font-semibold text-white transition hover:bg-rose-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
-            >
-              Start your Skin Check
-            </Link>
-            <Link
-              href="/consultation"
               className="rounded-full border border-ink/15 px-6 py-3 font-semibold text-ink transition hover:bg-blush focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
             >
-              Talk to an expert
+              Start your Skin Check
             </Link>
           </div>
 

@@ -53,11 +53,11 @@ const securityHeaders = [
  * elements — which is precisely why the native Skin Check exists. They point
  * at it.
  *
- * The WooCommerce group (cart, checkout, the advance-payment product, and the
- * appointment payment page) has no equivalent by design: online payment was
- * removed from scope in favour of a WhatsApp handoff. Sending that traffic to
- * a checkout that does not exist would be worse than sending it to the
- * consultation request, which is the step those pages were trying to reach.
+ * The old WooCommerce shopping URLs (cart, checkout, the product listings)
+ * now point at /products: there is a real cart again — a WhatsApp-order cart,
+ * with no online payment — so the catalogue is the apt home for that traffic.
+ * The advance-payment product and the appointment payment page have no
+ * equivalent and go to the consultation request instead.
  */
 const LEGACY_REDIRECTS: { source: string; destination: string }[] = [
   // The WordPress lead funnel → the native assessment.
@@ -75,10 +75,10 @@ const LEGACY_REDIRECTS: { source: string; destination: string }[] = [
   { source: "/product-category/pigmentation", destination: "/products" },
   { source: "/product/:slug", destination: "/products" },
 
-  // WooCommerce checkout flow → consultation request (payments are out of
-  // scope; the handoff is WhatsApp).
-  { source: "/cart", destination: "/consultation" },
-  { source: "/checkout", destination: "/consultation" },
+  // Old WooCommerce shopping URLs → the catalogue (real WhatsApp-order cart).
+  { source: "/cart", destination: "/products" },
+  { source: "/checkout", destination: "/products" },
+  // The advance-payment appointment page → the consultation request.
   { source: "/book-appointment-payment-page", destination: "/consultation" },
 
   // A dated duplicate of the Other Issues page.

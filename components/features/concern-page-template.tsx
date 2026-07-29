@@ -5,6 +5,7 @@ import { Breadcrumb } from "@/components/features/breadcrumb";
 import { Hero } from "@/components/features/hero";
 import { Accordion } from "@/components/ui/accordion";
 import { IngredientScience } from "@/components/features/ingredient-science";
+import { RecommendedCombo } from "@/components/products/recommended-combo";
 import { ProcessSteps } from "@/components/features/process-steps";
 import { BeforeAfterCarousel } from "@/components/features/before-after-carousel";
 import { FAQSection } from "@/components/features/faq-section";
@@ -94,6 +95,12 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
           groups={content.ingredientsByType}
           heading="Research-Driven Ingredients"
         />
+      </Section>
+
+      <Section>
+        <div className="mx-auto max-w-2xl">
+          <RecommendedCombo concern={content.slug} />
+        </div>
       </Section>
 
       <Section className="bg-surface">

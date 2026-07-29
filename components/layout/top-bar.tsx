@@ -8,6 +8,7 @@ import { SITE, waHref } from "@/config/site";
 import { IMAGES } from "@/content/assets";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/layout/drawer";
+import { CartButton } from "@/components/cart/cart-button";
 
 /**
  * Sticky app header.
@@ -103,6 +104,7 @@ export function TopBar() {
           >
             <MessageCircle aria-hidden="true" className="size-5" />
           </a>
+          <CartButton />
           <Button size="sm" asChild className="hidden lg:inline-flex">
             <Link href="/skin-check">Start Skin Check</Link>
           </Button>

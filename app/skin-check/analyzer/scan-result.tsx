@@ -6,6 +6,7 @@ import { Mic, ShieldCheck } from "lucide-react";
 import { FEATURE_LABELS, CERTAINTY_LABELS, type Observation } from "@/lib/ai/vision-schema";
 import { Button } from "@/components/ui/button";
 import { FaceMarkers, type ShownFeature } from "@/components/analyzer/face-markers";
+import { RecommendedCombo } from "@/components/products/recommended-combo";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 /**
@@ -59,6 +60,20 @@ const QUALITY_NOTE: Record<Observation["image_quality"], string> = {
   poor: "Low photo quality — these findings are less reliable",
   unusable: "This photo was hard to read",
 };
+
+/**
+ * Infers a concern from the VISIBLE features only, to pick a sensible starter
+ * routine. Non-diagnostic: it never names a condition, it just chooses which
+ * of the three concern routines to suggest, and the expert confirms.
+ */
+function suggestedConcern(observation: Observation): string {
+  const feats = new Set(
+    observation.features.filter((f) => f.certainty !== "unclear").map((f) => f.feature),
+  );
+  if (feats.has("visible_dark_spots") || feats.has("visible_uneven_tone")) return "pigmentation";
+  if (feats.has("visible_blemishes") || feats.has("visible_redness")) return "acne";
+  return "other-issues";
+}
 
 export function ScanResult({
   observation,
@@ -183,6 +198,17 @@ export function ScanResult({
       )}
 
       <p className="mt-5 text-xs text-ink-soft">{observation.limitations}</p>
+
+      {/*
+        A starter combo based on what was visible. Framed as "you might
+        explore", not a diagnosis — the concern is inferred from the visible
+        features only to pick a sensible routine, and the expert confirms it.
+      */}
+      {shown.length > 0 && (
+        <div className="mt-8">
+          <RecommendedCombo concern={suggestedConcern(observation)} />
+        </div>
+      )}
 
       {/*
         Four routes onward rather than one. This screen used to end with a
