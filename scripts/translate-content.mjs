@@ -27,6 +27,16 @@ const MAP_PATH = path.join(ROOT, "content", "i18n", "hi.json");
  */
 const SOURCES = [
   { file: "content/assessment/questions.ts", keys: ["prompt", "why", "label", "hint"] },
+  // Concern pages — all prose is in `key: "value"` object form (no bulleted
+  // string arrays), so the regex captures it cleanly.
+  { file: "content/concerns/pigmentation.ts", keys: ["heading", "subheading", "title", "body", "name", "question", "answer", "label"] },
+  { file: "content/concerns/acne.ts", keys: ["heading", "subheading", "title", "body", "name", "question", "answer", "label"] },
+  { file: "content/concerns/other-issues.ts", keys: ["heading", "subheading", "title", "body", "name", "question", "answer", "label"] },
+  // FAQs.
+  { file: "content/faqs.ts", keys: ["question", "answer"] },
+  // Products — DESCRIPTION prose only. Names and ingredient (INCI) lists are
+  // deliberately excluded: they are brand/regulated label text.
+  { file: "content/products/index.ts", keys: ["tagline", "description", "directions"] },
 ];
 
 function env(name) {

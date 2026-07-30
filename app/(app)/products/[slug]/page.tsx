@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/features/product-card";
 import { ProductGallery } from "@/components/features/product-gallery";
 import { AddToCartButton } from "@/components/cart/add-to-cart";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { T } from "@/components/i18n/t";
 
 export function generateStaticParams() {
   return PRODUCTS.map((p) => ({ slug: p.slug }));
@@ -61,10 +62,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <ProductGallery product={product} />
 
         <div>
-          <Eyebrow>{product.tagline}</Eyebrow>
+          <Eyebrow><T>{product.tagline}</T></Eyebrow>
           <h1 className="mt-3 font-display text-display font-semibold text-ink">{product.name}</h1>
 
-          <p className="mt-5 text-ink-soft">{product.description}</p>
+          <p className="mt-5 text-ink-soft"><T>{product.description}</T></p>
 
           <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 border-y border-ink/10 py-4 text-sm">
             <div>
@@ -95,7 +96,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {product.directions ? (
             <section className="mt-6">
               <h2 className="font-display text-lg font-semibold text-ink">How to use it</h2>
-              <p className="mt-2 text-ink-soft">{product.directions}</p>
+              <p className="mt-2 text-ink-soft"><T>{product.directions}</T></p>
             </section>
           ) : null}
 

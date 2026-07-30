@@ -6,6 +6,7 @@ import { Section } from "@/components/ui/section";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { cn } from "@/lib/utils";
 import type { ImageAsset } from "@/content/assets";
+import { T } from "@/components/i18n/t";
 
 export interface HeroCta {
   label: string;
@@ -62,10 +63,10 @@ export function Hero({ image, heading, subheading, ctas, eyebrow, trustNote, tru
 
       <div className={cn("relative flex flex-col gap-6", image ? "order-2 lg:order-1" : "items-center")}>
         {eyebrow && <Eyebrow className={!image ? "justify-center" : undefined}>{eyebrow}</Eyebrow>}
-        <h1 className="text-balance text-display font-semibold text-ink">{heading}</h1>
+        <h1 className="text-balance text-display font-semibold text-ink"><T>{heading}</T></h1>
         {subheading && (
           <p className={cn("text-lg text-ink/70 md:text-xl", !image && "max-w-xl text-balance")}>
-            {subheading}
+            {subheading ? <T>{subheading}</T> : null}
           </p>
         )}
         <div className={cn("flex flex-wrap gap-3", !image && "justify-center")}>

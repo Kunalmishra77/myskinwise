@@ -11,6 +11,7 @@ import { BeforeAfterCarousel } from "@/components/features/before-after-carousel
 import { FAQSection } from "@/components/features/faq-section";
 import { Section } from "@/components/ui/section";
 import { Card, CardBody } from "@/components/ui/card";
+import { T } from "@/components/i18n/t";
 
 export interface ConcernPageTemplateProps {
   content: ConcernContent;
@@ -48,8 +49,8 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
       />
 
       <Section className="bg-surface">
-        <h2 className="text-2xl font-semibold text-ink md:text-3xl">{content.whatIs.title}</h2>
-        <p className="mt-4 text-lg text-ink-soft">{content.whatIs.body}</p>
+        <h2 className="text-2xl font-semibold text-ink md:text-3xl"><T>{content.whatIs.title}</T></h2>
+        <p className="mt-4 text-lg text-ink-soft"><T>{content.whatIs.body}</T></p>
       </Section>
 
       {/*
@@ -62,7 +63,7 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
       {content.causes.length > 0 && (
         <Section>
           <h2 className="mb-6 text-2xl font-semibold text-ink md:text-3xl">
-            Reasons of {content.label}
+            <T>{`Reasons of ${content.label}`}</T>
           </h2>
           <Accordion
             items={content.causes.map((cause, index) => ({
@@ -76,14 +77,14 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
 
       <Section className="bg-surface">
         <h2 className="mb-8 text-center text-2xl font-semibold text-ink md:text-3xl">
-          Which one looks like yours
+          <T>Which one looks like yours</T>
         </h2>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {content.types.map((type) => (
             <Card key={type.name}>
               <CardBody>
-                <h3 className="text-lg font-semibold text-ink">{type.name}</h3>
-                <p className="mt-2 text-sm text-ink-soft">{type.body}</p>
+                <h3 className="text-lg font-semibold text-ink"><T>{type.name}</T></h3>
+                <p className="mt-2 text-sm text-ink-soft"><T>{type.body}</T></p>
               </CardBody>
             </Card>
           ))}
@@ -105,13 +106,13 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
 
       <Section className="bg-surface">
         <h2 className="mb-8 text-2xl font-semibold text-ink md:text-3xl">
-          The Science Behind Treating {content.label}
+          <T>{`The Science Behind Treating ${content.label}`}</T>
         </h2>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {content.scienceSteps.map((step) => (
             <div key={step.title}>
-              <h3 className="text-lg font-semibold text-ink">{step.title}</h3>
-              <p className="mt-2 text-sm text-ink-soft">{step.body}</p>
+              <h3 className="text-lg font-semibold text-ink"><T>{step.title}</T></h3>
+              <p className="mt-2 text-sm text-ink-soft"><T>{step.body}</T></p>
             </div>
           ))}
         </div>

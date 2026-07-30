@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { DEFAULT_LOCALE, LANG_COOKIE, isLocale, type Locale } from "@/lib/i18n/config";
 import { translate, type MessageKey } from "@/lib/i18n/dictionary";
+import { translateContent } from "@/lib/i18n/content";
 
 /** The active locale for this request, from the cookie. Server components only. */
 export async function getLocale(): Promise<Locale> {
@@ -12,4 +13,10 @@ export async function getLocale(): Promise<Locale> {
 export async function getT(): Promise<(key: MessageKey) => string> {
   const locale = await getLocale();
   return (key: MessageKey) => translate(locale, key);
+}
+
+/** A bound CONTENT translator for a server component: `const tc = await getTContent(); tc(product.description)`. */
+export async function getTContent(): Promise<(text: string) => string> {
+  const locale = await getLocale();
+  return (text: string) => translateContent(locale, text);
 }

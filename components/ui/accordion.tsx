@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTContent } from "@/lib/i18n/use-content";
 import { motion } from "framer-motion";
 import { ChevronDown, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ export function Accordion({
   className,
   ...props
 }: AccordionProps) {
+  const tc = useTContent();
   // Salts every derived DOM id so multiple <Accordion> instances on one
   // page never collide, even when their items share caller-supplied ids.
   const uid = React.useId();
@@ -66,6 +68,7 @@ export function Accordion({
   return (
     <div className={cn("divide-y divide-ink/10", className)} {...props}>
       {items.map((item) => {
+        // translate() falls back to English when no Hindi exists / no provider
         const isOpen = openIds.has(item.id);
         const headerId = `acc-${uid}-${item.id}-header`;
         const panelId = `acc-${uid}-${item.id}-panel`;
@@ -81,7 +84,7 @@ export function Accordion({
                 onClick={() => toggle(item.id)}
                 className="flex w-full items-center justify-between gap-4 py-4 text-left font-display text-lg font-medium text-ink transition-colors hover:text-rose-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
               >
-                <span>{item.question}</span>
+                <span>{tc(item.question)}</span>
                 <span
                   aria-hidden="true"
                   className={cn(
@@ -117,7 +120,7 @@ export function Accordion({
               transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.25, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="pb-5 pt-1 font-body text-ink-soft">{item.answer}</div>
+              <div className="pb-5 pt-1 font-body text-ink-soft">{typeof item.answer === "string" ? tc(item.answer) : item.answer}</div>
             </motion.div>
           </div>
         );

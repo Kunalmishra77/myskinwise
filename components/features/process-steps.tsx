@@ -1,4 +1,5 @@
 import { Section } from "@/components/ui/section";
+import { T } from "@/components/i18n/t";
 
 export interface ProcessStep {
   title: string;
@@ -21,7 +22,7 @@ export function ProcessSteps({ steps, heading }: ProcessStepsProps) {
   return (
     <Section>
       {heading && (
-        <h2 className="mb-14 text-center text-h2 font-semibold text-ink">{heading}</h2>
+        <h2 className="mb-14 text-center text-h2 font-semibold text-ink"><T>{heading}</T></h2>
       )}
       <div className="relative">
         {/* Horizontal connecting line, desktop only — sits behind the
@@ -51,8 +52,8 @@ export function ProcessSteps({ steps, heading }: ProcessStepsProps) {
                 )}
               </div>
               <div className="flex flex-col gap-2 pb-2 sm:items-center">
-                <h3 className="text-lg font-semibold text-ink">{step.title}</h3>
-                <p className="text-sm text-ink/70">{step.body}</p>
+                <h3 className="text-lg font-semibold text-ink"><T>{step.title}</T></h3>
+                <p className="text-sm text-ink/70"><T>{step.body}</T></p>
               </div>
             </li>
           ))}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { primaryProductImage } from "@/content/products";
 import type { Product } from "@/content/products/types";
+import { T } from "@/components/i18n/t";
 
 const STEP_LABEL: Record<Product["step"], string> = {
   cleanse: "Cleanse",
@@ -48,7 +49,7 @@ export function ProductCard({ product, because }: ProductCardProps) {
           {STEP_LABEL[product.step]}
         </span>
         <h3 className="font-display text-lg font-semibold text-ink">{product.name}</h3>
-        <p className="text-sm text-ink-soft">{product.tagline}</p>
+        <p className="text-sm text-ink-soft"><T>{product.tagline}</T></p>
         {because ? <p className="text-sm text-ink-soft">{because}</p> : null}
         <span className="mt-auto inline-flex w-fit items-center gap-1.5 pt-3 text-sm font-medium text-rose-ink">
           View product
