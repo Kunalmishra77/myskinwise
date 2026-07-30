@@ -6,7 +6,13 @@ import { useLocale } from "@/lib/i18n/provider";
 
 export type VoiceState = "idle" | "listening" | "transcribing" | "thinking" | "speaking" | "error";
 export type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
-export type VoiceTurn = { role: "user" | "assistant"; content: string; cta?: CtaKind | null };
+export type VoiceTurn = {
+  role: "user" | "assistant";
+  content: string;
+  cta?: CtaKind | null;
+  /** When set, the UI shows a catalogue-derived combo for this concern. */
+  recommendConcern?: string;
+};
 
 /**
  * The whole voice-to-voice loop in one hook, shared by the overlay and the
@@ -114,7 +120,10 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
         if (!optimisticUser && data.transcript) {
           setTurns((prev) => [...prev, { role: "user", content: data.transcript }]);
         }
-        setTurns((prev) => [...prev, { role: "assistant", content: data.text, cta: data.cta }]);
+        setTurns((prev) => [
+          ...prev,
+          { role: "assistant", content: data.text, cta: data.cta, recommendConcern: data.recommendConcern },
+        ]);
 
         // Speak the reply, then re-open the mic so the conversation continues
         // on its own.

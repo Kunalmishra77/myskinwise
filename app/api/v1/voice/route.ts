@@ -139,6 +139,7 @@ export async function POST(request: Request) {
     text: outcome.text,
     cta: "cta" in outcome ? outcome.cta : null,
     kind: outcome.kind,
+    recommendConcern: "recommendConcern" in outcome ? outcome.recommendConcern : undefined,
     audioBase64,
     audioMimeType,
   });

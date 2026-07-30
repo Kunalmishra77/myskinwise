@@ -6,6 +6,7 @@ import { Mic, Square, Keyboard, Loader2, X, Send } from "lucide-react";
 import { SITE, waHref } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useVoiceConversation, type CtaKind, type VoiceState } from "@/lib/voice/use-voice-conversation";
+import { RecommendedCombo } from "@/components/products/recommended-combo";
 
 const CTA_LABEL: Record<CtaKind, string> = {
   skin_check: "Start your Skin Check",
@@ -54,6 +55,10 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
 
   const busy = state === "transcribing" || state === "thinking";
   const active = state === "listening" || state === "speaking";
+  // Show the combo under the newest reply only (see the chat for the same
+  // single-card-follows-latest rationale).
+  const lastTurn = turns[turns.length - 1];
+  const lastRecommend = !busy && lastTurn?.role === "assistant" ? lastTurn.recommendConcern : undefined;
 
   return (
     <div className="flex h-full flex-col">
@@ -116,6 +121,11 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
               </li>
             ))}
           </ul>
+        )}
+        {lastRecommend && (
+          <div className="mt-4">
+            <RecommendedCombo concern={lastRecommend} />
+          </div>
         )}
         {note && (
           <p role="alert" className="mt-4 rounded-2xl bg-champagne/50 p-3 text-sm text-ink">

@@ -1,7 +1,8 @@
 import { getAiProvider, type ChatTurn } from "@/lib/ai/provider";
 export type { ChatTurn };
 import { knowledgeBase } from "@/lib/ai/grounding";
-import { concernGuidance } from "@/lib/ai/concern-context";
+import { concernGuidance, isKnownConcern } from "@/lib/ai/concern-context";
+import { comboForConcern } from "@/content/products/combos";
 import {
   assessRisk,
   scrubClaims,
@@ -28,7 +29,7 @@ export type CustomerContext = {
 };
 
 export type AssistantOutcome =
-  | { kind: "answer"; text: string; cta: CtaKind | null }
+  | { kind: "answer"; text: string; cta: CtaKind | null; recommendConcern?: string }
   | { kind: "escalation"; text: string; cta: "whatsapp" }
   | { kind: "unavailable"; text: string; cta: "whatsapp" };
 
@@ -97,7 +98,60 @@ export async function respond(
   const safe = scrubClaims(result.text);
 
   // 4. CTA selection from the conversation, never fabricated.
-  return { kind: "answer", text: safe, cta: chooseCta(latest, context) };
+  // 5. A deterministic product recommendation: when the conversation is clearly
+  //    about a concern we sell a routine for, tell the client which concern to
+  //    surface a combo for. The combo itself is derived from the real catalogue
+  //    on the client (RecommendedCombo) — never named or priced by the model —
+  //    so this can only point at genuine products, never invent one.
+  return {
+    kind: "answer",
+    text: safe,
+    cta: chooseCta(latest, context),
+    recommendConcern: recommendationConcern(messages, context),
+  };
+}
+
+/**
+ * Keyword → concern map for inferring what a conversation is about when the
+ * customer never explicitly picked a concern chip. Deliberately conservative:
+ * only the three concerns we build a combo for, appearance-led wording.
+ */
+const CONCERN_KEYWORDS: { slug: string; re: RegExp }[] = [
+  { slug: "acne", re: /\b(acne|pimple|pimples|breakout|breakouts|blemish|blemishes|whitehead|whiteheads|blackhead|blackheads|zit|zits)\b/i },
+  { slug: "pigmentation", re: /\b(pigment|pigmentation|hyperpigment\w*|dark spot|dark spots|uneven tone|uneven skin tone|tan|tanning|melasma)\b/i },
+  { slug: "other-issues", re: /\b(wrinkle|wrinkles|fine line|fine lines|dark circle|dark circles|dull|dullness|open pore|open pores|pores|aging|ageing|anti-aging|anti-ageing)\b/i },
+];
+
+/** Most recent concern the customer's own words point at, if any. */
+function detectConcern(userMessages: ChatTurn[]): string | undefined {
+  for (let i = userMessages.length - 1; i >= 0; i--) {
+    const text = userMessages[i]?.content ?? "";
+    for (const { slug, re } of CONCERN_KEYWORDS) {
+      if (re.test(text)) return slug;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Decide whether — and for which concern — to attach a product recommendation.
+ *
+ * An explicit concern (picked in the UI) wins; otherwise it is inferred from
+ * the customer's words. Gated on at least two customer turns so a combo never
+ * lands on the opening hello, and only for a concern that actually yields a
+ * catalogue-derived combo. Returns undefined = no card.
+ */
+export function recommendationConcern(messages: ChatTurn[], context?: CustomerContext): string | undefined {
+  const userMessages = messages.filter((m) => m.role === "user");
+  if (userMessages.length < 2) return undefined;
+
+  const candidate =
+    context?.concern && isKnownConcern(context.concern)
+      ? context.concern
+      : detectConcern(userMessages);
+
+  if (!candidate || !isKnownConcern(candidate)) return undefined;
+  return comboForConcern(candidate) ? candidate : undefined;
 }
 
 function chooseCta(message: string, context?: CustomerContext): CtaKind | null {

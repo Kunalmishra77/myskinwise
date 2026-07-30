@@ -9,9 +9,16 @@ import { useLocale } from "@/lib/i18n/provider";
 import { ASSISTANT } from "@/content/i18n/assistant-ui";
 import { useTContent } from "@/lib/i18n/use-content";
 import { T } from "@/components/i18n/t";
+import { RecommendedCombo } from "@/components/products/recommended-combo";
 
 type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
-type Msg = { role: "user" | "assistant"; content: string; cta?: CtaKind | null };
+type Msg = {
+  role: "user" | "assistant";
+  content: string;
+  cta?: CtaKind | null;
+  /** When set, the client shows a catalogue-derived combo for this concern. */
+  recommendConcern?: string;
+};
 
 type ConcernSlug = "acne" | "pigmentation" | "other-issues";
 
@@ -111,7 +118,10 @@ export function AssistantChat() {
         return;
       }
       const data = await res.json();
-      setMessages((prev) => [...prev, { role: "assistant", content: data.text, cta: data.cta }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.text, cta: data.cta, recommendConcern: data.recommendConcern },
+      ]);
     } catch {
       setError(ASSISTANT.errorGeneric);
     } finally {
@@ -120,6 +130,12 @@ export function AssistantChat() {
   }
 
   const empty = messages.length === 0;
+  // Surface the combo under the newest reply only. Detection is deterministic
+  // over the whole history, so once a concern is established it stays set on
+  // each later reply — the single card just follows the latest message rather
+  // than stacking a new one under every turn.
+  const last = messages[messages.length - 1];
+  const lastRecommend = !busy && last?.role === "assistant" ? last.recommendConcern : undefined;
 
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-2xl flex-col px-4 lg:min-h-[calc(100dvh-4rem)]">
@@ -234,6 +250,11 @@ export function AssistantChat() {
               </li>
             )}
           </ul>
+        )}
+        {lastRecommend && (
+          <div className="mt-5">
+            <RecommendedCombo concern={lastRecommend} />
+          </div>
         )}
         {error && (
           <p role="alert" className="mt-4 rounded-2xl bg-champagne/50 p-3 text-sm text-ink">
