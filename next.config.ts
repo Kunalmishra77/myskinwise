@@ -75,9 +75,9 @@ const LEGACY_REDIRECTS: { source: string; destination: string }[] = [
   { source: "/product-category/pigmentation", destination: "/products" },
   { source: "/product/:slug", destination: "/products" },
 
-  // Old WooCommerce shopping URLs → the catalogue (real WhatsApp-order cart).
-  { source: "/cart", destination: "/products" },
-  { source: "/checkout", destination: "/products" },
+  // NOTE: /cart and /checkout are now REAL in-app pages (quantities, totals,
+  // review → WhatsApp order), so they are intentionally NOT redirected. The old
+  // WooCommerce product URLs above still funnel to the catalogue.
   // The advance-payment appointment page → the consultation request.
   { source: "/book-appointment-payment-page", destination: "/consultation" },
 

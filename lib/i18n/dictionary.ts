@@ -55,6 +55,8 @@ export const DICTIONARY = {
     en: "Skinwise formulations are compounded per customer, so our team confirms the final price and arranges payment over WhatsApp.",
     hi: "स्किनवाइज़ फ़ॉर्मूलेशन हर ग्राहक के लिए अलग से बनाए जाते हैं, इसलिए हमारी टीम अंतिम कीमत तय करके WhatsApp पर भुगतान की व्यवस्था करती है।",
   },
+  "cart.subtotal": { en: "Subtotal", hi: "उप-योग" },
+  "cart.checkout": { en: "Go to checkout", hi: "चेकआउट पर जाएँ" },
 
   "voice.title": { en: "Talk to Skinwise", hi: "स्किनवाइज़ से बात करें" },
   "voice.tapToSpeak": { en: "Tap to speak", hi: "बोलने के लिए टैप करें" },

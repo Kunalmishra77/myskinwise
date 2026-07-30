@@ -4,10 +4,9 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag, X, Trash2, MessageCircle } from "lucide-react";
-import { SITE, waHref } from "@/config/site";
+import { ShoppingBag, X, Trash2, ArrowRight } from "lucide-react";
 import { primaryProductImage } from "@/content/products";
-import { useCart, buildOrderMessage } from "@/lib/cart/use-cart";
+import { useCart, formatPrice } from "@/lib/cart/use-cart";
 import { useT } from "@/lib/i18n/provider";
 
 /**
@@ -18,12 +17,11 @@ import { useT } from "@/lib/i18n/provider";
  * external store — the badge updates the instant any "add to cart" anywhere on
  * the site fires, with no provider around the tree.
  *
- * Ordering is a WhatsApp handoff, not a checkout: the button opens WhatsApp
- * pre-filled with the cart. No payment, no invented prices — unpriced items
- * say "price to confirm".
+ * The drawer is a quick glance; the full journey (quantities, totals, contact,
+ * WhatsApp order) lives on /cart → /checkout, which its primary button opens.
  */
 export function CartButton() {
-  const { products, count, remove, clear } = useCart();
+  const { items, count, subtotal, remove, clear } = useCart();
   const t = useT();
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
@@ -42,10 +40,6 @@ export function CartButton() {
       window.removeEventListener("keydown", onKey);
     };
   }, [open]);
-
-  const orderHref = products.length
-    ? `${waHref(SITE.whatsapp.e164)}?text=${encodeURIComponent(buildOrderMessage(products))}`
-    : waHref(SITE.whatsapp.e164);
 
   const drawer =
     mounted && open
@@ -70,7 +64,7 @@ export function CartButton() {
               </div>
 
               <div className="flex-1 overflow-y-auto px-5 py-4">
-                {products.length === 0 ? (
+                {items.length === 0 ? (
                   <div className="pt-10 text-center">
                     <p className="text-ink-soft">{t("cart.empty")}</p>
                     <Link
@@ -83,7 +77,7 @@ export function CartButton() {
                   </div>
                 ) : (
                   <ul className="flex flex-col gap-3">
-                    {products.map((p) => {
+                    {items.map(({ product: p, qty }) => {
                       const img = primaryProductImage(p);
                       return (
                         <li key={p.slug} className="flex items-center gap-3 rounded-2xl bg-surface p-3 shadow-soft">
@@ -99,7 +93,7 @@ export function CartButton() {
                               {p.name}
                             </Link>
                             <p className="text-sm text-ink-soft">
-                              {p.mrp !== null ? `₹${p.mrp.toLocaleString("en-IN")}` : t("cart.priceOnWhatsapp")}
+                              {qty} × {p.mrp !== null ? formatPrice(p.mrp) : t("cart.priceOnWhatsapp")}
                             </p>
                           </div>
                           <button
@@ -117,18 +111,23 @@ export function CartButton() {
                 )}
               </div>
 
-              {products.length > 0 && (
+              {items.length > 0 && (
                 <div className="border-t border-ink/10 px-5 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+                  {subtotal > 0 && (
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-ink">{t("cart.subtotal")}</span>
+                      <span className="font-display text-lg font-semibold text-ink">{formatPrice(subtotal)}</span>
+                    </div>
+                  )}
                   <p className="mb-3 text-xs text-ink-soft">{t("cart.note")}</p>
-                  <a
-                    href={orderHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/cart"
+                    onClick={() => setOpen(false)}
                     className="flex w-full items-center justify-center gap-2 rounded-full bg-rose-ink px-6 py-3.5 font-semibold text-white"
                   >
-                    <MessageCircle aria-hidden="true" className="size-5" />
-                    {t("cta.orderWhatsapp")}
-                  </a>
+                    {t("cart.checkout")}
+                    <ArrowRight aria-hidden="true" className="size-5" />
+                  </Link>
                   <button
                     type="button"
                     onClick={clear}

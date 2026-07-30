@@ -44,17 +44,25 @@ describe("WhatsApp order message", () => {
   it("shows a real price where one exists and never invents one", () => {
     const priced = PRODUCTS_BY_SLUG.get("spf-30" as never)!; // ₹899
     const unpriced = PRODUCTS_BY_SLUG.get("d-tan-pack" as never)!; // no printed price
-    const msg = buildOrderMessage([priced, unpriced]);
+    const msg = buildOrderMessage([
+      { product: priced, qty: 2 },
+      { product: unpriced, qty: 1 },
+    ]);
 
     expect(msg).toContain("Customised SPF-30");
     expect(msg).toContain("₹899");
     expect(msg).toContain("price to confirm");
+    // Quantities are shown.
+    expect(msg).toContain("× 2");
+    // The subtotal sums only the priced line (2 × 899 = 1,798), and flags the
+    // unpriced item rather than inventing a figure for it.
+    expect(msg).toContain("₹1,798");
     // The unpriced product must NOT get a rupee figure.
-    expect(msg).not.toMatch(/D-Tan Pack \(₹/);
+    expect(msg).not.toMatch(/D-Tan Pack × \d+ \(₹/);
   });
 
   it("is a plain order request, not a payment or a claim", () => {
-    const msg = buildOrderMessage([PRODUCTS_BY_SLUG.get("spf-30" as never)!]);
+    const msg = buildOrderMessage([{ product: PRODUCTS_BY_SLUG.get("spf-30" as never)!, qty: 1 }]);
     expect(msg).toContain("Skinwise order request");
     expect(msg).not.toMatch(/\bcure\b|\bguaranteed\b|\bpay now\b/i);
   });

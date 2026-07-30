@@ -48,6 +48,7 @@ const SOURCES = [
   { file: "content/i18n/home.ts", keys: "*" },
   { file: "content/i18n/account.ts", keys: "*" },
   { file: "content/i18n/assistant-ui.ts", keys: "*" },
+  { file: "content/i18n/checkout.ts", keys: "*" },
   // Skin-type body content. `name` is a plain descriptor ("Dry skin") so it is
   // translated; the `ingredients` array is INCI/proper names and is excluded.
   {

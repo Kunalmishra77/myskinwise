@@ -5,13 +5,9 @@ import Link from "next/link";
 import { Check, Plus } from "lucide-react";
 import { comboForConcern } from "@/content/products/combos";
 import { primaryProductImage } from "@/content/products";
-import { useCart } from "@/lib/cart/use-cart";
-
-const CONCERN_LABEL: Record<string, string> = {
-  acne: "acne & breakouts",
-  pigmentation: "pigmentation & dark spots",
-  "other-issues": "texture, dullness & fine lines",
-};
+import { useCart, formatPrice } from "@/lib/cart/use-cart";
+import { COMBO } from "@/content/i18n/checkout";
+import { T } from "@/components/i18n/t";
 
 /**
  * A suggested combo for a concern, with add-to-cart for the whole set and for
@@ -28,17 +24,15 @@ export function RecommendedCombo({ concern }: { concern: string }) {
 
   const slugs = combo.products.map((p) => p.slug);
   const allIn = slugs.every((s) => has(s));
-  const label = CONCERN_LABEL[concern] ?? "your skin";
 
   return (
     <section className="rounded-3xl bg-surface p-5 shadow-soft sm:p-6">
-      <p className="text-xs font-semibold uppercase tracking-wide text-rose-ink">Recommended combo</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-rose-ink"><T>{COMBO.eyebrow}</T></p>
       <h2 className="mt-1 font-display text-2xl font-semibold text-ink">
-        A starter routine for {label}
+        <T>{COMBO.title}</T>
       </h2>
       <p className="mt-2 text-sm text-ink-soft">
-        A simple {combo.products.length}-step set our experts often build from for {label}. Each one
-        is customised for you — your expert confirms the final routine after your Skin Check.
+        <T>{COMBO.body}</T>
       </p>
 
       <ul className="mt-5 flex flex-col gap-3">
@@ -58,7 +52,7 @@ export function RecommendedCombo({ concern }: { concern: string }) {
                   {p.name}
                 </Link>
                 <p className="text-xs capitalize text-ink-soft">
-                  {p.step} · {p.mrp !== null ? `₹${p.mrp.toLocaleString("en-IN")}` : "price on confirmation"}
+                  {p.step} · {formatPrice(p.mrp)}
                 </p>
               </div>
               <button
@@ -87,12 +81,12 @@ export function RecommendedCombo({ concern }: { concern: string }) {
         {allIn ? (
           <>
             <Check aria-hidden="true" className="size-5" />
-            Combo in cart
+            <T>{COMBO.inCart}</T>
           </>
         ) : (
           <>
             <Plus aria-hidden="true" className="size-5" />
-            Add the combo to cart
+            <T>{COMBO.addCombo}</T>
           </>
         )}
       </button>

@@ -5,31 +5,57 @@ import { PRODUCTS_BY_SLUG } from "@/content/products";
 import type { Product } from "@/content/products/types";
 
 /**
- * A tiny cart, backed by localStorage and shared across the app without a
+ * A small cart, backed by localStorage and shared across the app without a
  * provider.
  *
  * It is an external store read through useSyncExternalStore, so the header
- * badge, the drawer and every "add to cart" button on every page stay in sync
- * with no context wrapping the tree — and it survives a reload. The cart holds
- * product slugs only; everything else (name, image, price) is resolved from
- * the catalogue at render time, so the cart can never drift from the source of
- * truth or store a stale price.
+ * badge, the drawer, the /cart page and every "add to cart" button stay in
+ * sync with no context wrapping the tree — and it survives a reload. The cart
+ * stores only a slug + quantity per line; everything else (name, image, price)
+ * is resolved from the catalogue at render time, so the cart can never drift
+ * from the source of truth or hold a stale price.
  *
  * There is no online payment by design: an order is a WhatsApp handoff (see
  * buildOrderMessage). Unpriced products carry no invented number — they say
- * the price is confirmed on WhatsApp, exactly as everywhere else.
+ * the price is confirmed on WhatsApp, and totals only ever sum the priced
+ * lines, never a fabricated figure for the rest.
  */
 
 const KEY = "sw_cart";
-let slugs: string[] = [];
+
+export type CartEntry = { slug: string; qty: number };
+export type CartLine = { product: Product; qty: number };
+
+let entries: CartEntry[] = [];
 let hydrated = false;
 const listeners = new Set<() => void>();
 
-function load(): string[] {
+const MAX_QTY = 20; // a sane per-line ceiling for a compounded skincare order
+
+function clampQty(n: unknown): number {
+  const q = Math.floor(Number(n));
+  if (!Number.isFinite(q) || q < 1) return 1;
+  return Math.min(q, MAX_QTY);
+}
+
+function load(): CartEntry[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "[]");
-    return Array.isArray(raw) ? raw.filter((s) => typeof s === "string" && PRODUCTS_BY_SLUG.has(s as never)) : [];
+    if (!Array.isArray(raw)) return [];
+    const out: CartEntry[] = [];
+    const seen = new Set<string>();
+    for (const item of raw) {
+      // Accept both the legacy string[] shape and the {slug, qty} shape, so an
+      // existing cart from before quantities survives the upgrade.
+      const slug = typeof item === "string" ? item : item?.slug;
+      const qty = typeof item === "string" ? 1 : clampQty(item?.qty);
+      if (typeof slug === "string" && !seen.has(slug) && PRODUCTS_BY_SLUG.has(slug as never)) {
+        seen.add(slug);
+        out.push({ slug, qty });
+      }
+    }
+    return out;
   } catch {
     return [];
   }
@@ -37,13 +63,13 @@ function load(): string[] {
 
 function ensureHydrated() {
   if (!hydrated && typeof window !== "undefined") {
-    slugs = load();
+    entries = load();
     hydrated = true;
   }
 }
 
 function persist() {
-  if (typeof window !== "undefined") localStorage.setItem(KEY, JSON.stringify(slugs));
+  if (typeof window !== "undefined") localStorage.setItem(KEY, JSON.stringify(entries));
   listeners.forEach((l) => l());
 }
 
@@ -51,7 +77,7 @@ function persist() {
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (e) => {
     if (e.key === KEY) {
-      slugs = load();
+      entries = load();
       listeners.forEach((l) => l());
     }
   });
@@ -62,39 +88,74 @@ export const cartStore = {
     listeners.add(l);
     return () => listeners.delete(l);
   },
-  snapshot(): string[] {
+  snapshot(): CartEntry[] {
     ensureHydrated();
-    return slugs;
+    return entries;
   },
   has(slug: string) {
     ensureHydrated();
-    return slugs.includes(slug);
+    return entries.some((e) => e.slug === slug);
+  },
+  qty(slug: string) {
+    ensureHydrated();
+    return entries.find((e) => e.slug === slug)?.qty ?? 0;
   },
   add(slug: string) {
     ensureHydrated();
-    if (!PRODUCTS_BY_SLUG.has(slug as never) || slugs.includes(slug)) return;
-    slugs = [...slugs, slug];
+    if (!PRODUCTS_BY_SLUG.has(slug as never) || entries.some((e) => e.slug === slug)) return;
+    entries = [...entries, { slug, qty: 1 }];
     persist();
   },
   addMany(next: string[]) {
     ensureHydrated();
-    const set = new Set(slugs);
-    for (const s of next) if (PRODUCTS_BY_SLUG.has(s as never)) set.add(s);
-    slugs = [...set];
+    const have = new Set(entries.map((e) => e.slug));
+    const added: CartEntry[] = [];
+    for (const s of next) {
+      if (!have.has(s) && PRODUCTS_BY_SLUG.has(s as never)) {
+        have.add(s);
+        added.push({ slug: s, qty: 1 });
+      }
+    }
+    if (added.length) {
+      entries = [...entries, ...added];
+      persist();
+    }
+  },
+  setQty(slug: string, qty: number) {
+    ensureHydrated();
+    if (qty < 1) {
+      cartStore.remove(slug);
+      return;
+    }
+    if (!entries.some((e) => e.slug === slug)) {
+      if (PRODUCTS_BY_SLUG.has(slug as never)) {
+        entries = [...entries, { slug, qty: clampQty(qty) }];
+        persist();
+      }
+      return;
+    }
+    entries = entries.map((e) => (e.slug === slug ? { ...e, qty: clampQty(qty) } : e));
     persist();
+  },
+  increment(slug: string) {
+    cartStore.setQty(slug, cartStore.qty(slug) + 1);
+  },
+  decrement(slug: string) {
+    // Decrementing the last one removes the line.
+    cartStore.setQty(slug, cartStore.qty(slug) - 1);
   },
   remove(slug: string) {
     ensureHydrated();
-    slugs = slugs.filter((s) => s !== slug);
+    entries = entries.filter((e) => e.slug !== slug);
     persist();
   },
   clear() {
-    slugs = [];
+    entries = [];
     persist();
   },
 };
 
-const EMPTY: string[] = [];
+const EMPTY: CartEntry[] = [];
 
 export function useCart() {
   const stored = React.useSyncExternalStore(cartStore.subscribe, cartStore.snapshot, () => EMPTY);
@@ -112,34 +173,80 @@ export function useCart() {
   React.useEffect(() => setMounted(true), []);
   const current = mounted ? stored : EMPTY;
 
-  const products = current
-    .map((s) => PRODUCTS_BY_SLUG.get(s as never))
-    .filter((p): p is Product => Boolean(p));
+  const items: CartLine[] = current
+    .map((e) => {
+      const product = PRODUCTS_BY_SLUG.get(e.slug as never);
+      return product ? { product, qty: e.qty } : null;
+    })
+    .filter((l): l is CartLine => Boolean(l));
+
+  const products = items.map((l) => l.product);
+  const count = items.reduce((n, l) => n + l.qty, 0);
+  const subtotal = items.reduce((sum, l) => sum + (l.product.mrp ?? 0) * l.qty, 0);
+  const hasUnpriced = items.some((l) => l.product.mrp === null);
+
   return {
-    slugs: current,
+    items,
+    slugs: current.map((e) => e.slug),
     products,
-    count: current.length,
-    // `has` reflects the mounted view too, so buttons don't flip state during
-    // hydration.
+    count,
+    subtotal,
+    hasUnpriced,
+    // `has`/`qty` reflect the mounted view too, so buttons don't flip state
+    // during hydration.
     has: (slug: string) => (mounted ? cartStore.has(slug) : false),
+    qty: (slug: string) => (mounted ? cartStore.qty(slug) : 0),
     add: cartStore.add,
     addMany: cartStore.addMany,
+    setQty: cartStore.setQty,
+    increment: cartStore.increment,
+    decrement: cartStore.decrement,
     remove: cartStore.remove,
     clear: cartStore.clear,
   };
 }
 
-/** Formats the cart as a WhatsApp order message. No invented prices. */
-export function buildOrderMessage(products: Product[]): string {
-  const lines = products.map((p) => {
-    const price = p.mrp !== null ? `₹${p.mrp.toLocaleString("en-IN")}` : "price to confirm";
-    return `• ${p.name} (${price})`;
+/** ₹ with Indian grouping, or the "confirm on WhatsApp" line for unpriced. */
+export function formatPrice(mrp: number | null): string {
+  return mrp !== null ? `₹${mrp.toLocaleString("en-IN")}` : "price on confirmation";
+}
+
+export type OrderContact = { name?: string; phone?: string; note?: string };
+
+/**
+ * Formats the cart as a WhatsApp order message. Quantities and per-line prices
+ * are included; the total sums ONLY the priced lines and says so, never
+ * inventing a figure for compounded items whose price is confirmed on the call.
+ *
+ * Optional contact (name / phone / note) is folded in so the team knows who
+ * placed the order — it travels only inside this WhatsApp message, never to our
+ * own server.
+ */
+export function buildOrderMessage(lines: CartLine[], contact?: OrderContact): string {
+  const rows = lines.map(({ product, qty }) => {
+    const price = product.mrp !== null ? `₹${product.mrp.toLocaleString("en-IN")}` : "price to confirm";
+    return `• ${product.name} × ${qty} (${price})`;
   });
+  const pricedTotal = lines.reduce((sum, l) => sum + (l.product.mrp ?? 0) * l.qty, 0);
+  const anyUnpriced = lines.some((l) => l.product.mrp === null);
+  const totalLine =
+    pricedTotal > 0
+      ? `Subtotal (priced items): ₹${pricedTotal.toLocaleString("en-IN")}${anyUnpriced ? " + items confirmed on this chat" : ""}`
+      : "Final price confirmed on this chat";
+
+  const contactLines: string[] = [];
+  if (contact?.name?.trim()) contactLines.push(`Name: ${contact.name.trim()}`);
+  if (contact?.phone?.trim()) contactLines.push(`WhatsApp: ${contact.phone.trim()}`);
+  if (contact?.note?.trim()) contactLines.push(`Note: ${contact.note.trim()}`);
+
   return [
     "*Skinwise order request*",
     "",
     "I'd like to order:",
-    ...lines,
+    ...rows,
+    "",
+    totalLine,
+    ...(contactLines.length ? ["", ...contactLines] : []),
     "",
     "Please confirm availability, the final price for any custom items, and how to pay. Thank you!",
   ].join("\n");

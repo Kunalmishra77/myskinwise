@@ -37,8 +37,7 @@ const EXPECTED_REDIRECTS: Record<string, string> = {
   "/product-category/acne": "/products",
   "/product-category/pigmentation": "/products",
   "/product/:slug": "/products",
-  "/cart": "/products",
-  "/checkout": "/products",
+  // /cart and /checkout are now real in-app pages — no longer redirected.
   "/book-appointment-payment-page": "/consultation",
   "/other-issues-all-skin-care-19-june": "/other-issues",
   "/hello-world": "/",
