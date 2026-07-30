@@ -1,4 +1,5 @@
 import { Tabs, type TabItem } from "@/components/ui/tabs";
+import { T } from "@/components/i18n/t";
 
 export interface IngredientGroup {
   tabLabel: string;
@@ -45,7 +46,7 @@ export function IngredientScience({ groups, heading }: IngredientScienceProps) {
   return (
     <div>
       {heading && (
-        <h2 className="mb-6 text-2xl font-semibold text-ink md:text-3xl">{heading}</h2>
+        <h2 className="mb-6 text-2xl font-semibold text-ink md:text-3xl"><T>{heading}</T></h2>
       )}
       <Tabs tabs={tabs} />
     </div>

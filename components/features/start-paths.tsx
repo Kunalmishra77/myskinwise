@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Camera, ClipboardList, MessageCircle, Mic } from "lucide-react";
+import { T } from "@/components/i18n/t";
+import { START_PATHS } from "@/content/i18n/home";
 
 /**
  * The three ways into the product.
@@ -23,34 +25,12 @@ import { ArrowRight, Camera, ClipboardList, MessageCircle, Mic } from "lucide-re
  * back. The Analyzer's copy in particular avoids anything diagnostic: it
  * offers "visual observations", never a reading, a diagnosis or a score.
  */
+// Non-display fields only. The translatable copy (eyebrow/title/body/action)
+// lives in START_PATHS.paths and is zipped in by index below.
 const PATHS = [
-  {
-    href: "/skin-check",
-    eyebrow: "Answer questions",
-    title: "Check your skin",
-    body: "A few guided questions about your skin, your routine and your history. An expert reviews your answers and builds your routine.",
-    action: "Start your Skin Check",
-    Icon: ClipboardList,
-    primary: true,
-  },
-  {
-    href: "/skin-check/analyzer",
-    eyebrow: "Upload a photo",
-    title: "Scan your skin with AI",
-    body: "Take or upload a clear photo of your face and get AI-powered visual observations in seconds. Reviewed by a Skinwise expert before any routine is made.",
-    action: "Open the Skin Analyzer",
-    Icon: Camera,
-    primary: false,
-  },
-  {
-    href: "/assistant",
-    eyebrow: "Type or talk",
-    title: "Ask Skinwise AI",
-    body: "Ask anything about ingredients, routines or your own regimen. Type your question, or talk to it out loud.",
-    action: "Ask a question",
-    Icon: MessageCircle,
-    primary: false,
-  },
+  { href: "/skin-check", Icon: ClipboardList, primary: true },
+  { href: "/skin-check/analyzer", Icon: Camera, primary: false },
+  { href: "/assistant", Icon: MessageCircle, primary: false },
 ] as const;
 
 export function StartPaths() {
@@ -61,15 +41,16 @@ export function StartPaths() {
           id="start-paths-heading"
           className="max-w-xl font-display text-h2 font-semibold text-ink"
         >
-          Three ways to start.
+          <T>{START_PATHS.heading}</T>
         </h2>
         <p className="mt-3 max-w-xl text-ink-soft">
-          Use whichever suits you — or all three. Every route ends with a qualified expert reading
-          your skin before anything is recommended.
+          <T>{START_PATHS.intro}</T>
         </p>
 
         <ul className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
-          {PATHS.map(({ href, eyebrow, title, body, action, Icon, primary }) => (
+          {PATHS.map(({ href, Icon, primary }, i) => {
+            const { eyebrow, title, body, action } = START_PATHS.paths[i]!;
+            return (
             <li key={href} className={primary ? "md:-mt-3" : undefined}>
               <Link
                 href={href}
@@ -92,11 +73,11 @@ export function StartPaths() {
                     primary ? "text-white" : "text-rose-ink"
                   }`}
                 >
-                  {eyebrow}
+                  <T>{eyebrow}</T>
                 </span>
-                <h3 className="mt-1.5 font-display text-2xl font-semibold">{title}</h3>
+                <h3 className="mt-1.5 font-display text-2xl font-semibold"><T>{title}</T></h3>
                 <p className={`mt-3 flex-1 text-sm ${primary ? "text-white" : "text-ink-soft"}`}>
-                  {body}
+                  <T>{body}</T>
                 </p>
 
                 <span
@@ -104,7 +85,7 @@ export function StartPaths() {
                     primary ? "text-white" : "text-rose-ink"
                   }`}
                 >
-                  {action}
+                  <T>{action}</T>
                   <ArrowRight
                     aria-hidden="true"
                     className="size-4 transition-transform duration-200 ease-out group-hover:translate-x-1"
@@ -112,7 +93,8 @@ export function StartPaths() {
                 </span>
               </Link>
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         {/*
@@ -124,14 +106,14 @@ export function StartPaths() {
         */}
         <p className="mt-6 text-sm text-ink-soft">
           <Mic aria-hidden="true" className="mr-1.5 inline size-4 text-rose-ink" />
-          Prefer to speak?{" "}
+          <T>{START_PATHS.preferToSpeak}</T>{" "}
           <Link
             href="/voice"
             className="inline-flex min-h-11 items-center font-semibold text-rose-ink underline underline-offset-4 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
           >
-            Talk to Skinwise AI out loud
+            <T>{START_PATHS.voiceLink}</T>
           </Link>{" "}
-          — hands-free, in your own words.
+          <T>{START_PATHS.handsFree}</T>
         </p>
       </div>
     </section>

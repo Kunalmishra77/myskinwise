@@ -1,5 +1,7 @@
 import { buildMetadata } from "@/config/seo";
 import { ConsultationLookup } from "@/app/(app)/consultation/lookup";
+import { CONSULTATION } from "@/content/i18n/assistant-ui";
+import { T } from "@/components/i18n/t";
 
 export const metadata = buildMetadata({
   title: "Your consultation",
@@ -17,9 +19,9 @@ export const metadata = buildMetadata({
 export default function ConsultationPage() {
   return (
     <div className="mx-auto w-full max-w-xl px-5 py-10">
-      <h1 className="font-display text-display font-semibold text-ink">Your consultation</h1>
+      <h1 className="font-display text-display font-semibold text-ink"><T>{CONSULTATION.pageTitle}</T></h1>
       <p className="mt-3 text-ink-soft">
-        Enter the reference we sent you and the mobile number from your Skin Check.
+        <T>{CONSULTATION.pageIntro}</T>
       </p>
       <ConsultationLookup />
     </div>

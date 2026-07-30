@@ -4,18 +4,20 @@ import { Globe, Mail, MessageCircle, Phone } from "lucide-react";
 import { SITE, telHref, waHref } from "@/config/site";
 import { IMAGES } from "@/content/assets";
 import { SubscribeForm } from "@/components/features/subscribe-form";
+import { T } from "@/components/i18n/t";
+import { FOOTER } from "@/content/i18n/account";
 
 const visitLinks = [
-  { label: "Home", href: "/" },
-  { label: "About Us", href: "/about-us" },
-  { label: "Contact us", href: "/contact-us" },
+  { label: FOOTER.home, href: "/" },
+  { label: FOOTER.aboutUs, href: "/about-us" },
+  { label: FOOTER.contactUs, href: "/contact-us" },
   ...SITE.concerns.map((c) => ({ label: c.label, href: `/${c.slug}` })),
 ];
 
 const legalLinks = [
-  { label: "Privacy Policy", href: "/privacy-policy" },
-  { label: "Terms & Conditions", href: "/terms-and-conditions" },
-  { label: "Refund & Cancellation", href: "/refund-and-cancellation" },
+  { label: FOOTER.privacyPolicy, href: "/privacy-policy" },
+  { label: FOOTER.terms, href: "/terms-and-conditions" },
+  { label: FOOTER.refund, href: "/refund-and-cancellation" },
 ];
 
 /**
@@ -92,7 +94,7 @@ export function Footer() {
 
             <div>
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-rose-ink">
-                Reach Out
+                <T>{FOOTER.reachOut}</T>
               </h2>
               <ul className="flex flex-col text-sm text-ink/80">
                 <li>
@@ -112,7 +114,7 @@ export function Footer() {
                     className="inline-flex min-h-11 items-center gap-2 py-1 hover:text-rose-ink"
                   >
                     <Phone aria-hidden="true" className="size-4" />
-                    Customer Care: {SITE.phones.general.display}
+                    <T>{FOOTER.customerCare}</T>: {SITE.phones.general.display}
                   </a>
                 </li>
                 <li>
@@ -130,13 +132,13 @@ export function Footer() {
 
           <div>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-rose-ink">
-              Visit Links
+              <T>{FOOTER.visitLinks}</T>
             </h2>
             <ul className="flex flex-col text-sm text-ink/80">
               {visitLinks.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="inline-flex min-h-11 items-center py-1 hover:text-rose-ink">
-                    {link.label}
+                    <T>{link.label}</T>
                   </Link>
                 </li>
               ))}
@@ -145,10 +147,10 @@ export function Footer() {
 
           <div className="md:col-span-2">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-rose-ink">
-              Subscribe Now
+              <T>{FOOTER.subscribeNow}</T>
             </h2>
             <p className="mb-4 text-sm text-ink/80">
-              Never miss our updates! Subscribe today!
+              <T>{FOOTER.subscribeTagline}</T>
             </p>
             <SubscribeForm />
 
@@ -181,7 +183,7 @@ export function Footer() {
             {legalLinks.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="inline-flex min-h-11 items-center py-1 hover:text-rose-ink">
-                  {link.label}
+                  <T>{link.label}</T>
                 </Link>
               </li>
             ))}

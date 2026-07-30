@@ -12,6 +12,7 @@ import { FAQSection } from "@/components/features/faq-section";
 import { Section } from "@/components/ui/section";
 import { Card, CardBody } from "@/components/ui/card";
 import { T } from "@/components/i18n/t";
+import { CONCERN_PAGE } from "@/content/i18n/pages";
 
 export interface ConcernPageTemplateProps {
   content: ConcernContent;
@@ -45,7 +46,7 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
         image={IMAGES.heroModel}
         heading={content.hero.heading}
         subheading={content.hero.subheading}
-        ctas={[{ label: "Analyse your skin", href: "/skin-check", variant: "primary" }]}
+        ctas={[{ label: CONCERN_PAGE.analyseCta, href: "/skin-check", variant: "primary" }]}
       />
 
       <Section className="bg-surface">
@@ -94,7 +95,7 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
       <Section>
         <IngredientScience
           groups={content.ingredientsByType}
-          heading="Research-Driven Ingredients"
+          heading={CONCERN_PAGE.ingredientsHeading}
         />
       </Section>
 
@@ -118,7 +119,7 @@ export function ConcernPageTemplate({ content }: ConcernPageTemplateProps) {
         </div>
       </Section>
 
-      <ProcessSteps steps={content.process} heading="From Assessment to Results" />
+      <ProcessSteps steps={content.process} heading={CONCERN_PAGE.processHeading} />
 
       <Section>
         <BeforeAfterCarousel slides={[]} />

@@ -4,6 +4,8 @@ import { buildMetadata } from "@/config/seo";
 import { SITE, telHref, waHref } from "@/config/site";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { T } from "@/components/i18n/t";
+import { ME } from "@/content/i18n/account";
 
 export const metadata = buildMetadata({
   title: "Your space",
@@ -26,44 +28,38 @@ export const metadata = buildMetadata({
  * assessment and consultation flows land.
  */
 
-const COMING = [
-  "Your skin profile and the concern you told us about",
-  "The routine your expert put together for you",
-  "Your consultation and order history",
-  "Your photos, with the option to delete them at any time",
-];
+const COMING = [ME.coming1, ME.coming2, ME.coming3, ME.coming4];
 
 export default function MePage() {
   return (
     <div className="mx-auto w-full max-w-2xl px-5 py-12">
-      <Eyebrow>Your space</Eyebrow>
+      <Eyebrow><T>{ME.eyebrow}</T></Eyebrow>
       <h1 className="mt-4 font-display text-display font-semibold text-ink">
-        Your skincare journey, in one place.
+        <T>{ME.title}</T>
       </h1>
       <p className="mt-4 font-body text-ink-soft">
-        Skinwise does not ask you to create an account. When you complete a Skin Check, we send
-        your results straight to your WhatsApp — and this is where they will live.
+        <T>{ME.intro}</T>
       </p>
 
       <section className="mt-10 rounded-3xl bg-blush p-6">
-        <h2 className="font-display text-2xl font-semibold text-ink">Coming here soon</h2>
+        <h2 className="font-display text-2xl font-semibold text-ink"><T>{ME.comingTitle}</T></h2>
         <ul className="mt-4 flex flex-col gap-3">
           {COMING.map((item) => (
             <li key={item} className="flex gap-3 font-body text-sm text-ink">
               <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-rose-ink" />
-              {item}
+              <T>{item}</T>
             </li>
           ))}
         </ul>
         <Button asChild className="mt-6 w-full sm:w-auto">
-          <Link href="/skin-check">Start your Skin Check</Link>
+          <Link href="/skin-check"><T>{ME.startSkinCheck}</T></Link>
         </Button>
       </section>
 
       <section className="mt-10">
-        <h2 className="font-display text-2xl font-semibold text-ink">Need a person?</h2>
+        <h2 className="font-display text-2xl font-semibold text-ink"><T>{ME.needPersonTitle}</T></h2>
         <p className="mt-2 font-body text-sm text-ink-soft">
-          Our team answers directly — no bots, no queue.
+          <T>{ME.needPersonBody}</T>
         </p>
         <ul className="mt-5 flex flex-col gap-3">
           <li>

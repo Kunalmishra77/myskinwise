@@ -43,6 +43,11 @@ const SOURCES = [
   { file: "content/i18n/scanner.ts", keys: "*" },
   // Skin-type and ingredient page chrome (headings, CTAs). Also pure data.
   { file: "content/i18n/pages.ts", keys: "*" },
+  // Remaining chrome: homepage + showcase, footer + /me, consultation +
+  // assistant UI. All pure-data string modules (no imports).
+  { file: "content/i18n/home.ts", keys: "*" },
+  { file: "content/i18n/account.ts", keys: "*" },
+  { file: "content/i18n/assistant-ui.ts", keys: "*" },
   // Skin-type body content. `name` is a plain descriptor ("Dry skin") so it is
   // translated; the `ingredients` array is INCI/proper names and is excluded.
   {

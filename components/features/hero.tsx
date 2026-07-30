@@ -72,11 +72,11 @@ export function Hero({ image, heading, subheading, ctas, eyebrow, trustNote, tru
         <div className={cn("flex flex-wrap gap-3", !image && "justify-center")}>
           {ctas.map((cta) => (
             <Button key={cta.href} asChild variant={cta.variant ?? "primary"}>
-              <Link href={cta.href}>{cta.label}</Link>
+              <Link href={cta.href}><T>{cta.label}</T></Link>
             </Button>
           ))}
         </div>
-        {trustNote && <p className="text-sm text-ink-soft">{trustNote}</p>}
+        {trustNote && <p className="text-sm text-ink-soft"><T>{trustNote}</T></p>}
       </div>
 
       {image && (
@@ -100,7 +100,7 @@ export function Hero({ image, heading, subheading, ctas, eyebrow, trustNote, tru
               {trustChip.icon && (
                 <trustChip.icon aria-hidden="true" className="size-5 shrink-0 text-rose-ink" />
               )}
-              <span className="text-sm font-medium text-ink">{trustChip.label}</span>
+              <span className="text-sm font-medium text-ink"><T>{trustChip.label}</T></span>
             </div>
           )}
         </div>

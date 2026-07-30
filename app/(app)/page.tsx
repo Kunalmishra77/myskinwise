@@ -13,6 +13,8 @@ import { FeaturedFormulations } from "@/components/features/featured-formulation
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Reveal } from "@/components/ui/reveal";
+import { T } from "@/components/i18n/t";
+import { HOME, JOURNEY, DIFFERENCE } from "@/content/i18n/home";
 
 export const metadata: Metadata = {
   title: { absolute: "Skinwise — Personalised Skincare, Decided by Real Experts" },
@@ -31,45 +33,9 @@ export const metadata: Metadata = {
  * None have been verified, so none are shown — see the Stage 1 spec §4.4.
  */
 
-const JOURNEY = [
-  {
-    title: "Tell us about your skin",
-    body: "A few questions about your concern, your skin type, and what you have already tried.",
-  },
-  {
-    title: "Complete your Skin Check",
-    body: "Around three minutes. You can add photos if you want a closer look — they are optional.",
-  },
-  {
-    title: "Get personalised guidance",
-    body: "You see what we noticed and what we would suggest, before anyone asks you for anything.",
-  },
-  {
-    title: "Talk to a real expert",
-    body: "A Skinwise skin expert reviews your answers personally and speaks with you directly.",
-  },
-  {
-    title: "Receive your routine",
-    body: "A formulation put together for your skin, rather than pulled off a shelf.",
-  },
-  {
-    title: "Keep going, with support",
-    body: "Skin changes. We stay in touch and adjust your routine as it does.",
-  },
-];
-
-const DIFFERENCE = [
-  {
-    icon: Sparkles,
-    title: "What our technology does",
-    body: "It helps you describe your skin properly, checks your photos are usable, and organises everything so nothing about your case gets lost.",
-  },
-  {
-    icon: UserCheck,
-    title: "What a person does",
-    body: "A qualified Skinwise expert reviews your case, speaks to you, and decides your routine. Every recommendation you receive has been through a human being.",
-  },
-];
+// Icons for the AI-vs-human cards, zipped by index with DIFFERENCE from the
+// content module (which holds the translatable prose, import-free).
+const DIFFERENCE_ICONS = [Sparkles, UserCheck];
 
 export default function HomePage() {
   const concerns = Object.values(CONCERNS);
@@ -82,24 +48,22 @@ export default function HomePage() {
       <section className="px-5 pt-8 lg:pt-16">
         <div className="mx-auto grid w-full max-w-6xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
-            <Eyebrow>Personalised skincare</Eyebrow>
+            <Eyebrow><T>{HOME.heroEyebrow}</T></Eyebrow>
             <h1 className="mt-4 font-display text-display font-semibold text-ink">
-              Skincare made for your skin.{" "}
-              <em className="italic text-rose-ink">Not everyone&rsquo;s.</em>
+              <T>{HOME.heroTitle}</T>
             </h1>
             <p className="mt-5 max-w-md text-lg text-ink-soft">
-              Tell us what your skin is doing. A Skinwise expert reads your answers personally and
-              builds a routine around your concern.
+              <T>{HOME.heroBody}</T>
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg">
-                <Link href="/skin-check">Start your Skin Check</Link>
+                <Link href="/skin-check"><T>{HOME.startSkinCheck}</T></Link>
               </Button>
               <Button asChild size="lg" variant="outline">
                 <a href={waHref(SITE.whatsapp.e164)} target="_blank" rel="noopener noreferrer">
                   <MessageCircle aria-hidden="true" className="size-4" />
-                  Message an expert
+                  <T>{HOME.messageExpert}</T>
                 </a>
               </Button>
             </div>
@@ -107,11 +71,11 @@ export default function HomePage() {
             <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-soft">
               <li className="flex items-center gap-2">
                 <ShieldCheck aria-hidden="true" className="size-4 text-rose-ink" />
-                Free, and no account needed
+                <T>{HOME.heroPointFree}</T>
               </li>
               <li className="flex items-center gap-2">
                 <UserCheck aria-hidden="true" className="size-4 text-rose-ink" />
-                Reviewed by a real expert
+                <T>{HOME.heroPointReviewed}</T>
               </li>
             </ul>
           </div>
@@ -144,12 +108,12 @@ export default function HomePage() {
       <section className="mt-20 lg:mt-28" aria-labelledby="concerns-heading">
         <div className="mx-auto w-full max-w-6xl px-5">
           <Reveal>
-            <Eyebrow index="01">Where to start</Eyebrow>
+            <Eyebrow index="01"><T>{HOME.concernsEyebrow}</T></Eyebrow>
             <h2
               id="concerns-heading"
               className="mt-3 max-w-xl font-display text-h2 font-semibold text-ink"
             >
-              What is your skin doing right now?
+              <T>{HOME.concernsTitle}</T>
             </h2>
           </Reveal>
         </div>
@@ -161,7 +125,7 @@ export default function HomePage() {
                 href={`/${concern.slug}`}
                 className="group flex h-full flex-col rounded-3xl bg-surface p-6 shadow-soft transition-shadow hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
               >
-                <h3 className="font-display text-2xl font-semibold text-ink">{concern.label}</h3>
+                <h3 className="font-display text-2xl font-semibold text-ink"><T>{concern.label}</T></h3>
                 <p className="mt-3 flex-1 text-sm text-ink-soft">
                   {concern.whatIs.body.slice(0, 150)}&hellip;
                 </p>
@@ -169,7 +133,7 @@ export default function HomePage() {
                   aria-hidden="true"
                   className="mt-5 font-body text-sm font-semibold text-rose-ink"
                 >
-                  Understand this &rarr;
+                  <T>{HOME.understandThis}</T> &rarr;
                 </span>
               </Link>
             </li>
@@ -184,9 +148,9 @@ export default function HomePage() {
       >
         <div className="mx-auto w-full max-w-3xl px-5">
           <Reveal>
-            <Eyebrow index="02">How Skinwise works</Eyebrow>
+            <Eyebrow index="02"><T>{HOME.journeyEyebrow}</T></Eyebrow>
             <h2 id="journey-heading" className="mt-3 font-display text-h2 font-semibold text-ink">
-              From your first answer to a routine that is yours.
+              <T>{HOME.journeyTitle}</T>
             </h2>
           </Reveal>
 
@@ -202,8 +166,8 @@ export default function HomePage() {
                   )}
                 </div>
                 <div className="pt-1">
-                  <h3 className="font-display text-xl font-semibold text-ink">{step.title}</h3>
-                  <p className="mt-1.5 text-ink-soft">{step.body}</p>
+                  <h3 className="font-display text-xl font-semibold text-ink"><T>{step.title}</T></h3>
+                  <p className="mt-1.5 text-ink-soft"><T>{step.body}</T></p>
                 </div>
               </Reveal>
             ))}
@@ -215,23 +179,21 @@ export default function HomePage() {
       <section className="mt-20 lg:mt-28" aria-labelledby="difference-heading">
         <div className="mx-auto w-full max-w-5xl px-5">
           <Reveal>
-            <Eyebrow index="03">Where the decisions are made</Eyebrow>
+            <Eyebrow index="03"><T>{HOME.differenceEyebrow}</T></Eyebrow>
             <h2
               id="difference-heading"
               className="mt-3 max-w-xl font-display text-h2 font-semibold text-ink"
             >
-              Technology helps. A person decides.
+              <T>{HOME.differenceTitle}</T>
             </h2>
             <p className="mt-4 max-w-xl text-ink-soft">
-              Plenty of skincare now runs on software alone. Ours does not. Software is good at
-              organising and checking; it is not the thing that should be deciding what goes on your
-              face.
+              <T>{HOME.differenceBody}</T>
             </p>
           </Reveal>
 
           <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2">
             {DIFFERENCE.map((item, i) => {
-              const Icon = item.icon;
+              const Icon = DIFFERENCE_ICONS[i]!;
               return (
                 <Reveal key={item.title} delay={i * 0.06}>
                   <div className="h-full rounded-3xl bg-surface p-7 shadow-soft">
@@ -242,9 +204,9 @@ export default function HomePage() {
                       <Icon className="size-5" />
                     </span>
                     <h3 className="mt-5 font-display text-xl font-semibold text-ink">
-                      {item.title}
+                      <T>{item.title}</T>
                     </h3>
-                    <p className="mt-2 text-ink-soft">{item.body}</p>
+                    <p className="mt-2 text-ink-soft"><T>{item.body}</T></p>
                   </div>
                 </Reveal>
               );
@@ -261,32 +223,32 @@ export default function HomePage() {
         <div className="mx-auto w-full max-w-5xl px-5">
           <div className="rounded-[2rem] bg-plum px-6 py-12 lg:px-14 lg:py-16">
             <Eyebrow tone="dark" index="04">
-              The Skin Check
+              <T>{HOME.skinCheckEyebrow}</T>
             </Eyebrow>
             <h2
               id="skincheck-heading"
               className="mt-3 max-w-lg font-display text-h2 font-semibold text-white"
             >
-              Three minutes now, instead of another year of guessing.
+              <T>{HOME.skinCheckTitle}</T>
             </h2>
 
             <dl className="mt-9 grid grid-cols-1 gap-6 sm:grid-cols-3">
               <div>
-                <dt className="font-body text-sm font-semibold text-rose">What you do</dt>
+                <dt className="font-body text-sm font-semibold text-rose"><T>{HOME.skinCheckDoTerm}</T></dt>
                 <dd className="mt-1.5 text-white/80">
-                  Answer questions about your skin. Add photos if you want to.
+                  <T>{HOME.skinCheckDoBody}</T>
                 </dd>
               </div>
               <div>
-                <dt className="font-body text-sm font-semibold text-rose">What you get</dt>
+                <dt className="font-body text-sm font-semibold text-rose"><T>{HOME.skinCheckGetTerm}</T></dt>
                 <dd className="mt-1.5 text-white/80">
-                  A Skinwise expert&rsquo;s reading of your skin and what they suggest.
+                  <T>{HOME.skinCheckGetBody}</T>
                 </dd>
               </div>
               <div>
-                <dt className="font-body text-sm font-semibold text-rose">What it costs</dt>
+                <dt className="font-body text-sm font-semibold text-rose"><T>{HOME.skinCheckCostTerm}</T></dt>
                 <dd className="mt-1.5 text-white/80">
-                  Nothing. There is no payment anywhere in the Skin Check.
+                  <T>{HOME.skinCheckCostBody}</T>
                 </dd>
               </div>
             </dl>
@@ -294,7 +256,7 @@ export default function HomePage() {
             <Button asChild size="lg" className="mt-10">
               <Link href="/skin-check">
                 <ScanFace aria-hidden="true" className="size-4" />
-                Start your Skin Check
+                <T>{HOME.startSkinCheck}</T>
               </Link>
             </Button>
           </div>
@@ -305,12 +267,12 @@ export default function HomePage() {
       <section className="mt-20 lg:mt-28" aria-labelledby="learn-heading">
         <div className="mx-auto w-full max-w-5xl px-5">
           <Reveal>
-            <Eyebrow index="05">Learn</Eyebrow>
+            <Eyebrow index="05"><T>{HOME.learnEyebrow}</T></Eyebrow>
             <h2
               id="learn-heading"
               className="mt-3 max-w-xl font-display text-h2 font-semibold text-ink"
             >
-              Understand your skin before anyone sells you anything.
+              <T>{HOME.learnTitle}</T>
             </h2>
           </Reveal>
 
@@ -320,12 +282,12 @@ export default function HomePage() {
                 href="/concerns"
                 className="flex h-full flex-col rounded-3xl bg-surface p-6 shadow-soft transition-shadow hover:shadow-lift"
               >
-                <h3 className="font-display text-xl font-semibold text-ink">Skin concerns</h3>
+                <h3 className="font-display text-xl font-semibold text-ink"><T>{HOME.learnConcernsTitle}</T></h3>
                 <p className="mt-2 flex-1 text-sm text-ink-soft">
-                  What is actually happening with pigmentation, acne and texture.
+                  <T>{HOME.learnConcernsBody}</T>
                 </p>
                 <span aria-hidden="true" className="mt-4 text-sm font-semibold text-rose-ink">
-                  {concerns.length} guides &rarr;
+                  {concerns.length} <T>{HOME.guides}</T> &rarr;
                 </span>
               </Link>
             </Reveal>
@@ -334,12 +296,12 @@ export default function HomePage() {
                 href="/skin-types"
                 className="flex h-full flex-col rounded-3xl bg-surface p-6 shadow-soft transition-shadow hover:shadow-lift"
               >
-                <h3 className="font-display text-xl font-semibold text-ink">Skin types</h3>
+                <h3 className="font-display text-xl font-semibold text-ink"><T>{HOME.learnTypesTitle}</T></h3>
                 <p className="mt-2 flex-1 text-sm text-ink-soft">
-                  Dry, oily, combination, sensitive — and what each one actually needs.
+                  <T>{HOME.learnTypesBody}</T>
                 </p>
                 <span aria-hidden="true" className="mt-4 text-sm font-semibold text-rose-ink">
-                  {SKIN_TYPE_LIST.length} guides &rarr;
+                  {SKIN_TYPE_LIST.length} <T>{HOME.guides}</T> &rarr;
                 </span>
               </Link>
             </Reveal>
@@ -348,12 +310,12 @@ export default function HomePage() {
                 href="/ingredients"
                 className="flex h-full flex-col rounded-3xl bg-surface p-6 shadow-soft transition-shadow hover:shadow-lift"
               >
-                <h3 className="font-display text-xl font-semibold text-ink">Ingredients</h3>
+                <h3 className="font-display text-xl font-semibold text-ink"><T>{HOME.learnIngredientsTitle}</T></h3>
                 <p className="mt-2 flex-1 text-sm text-ink-soft">
-                  Niacinamide, retinol, salicylic acid — what they do, in plain language.
+                  <T>{HOME.learnIngredientsBody}</T>
                 </p>
                 <span aria-hidden="true" className="mt-4 text-sm font-semibold text-rose-ink">
-                  {INGREDIENT_LIST.length} guides &rarr;
+                  {INGREDIENT_LIST.length} <T>{HOME.guides}</T> &rarr;
                 </span>
               </Link>
             </Reveal>
@@ -374,23 +336,20 @@ export default function HomePage() {
             />
           </Reveal>
           <Reveal>
-            <Eyebrow index="06">Why we work this way</Eyebrow>
+            <Eyebrow index="06"><T>{HOME.trustEyebrow}</T></Eyebrow>
             <h2 id="trust-heading" className="mt-3 font-display text-h2 font-semibold text-ink">
-              Made for one person at a time.
+              <T>{HOME.trustTitle}</T>
             </h2>
             <blockquote className="mt-5 border-l-2 border-rose-ink/30 pl-5 text-ink-soft">
               <p>
-                &ldquo;Too often, people struggle with concerns like pigmentation, acne and fine
-                lines while using products that don&rsquo;t truly work for them. That&rsquo;s why
-                Skinwise is all about understanding your skin and choosing wisely.&rdquo;
+                <T>{HOME.founderQuote}</T>
               </p>
               <footer className="mt-3 text-sm font-semibold text-ink">
                 Anant Sanadhya, Founder
               </footer>
             </blockquote>
             <p className="mt-5 text-ink-soft">
-              Every formulation is put together after an expert has spoken to you. That is slower
-              than picking something off a shelf, and it is the entire point.
+              <T>{HOME.trustBody}</T>
             </p>
           </Reveal>
         </div>
@@ -400,14 +359,13 @@ export default function HomePage() {
       <section className="mt-20 pb-8 lg:mt-28 lg:pb-16">
         <div className="mx-auto w-full max-w-2xl px-5 text-center">
           <h2 className="font-display text-h2 font-semibold text-ink">
-            Ready to understand your skin?
+            <T>{HOME.finalTitle}</T>
           </h2>
           <p className="mx-auto mt-3 max-w-md text-ink-soft">
-            Start with the Skin Check. It is free, it takes about three minutes, and a real person
-            reads every answer.
+            <T>{HOME.finalBody}</T>
           </p>
           <Button asChild size="lg" className="mt-7">
-            <Link href="/skin-check">Start your Skin Check</Link>
+            <Link href="/skin-check"><T>{HOME.startSkinCheck}</T></Link>
           </Button>
         </div>
       </section>

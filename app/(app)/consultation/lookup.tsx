@@ -3,30 +3,32 @@
 import * as React from "react";
 import type { CustomerConsultationView } from "@/lib/consultation/customer";
 import { RegimenProduct } from "@/components/features/regimen-product";
+import { CONSULTATION } from "@/content/i18n/assistant-ui";
+import { T } from "@/components/i18n/t";
 
 const STATUS_COPY: Record<string, { label: string; body: string }> = {
   requested: {
-    label: "Request received",
-    body: "Our team has your request and will message you on WhatsApp to arrange a time. A time is not booked yet.",
+    label: CONSULTATION.statusRequestedLabel,
+    body: CONSULTATION.statusRequestedBody,
   },
   scheduled: {
-    label: "Time being arranged",
-    body: "We're confirming your consultation time with you on WhatsApp.",
+    label: CONSULTATION.statusScheduledLabel,
+    body: CONSULTATION.statusScheduledBody,
   },
   in_review: {
-    label: "With your expert",
-    body: "A Skinwise expert is reviewing your Skin Check.",
+    label: CONSULTATION.statusInReviewLabel,
+    body: CONSULTATION.statusInReviewBody,
   },
   reviewed: {
-    label: "Reviewed",
-    body: "Your expert has reviewed your skin and is preparing your routine.",
+    label: CONSULTATION.statusReviewedLabel,
+    body: CONSULTATION.statusReviewedBody,
   },
   regimen_created: {
-    label: "Your routine is ready",
-    body: "Your personalised routine is below.",
+    label: CONSULTATION.statusRegimenLabel,
+    body: CONSULTATION.statusRegimenBody,
   },
-  completed: { label: "Completed", body: "This consultation is complete." },
-  cancelled: { label: "Cancelled", body: "This consultation was cancelled." },
+  completed: { label: CONSULTATION.statusCompletedLabel, body: CONSULTATION.statusCompletedBody },
+  cancelled: { label: CONSULTATION.statusCancelledLabel, body: CONSULTATION.statusCancelledBody },
 };
 
 export function ConsultationLookup() {
@@ -50,9 +52,9 @@ export function ConsultationLookup() {
     if (res.ok) {
       setView((await res.json()).consultation);
     } else if (res.status === 404) {
-      setError("We couldn't find that reference for this number.");
+      setError(CONSULTATION.notFound);
     } else {
-      setError("Please check the reference and number and try again.");
+      setError(CONSULTATION.lookupError);
     }
   }
 
@@ -62,13 +64,13 @@ export function ConsultationLookup() {
       <div className="mt-8">
         <div className="rounded-3xl bg-surface p-6 shadow-soft">
           <span className="eyebrow">{view.reference}</span>
-          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">{copy.label}</h2>
-          <p className="mt-2 text-ink-soft">{copy.body}</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-ink"><T>{copy.label}</T></h2>
+          <p className="mt-2 text-ink-soft"><T>{copy.body}</T></p>
         </div>
 
         {view.regimen && (
           <div className="mt-6 rounded-3xl bg-blush p-6">
-            <h2 className="font-display text-2xl font-semibold text-ink">Your routine</h2>
+            <h2 className="font-display text-2xl font-semibold text-ink"><T>{CONSULTATION.regimenTitle}</T></h2>
             {view.regimen.durationDays && (
               <p className="mt-1 text-sm text-ink-soft">{view.regimen.durationDays}-day plan</p>
             )}
@@ -99,7 +101,7 @@ export function ConsultationLookup() {
               <p className="mt-4 rounded-2xl bg-surface p-4 text-sm text-ink-soft">{view.regimen.followUp}</p>
             )}
             <p className="mt-4 text-xs text-ink-soft">
-              This routine was prepared by a Skinwise expert. It is guidance, not a medical diagnosis.
+              <T>{CONSULTATION.regimenDisclaimer}</T>
             </p>
           </div>
         )}
@@ -111,7 +113,7 @@ export function ConsultationLookup() {
     <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
       <div>
         <label htmlFor="ref" className="text-sm font-semibold text-ink">
-          Reference
+          <T>{CONSULTATION.referenceLabel}</T>
         </label>
         <input
           id="ref"
@@ -123,7 +125,7 @@ export function ConsultationLookup() {
       </div>
       <div>
         <label htmlFor="ph" className="text-sm font-semibold text-ink">
-          Mobile number
+          <T>{CONSULTATION.mobileLabel}</T>
         </label>
         <input
           id="ph"
@@ -135,7 +137,7 @@ export function ConsultationLookup() {
       </div>
       {error && (
         <p role="alert" className="text-sm font-medium text-rose-ink">
-          {error}
+          <T>{error}</T>
         </p>
       )}
       <button
@@ -143,7 +145,7 @@ export function ConsultationLookup() {
         disabled={busy || !reference || !phone}
         className="rounded-full bg-rose-ink px-6 py-3.5 font-body font-semibold text-white disabled:opacity-50"
       >
-        {busy ? "Checking…" : "Check my consultation"}
+        <T>{busy ? CONSULTATION.checking : CONSULTATION.checkCta}</T>
       </button>
     </form>
   );

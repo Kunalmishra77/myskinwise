@@ -56,3 +56,15 @@ export const PAGE_COMMON = {
   startSkinCheck: "Start your Skin Check",
   readMore: "Read more",
 } as const;
+
+/**
+ * Literal section headings the concern-page template passes as props to shared
+ * components (Hero CTA, IngredientScience, ProcessSteps). Those components
+ * translate their heading/label props via <T>, so the English just needs to be
+ * sourced here.
+ */
+export const CONCERN_PAGE = {
+  analyseCta: "Analyse your skin",
+  ingredientsHeading: "Research-Driven Ingredients",
+  processHeading: "From Assessment to Results",
+} as const;
