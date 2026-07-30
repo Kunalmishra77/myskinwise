@@ -41,6 +41,20 @@ const SOURCES = [
   // display prose, so we extract EVERY string literal ("*") rather than name
   // each key.
   { file: "content/i18n/scanner.ts", keys: "*" },
+  // Skin-type and ingredient page chrome (headings, CTAs). Also pure data.
+  { file: "content/i18n/pages.ts", keys: "*" },
+  // Skin-type body content. `name` is a plain descriptor ("Dry skin") so it is
+  // translated; the `ingredients` array is INCI/proper names and is excluded.
+  {
+    file: "content/skin-types/index.ts",
+    keys: ["name", "summary", "aim", "characteristics", "challenges", "mistakes"],
+  },
+  // Ingredient body content. `name` is an INCI/proper name and is excluded so
+  // it stays exactly as printed; everything else is explanatory prose.
+  {
+    file: "content/ingredients/index.ts",
+    keys: ["role", "summary", "whatItIs", "suitedTo", "routineNote", "commonlyUsedFor", "considerations"],
+  },
 ];
 
 function env(name) {
@@ -54,22 +68,40 @@ function env(name) {
 /**
  * Pull display strings from a source file.
  *
- * With a list of `keys`, matches `key: "value"` literals (the content files).
+ * With a list of `keys`, matches both `key: "value"` scalars AND
+ * `key: ["a", "b", ...]` string arrays (the content files use both forms).
  * With keys === "*", matches EVERY double-quoted string literal in the file —
  * use only for pure-data files that hold nothing but display prose, or you
  * will translate identifiers and paths.
  */
 function extractStrings(source, keys) {
   const out = new Set();
-  const re =
-    keys === "*"
-      ? /"((?:[^"\\]|\\.)*)"/g
-      : new RegExp(`(?:${keys.join("|")}):\\s*"((?:[^"\\\\]|\\\\.)*)"`, "g");
-  let m;
-  while ((m = re.exec(source))) {
-    const value = m[1].replace(/\\"/g, '"').replace(/\\\\/g, "\\").trim();
+  const add = (raw) => {
+    const value = raw.replace(/\\"/g, '"').replace(/\\\\/g, "\\").trim();
     // Skip trivial or non-prose values.
     if (value.length > 1 && /[a-zA-Z]/.test(value)) out.add(value);
+  };
+
+  if (keys === "*") {
+    const re = /"((?:[^"\\]|\\.)*)"/g;
+    let m;
+    while ((m = re.exec(source))) add(m[1]);
+    return out;
+  }
+
+  // key: "value"
+  const scalar = new RegExp(`(?:${keys.join("|")}):\\s*"((?:[^"\\\\]|\\\\.)*)"`, "g");
+  let m;
+  while ((m = scalar.exec(source))) add(m[1]);
+
+  // key: [ "a", "b", ... ] — pull each string element. Content arrays never
+  // contain a literal "]", so a non-greedy match to the first bracket is safe.
+  const arrays = new RegExp(`(?:${keys.join("|")}):\\s*\\[([\\s\\S]*?)\\]`, "g");
+  const elem = /"((?:[^"\\]|\\.)*)"/g;
+  while ((m = arrays.exec(source))) {
+    let e;
+    while ((e = elem.exec(m[1]))) add(e[1]);
+    elem.lastIndex = 0;
   }
   return out;
 }

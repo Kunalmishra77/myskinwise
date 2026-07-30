@@ -6,6 +6,8 @@ import { INGREDIENT_LIST } from "@/content/ingredients";
 import { Breadcrumb } from "@/components/features/breadcrumb";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Reveal } from "@/components/ui/reveal";
+import { T } from "@/components/i18n/t";
+import { INGREDIENT_PAGE, PAGE_COMMON } from "@/content/i18n/pages";
 
 export const metadata = buildMetadata({
   title: "Skincare Ingredients Explained",
@@ -20,14 +22,11 @@ export default function IngredientsHubPage() {
       <Breadcrumb items={[{ label: "Ingredients", href: "/ingredients" }]} />
 
       <header className="mt-6 max-w-2xl">
-        <Eyebrow>Ingredients</Eyebrow>
+        <Eyebrow><T>{INGREDIENT_PAGE.hubEyebrow}</T></Eyebrow>
         <h1 className="mt-4 font-display text-display font-semibold text-ink">
-          The ingredients we build routines around.
+          <T>{INGREDIENT_PAGE.hubTitle}</T>
         </h1>
-        <p className="mt-4 text-ink-soft">
-          Six ingredients do most of the work in the routines our experts put together. Here is what
-          each one actually does, who it suits, and what to watch out for — without the marketing.
-        </p>
+        <p className="mt-4 text-ink-soft"><T>{INGREDIENT_PAGE.hubIntro}</T></p>
       </header>
 
       <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -49,16 +48,16 @@ export default function IngredientsHubPage() {
                   />
                 </div>
                 <div className="flex flex-1 flex-col p-5">
-                  <p className="eyebrow">{ingredient.role}</p>
+                  <p className="eyebrow"><T>{ingredient.role}</T></p>
                   <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
                     {ingredient.name}
                   </h2>
-                  <p className="mt-2 text-sm text-ink-soft">{ingredient.summary}</p>
+                  <p className="mt-2 text-sm text-ink-soft"><T>{ingredient.summary}</T></p>
                   <span
                     aria-hidden="true"
                     className="mt-4 font-body text-sm font-semibold text-rose-ink"
                   >
-                    Read more &rarr;
+                    <T>{PAGE_COMMON.readMore}</T> &rarr;
                   </span>
                 </div>
               </Link>
