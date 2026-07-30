@@ -35,8 +35,33 @@ export const otherIssues: ConcernContent = {
     title: "Understanding Common Skin Concerns",
     body: "Our skin constantly regenerates, adapting to internal and external factors. Wrinkles, open pores, dullness, and dark circles are common issues, but addressing their root causes is key. With advanced dermatological science and personalised skincare, these concerns can be effectively treated at a deeper level, restoring your skin's health and radiance.",
   },
-  // TODO(client): other-issues-specific "causes" copy (source reused acne causes — see file header note)
-  causes: [],
+  // Authored specifically for the "other issues" umbrella (wrinkles, open
+  // pores, dullness, dark circles). Deliberately factor-based and
+  // appearance-led — no medical claim, no condition named — replacing the
+  // earlier empty array left when the source's copy-pasted acne causes were
+  // removed.
+  causes: [
+    {
+      title: "Ageing and collagen loss",
+      body: "As skin ages, it makes less collagen and elastin, so it loses firmness and fine lines and wrinkles start to show more.",
+    },
+    {
+      title: "Sun exposure",
+      body: "Unprotected UV over time breaks down collagen and drives uneven tone, dullness and earlier-looking lines — which is why daily sunscreen matters so much.",
+    },
+    {
+      title: "Dehydration and a stressed barrier",
+      body: "When skin is low on moisture or its barrier is under strain, it can look dull and tired, feel rough, and make fine lines look deeper than they are.",
+    },
+    {
+      title: "Dead-skin buildup and slow renewal",
+      body: "As cell turnover slows, dead cells sit on the surface. That reads as dullness and can make pores look larger and more noticeable.",
+    },
+    {
+      title: "Sleep, stress and lifestyle",
+      body: "Poor sleep, ongoing stress, long screen hours and diet often show first around the eyes — as dark circles and puffiness — and in an overall tired-looking complexion.",
+    },
+  ],
   types: [
     {
       name: "Wrinkles",

@@ -16,8 +16,17 @@ describe("CONCERNS", () => {
     expect(CONCERNS.acne.causes.length).toBeGreaterThan(0);
   });
 
-  it("other-issues omits the copy-pasted acne causes block (content-accuracy fix)", () => {
-    expect(CONCERNS["other-issues"].causes.length).toBe(0);
+  it("other-issues has its own causes, never the copy-pasted acne block (content-accuracy fix)", () => {
+    // other-issues now carries causes authored specifically for it (ageing,
+    // sun, dehydration, dead-skin buildup, lifestyle). The content-accuracy
+    // guarantee is not "empty" but "not the acne causes" — the original bug
+    // was the Acne "Reasons of Acne" block (Excess Oil, Bacterial Growth,
+    // Clogged Pores, ...) copy-pasted onto this page.
+    const titles = CONCERNS["other-issues"].causes.map((c) => c.title.toLowerCase());
+    expect(titles.length).toBeGreaterThan(0);
+    for (const acneTitle of CONCERNS.acne.causes.map((c) => c.title.toLowerCase())) {
+      expect(titles).not.toContain(acneTitle);
+    }
   });
 
   it("objectionFaqs reference the shared FAQS sets, never re-transcribed", () => {

@@ -35,6 +35,10 @@ const bodySchema = z.object({
   analysisReference: z.string().regex(/^SW-[A-HJ-NP-Z2-9]{8}$/).optional(),
   // The client may decline audio (e.g. it will use browser TTS itself).
   wantAudio: z.boolean().default(true),
+  // Optional chosen concern, so voice runs a focused, concern-specific
+  // conversation — the SAME steering the text assistant already gets. Anonymous
+  // and safe: it only picks which questions/content the assistant draws on.
+  concern: z.enum(["pigmentation", "acne", "other-issues"]).optional(),
   // Reply + speech language.
   lang: z.enum(["en", "hi"]).optional(),
 });
@@ -97,11 +101,18 @@ export async function POST(request: Request) {
   }
 
   // 2. Context — the shared customer-safe resolver.
-  const context = await resolveCustomerContext({
+  const resolved = await resolveCustomerContext({
     reference: body.reference,
     phone: body.phone,
     analysisReference: body.analysisReference,
   });
+  // A concern chosen in the voice UI steers the conversation, unless the
+  // customer's own resolved data already carries one (their real concern wins)
+  // — identical to the text assistant.
+  const context =
+    body.concern && !resolved?.concern
+      ? { ...(resolved ?? {}), concern: body.concern }
+      : resolved;
 
   // 3. The SAME orchestrator as text: inbound safety -> grounded model ->
   // outbound safety -> CTA.

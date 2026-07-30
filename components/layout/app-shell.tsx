@@ -3,6 +3,7 @@ import { TopBar } from "@/components/layout/top-bar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Footer } from "@/components/features/footer";
 import { VoiceOverlay } from "@/components/voice/voice-overlay";
+import { FloatingActions } from "@/components/layout/floating-actions";
 
 /**
  * The application shell: sticky header, page content, footer, and the
@@ -34,6 +35,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Floating voice assistant, available on every shell page. Portals to
           <body>; not shown on /voice or the full-screen flows. */}
       <VoiceOverlay />
+      {/* WhatsApp (bottom-left) + back-to-top (bottom-right, above the mic).
+          Organised so nothing collides with the voice launcher or bottom nav. */}
+      <FloatingActions />
     </>
   );
 }

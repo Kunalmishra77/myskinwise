@@ -18,13 +18,13 @@ describe("ConcernPageTemplate", () => {
     expect(screen.getByText("Sun damage")).toBeInTheDocument();
   });
 
-  it("omits the causes accordion entirely for other-issues, which has no causes copy", () => {
+  it("renders other-issues' own causes accordion without leaking the acne block", () => {
     render(<ConcernPageTemplate content={CONCERNS["other-issues"]} />);
-    // "Excess oil" is an acne-specific cause title; it must never leak onto
-    // the other-issues page, and no causes section should render at all
-    // since content.causes is [] for other-issues.
+    // other-issues now has its own causes, so the section renders...
+    expect(screen.getByRole("heading", { name: /reasons of other issues/i })).toBeInTheDocument();
+    expect(screen.getByText("Ageing and collagen loss")).toBeInTheDocument();
+    // ...but the acne-specific cause title "Excess oil" must never leak onto it.
     expect(screen.queryByText("Excess oil")).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /reasons of/i })).not.toBeInTheDocument();
   });
 
   it("links the CTA to /skin-check for other-issues too", () => {

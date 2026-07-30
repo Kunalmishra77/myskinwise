@@ -28,6 +28,7 @@ import type { FaqItem } from "@/content/faqs";
 const CONCERN_FAQS: Record<string, FaqItem[]> = {
   acne: FAQS.acneObjections,
   pigmentation: FAQS.pigmentationObjections,
+  "other-issues": FAQS.otherIssuesObjections,
 };
 
 /** True for a slug we have a concern context for. */

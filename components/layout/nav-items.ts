@@ -1,4 +1,4 @@
-import { Home, Camera, MessageCircle, Mic, User, type LucideIcon } from "lucide-react";
+import { Home, Camera, MessageCircle, ShoppingBag, User, type LucideIcon } from "lucide-react";
 import { SITE } from "@/config/site";
 
 export type BottomNavItem = {
@@ -24,16 +24,22 @@ export type BottomNavItem = {
  * as the scanner being a questionnaire.
  *
  * Centre is now Scan, because it is the product's most distinctive action and
- * the easiest target to reach one-handed. Voice sits immediately left of it as
- * the second-most prominent action. The Skin Check is not demoted out of the
- * product — it is one tap from the Scanner screen, the home page and the menu
- * — it simply no longer impersonates the Scanner.
+ * the easiest target to reach one-handed. The Skin Check is not demoted out of
+ * the product — it is one tap from the Scanner screen, the home page and the
+ * menu — it simply no longer impersonates the Scanner.
+ *
+ * There is deliberately NO Voice tab here. Voice already has a single, clear
+ * home: the floating mic launcher that sits above this bar on every page (see
+ * FloatingActions / VoiceOverlay). A Voice tab here as well gave the mobile UI
+ * two competing voice entry points stacked on top of each other. The freed
+ * slot goes to Shop, which the recommendation → cart → checkout journey needs
+ * to be reachable in one tap.
  *
  * Five tabs at 320px is 64px each, comfortably past the 44px minimum.
  */
 export const BOTTOM_NAV: BottomNavItem[] = [
   { label: "Home", labelKey: "bottomNav.home", href: "/", icon: Home },
-  { label: "Voice", labelKey: "bottomNav.voice", href: "/voice", icon: Mic },
+  { label: "Shop", labelKey: "bottomNav.shop", href: "/products", icon: ShoppingBag },
   { label: "Scan", labelKey: "bottomNav.scan", href: "/skin-check/analyzer", icon: Camera, primary: true },
   { label: "Ask", labelKey: "bottomNav.ask", href: "/assistant", icon: MessageCircle },
   { label: "Me", labelKey: "bottomNav.me", href: "/me", icon: User },

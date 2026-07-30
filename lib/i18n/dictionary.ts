@@ -38,9 +38,13 @@ export const DICTIONARY = {
 
   "bottomNav.home": { en: "Home", hi: "होम" },
   "bottomNav.voice": { en: "Voice", hi: "वॉइस" },
+  "bottomNav.shop": { en: "Shop", hi: "शॉप" },
   "bottomNav.scan": { en: "Scan", hi: "स्कैन" },
   "bottomNav.ask": { en: "Ask", hi: "पूछें" },
   "bottomNav.me": { en: "Me", hi: "मेरा" },
+
+  "whatsapp.aria": { en: "Chat with us on WhatsApp", hi: "WhatsApp पर हमसे चैट करें" },
+  "action.backToTop": { en: "Back to top", hi: "ऊपर जाएँ" },
 
   "cart.title": { en: "Your cart", hi: "आपका कार्ट" },
   "cart.empty": { en: "Your cart is empty.", hi: "आपका कार्ट खाली है।" },
