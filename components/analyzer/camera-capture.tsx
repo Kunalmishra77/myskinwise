@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { Camera, ImageUp, SwitchCamera } from "lucide-react";
+import { CAMERA } from "@/content/i18n/scanner";
+import { useTContent } from "@/lib/i18n/use-content";
 
 /**
  * Live front-camera capture for the Skin Scanner.
@@ -23,6 +25,7 @@ export function CameraCapture({
   onCapture: (dataUrl: string, type: string, bytes: number) => void;
   message?: string | null;
 }) {
+  const tc = useTContent();
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -117,22 +120,19 @@ export function CameraCapture({
               <div className="h-[74%] w-[62%] rounded-[50%] border-2 border-white/70 shadow-[0_0_0_9999px_rgba(35,22,25,0.35)]" />
             </div>
             <p className="absolute inset-x-0 bottom-3 text-center text-sm font-medium text-white/90">
-              {status === "starting" ? "Starting camera…" : "Line your face up with the oval"}
+              {tc(status === "starting" ? CAMERA.starting : CAMERA.align)}
             </p>
           </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center px-6 text-center">
             <Camera aria-hidden="true" className="size-10 text-white/80" />
-            <p className="mt-3 text-sm text-white/90">
-              We couldn&rsquo;t open the camera. Allow camera access and try again, or upload a photo
-              instead.
-            </p>
+            <p className="mt-3 text-sm text-white/90">{tc(CAMERA.blocked)}</p>
             <button
               type="button"
               onClick={() => start(facing)}
               className="mt-4 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-ink"
             >
-              Try the camera again
+              {tc(CAMERA.retryCamera)}
             </button>
           </div>
         )}
@@ -140,7 +140,7 @@ export function CameraCapture({
 
       {message && (
         <p role="alert" className="mt-4 rounded-2xl bg-champagne/60 p-3 text-sm text-ink">
-          {message}
+          {tc(message)}
         </p>
       )}
 
@@ -152,7 +152,7 @@ export function CameraCapture({
             className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-ink px-6 py-3.5 font-semibold text-white transition active:scale-95"
           >
             <Camera aria-hidden="true" className="size-5" />
-            Capture photo
+            {tc(CAMERA.capture)}
           </button>
         )}
         <div className="flex items-center justify-center gap-5">
@@ -162,7 +162,7 @@ export function CameraCapture({
             className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-rose-ink"
           >
             <ImageUp aria-hidden="true" className="size-4" />
-            Upload instead
+            {tc(CAMERA.uploadInstead)}
           </button>
           {status === "live" && (
             <button
@@ -175,7 +175,7 @@ export function CameraCapture({
               className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink-soft"
             >
               <SwitchCamera aria-hidden="true" className="size-4" />
-              Flip camera
+              {tc(CAMERA.flip)}
             </button>
           )}
         </div>

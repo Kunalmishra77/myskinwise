@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Camera, ClipboardList } from "lucide-react";
+import { CHECK_VS_SCAN } from "@/content/i18n/scanner";
+import { T } from "@/components/i18n/t";
 
 export interface CheckVsScanProps {
   /** Which of the two the visitor is already on, so we offer the other. */
@@ -33,26 +35,24 @@ export function CheckVsScan({ current }: CheckVsScanProps) {
       ? {
           href: "/skin-check/analyzer",
           Icon: Camera,
-          eyebrow: "Or upload a photo",
-          title: "AI Skin Analyzer",
-          body: "Take or upload a clear photo and get AI-powered visual observations in seconds. A Skinwise expert reviews them before any routine is made.",
-          action: "Scan your skin",
+          eyebrow: CHECK_VS_SCAN.analyzerEyebrow,
+          title: CHECK_VS_SCAN.analyzerTitle,
+          body: CHECK_VS_SCAN.analyzerBody,
+          action: CHECK_VS_SCAN.analyzerAction,
         }
       : {
           href: "/skin-check",
           Icon: ClipboardList,
-          eyebrow: "Or answer questions",
-          title: "Skin Check",
-          body: "A few guided questions about your skin, routine and history — no photo needed. This is the route that reaches a Skinwise expert.",
-          action: "Start your Skin Check",
+          eyebrow: CHECK_VS_SCAN.checkEyebrow,
+          title: CHECK_VS_SCAN.checkTitle,
+          body: CHECK_VS_SCAN.checkBody,
+          action: CHECK_VS_SCAN.checkAction,
         };
 
   return (
     <aside className="rounded-3xl bg-surface p-6 shadow-soft">
       <p className="text-sm text-ink-soft">
-        {current === "skin-check"
-          ? "The Skin Check asks about your skin in your own words. The Skin Analyzer looks at a photo. You can do either, or both — together they give an expert the fullest picture."
-          : "The Skin Analyzer makes visual observations from your photo. The Skin Check asks about your skin, your routine and your history. You can do either, or both — together they give an expert the fullest picture."}
+        <T>{current === "skin-check" ? CHECK_VS_SCAN.fromCheck : CHECK_VS_SCAN.fromAnalyzer}</T>
       </p>
 
       <Link
@@ -64,14 +64,14 @@ export function CheckVsScan({ current }: CheckVsScanProps) {
         </span>
         <span className="min-w-0">
           <span className="block text-xs font-semibold uppercase tracking-wide text-rose-ink">
-            {other.eyebrow}
+            <T>{other.eyebrow}</T>
           </span>
           <span className="mt-0.5 block font-display text-lg font-semibold text-ink">
-            {other.title}
+            <T>{other.title}</T>
           </span>
-          <span className="mt-1 block text-sm text-ink-soft">{other.body}</span>
+          <span className="mt-1 block text-sm text-ink-soft"><T>{other.body}</T></span>
           <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-rose-ink">
-            {other.action}
+            <T>{other.action}</T>
             <ArrowRight
               aria-hidden="true"
               className="size-4 transition-transform duration-200 ease-out group-hover:translate-x-1"

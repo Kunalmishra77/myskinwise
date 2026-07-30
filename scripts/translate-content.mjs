@@ -37,6 +37,10 @@ const SOURCES = [
   // Products — DESCRIPTION prose only. Names and ingredient (INCI) lists are
   // deliberately excluded: they are brand/regulated label text.
   { file: "content/products/index.ts", keys: ["tagline", "description", "directions"] },
+  // Skin Scanner UI copy. This file is pure data (no imports) and holds only
+  // display prose, so we extract EVERY string literal ("*") rather than name
+  // each key.
+  { file: "content/i18n/scanner.ts", keys: "*" },
 ];
 
 function env(name) {
@@ -47,10 +51,20 @@ function env(name) {
   return line.slice(name.length + 1).trim().replace(/^["']|["']$/g, "");
 }
 
-/** Pull `key: "value"` string literals (double-quoted, escape-aware). */
+/**
+ * Pull display strings from a source file.
+ *
+ * With a list of `keys`, matches `key: "value"` literals (the content files).
+ * With keys === "*", matches EVERY double-quoted string literal in the file —
+ * use only for pure-data files that hold nothing but display prose, or you
+ * will translate identifiers and paths.
+ */
 function extractStrings(source, keys) {
   const out = new Set();
-  const re = new RegExp(`(?:${keys.join("|")}):\\s*"((?:[^"\\\\]|\\\\.)*)"`, "g");
+  const re =
+    keys === "*"
+      ? /"((?:[^"\\]|\\.)*)"/g
+      : new RegExp(`(?:${keys.join("|")}):\\s*"((?:[^"\\\\]|\\\\.)*)"`, "g");
   let m;
   while ((m = re.exec(source))) {
     const value = m[1].replace(/\\"/g, '"').replace(/\\\\/g, "\\").trim();

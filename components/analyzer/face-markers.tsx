@@ -1,12 +1,9 @@
 "use client";
 
 import * as React from "react";
-import {
-  FEATURE_LABELS,
-  REGION_POINTS,
-  DEFAULT_REGION,
-  type Observation,
-} from "@/lib/ai/vision-schema";
+import { REGION_POINTS, DEFAULT_REGION, type Observation } from "@/lib/ai/vision-schema";
+import { FEATURE_LABELS_DISPLAY } from "@/content/i18n/scanner";
+import { useTContent } from "@/lib/i18n/use-content";
 
 /**
  * The submitted photo with a marker over each observation, drawn where that
@@ -63,6 +60,8 @@ export function FaceMarkers({
   active: number | null;
   onSelect: (index: number | null) => void;
 }) {
+  const tc = useTContent();
+  const label = (feature: string) => tc(FEATURE_LABELS_DISPLAY[feature] ?? feature);
   const box = clampBox(observation.face_box);
 
   return (
@@ -88,7 +87,7 @@ export function FaceMarkers({
             key={f.index}
             type="button"
             onClick={() => onSelect(isActive ? null : f.index)}
-            aria-label={`${FEATURE_LABELS[f.feature]} — ${region.replace(/_/g, " ")}`}
+            aria-label={`${label(f.feature)} — ${region.replace(/_/g, " ")}`}
             className="absolute -translate-x-1/2 -translate-y-1/2"
             style={{ left: `${left}%`, top: `${top}%` }}
           >
@@ -113,7 +112,7 @@ export function FaceMarkers({
           if (!f) return null;
           return (
             <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-plum/80 px-4 py-2.5 text-center backdrop-blur">
-              <p className="text-sm font-semibold text-white">{FEATURE_LABELS[f.feature]}</p>
+              <p className="text-sm font-semibold text-white">{label(f.feature)}</p>
             </div>
           );
         })()}
