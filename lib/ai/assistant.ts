@@ -113,7 +113,7 @@ export async function respond(
   const result = await provider.complete(
     systemPrompt(context, lang, opts?.brief),
     messages,
-    opts?.brief ? { maxTokens: 85 } : undefined,
+    opts?.brief ? { maxTokens: 120 } : undefined,
   );
   if (!result.ok) {
     return { kind: "unavailable", text: LOCALISED.error[sl], cta: "whatsapp" };
@@ -205,7 +205,7 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
 function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false): string {
   // Voice replies must be short and never spell out numbers/prices out loud.
   const briefBlock = brief
-    ? `\nVOICE CALL — THIS OVERRIDES ANY LENGTH GUIDANCE ABOVE. You are speaking out loud, so keep it to AT MOST TWO short spoken sentences (roughly 35 words total). Never paragraphs, never lists, never bullet points. Ask at most one short question. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words ("a couple of products", "on the higher side", "we'll confirm the price on WhatsApp"). Warm, natural, and to the point — like a quick chat, not an essay.\n`
+    ? `\nVOICE CALL — THIS OVERRIDES ANY LENGTH GUIDANCE ABOVE. You are speaking out loud, so keep it to TWO or at most THREE short spoken sentences and finish your thought (never trail off mid-sentence). Never paragraphs, never lists, never bullet points. Ask at most one short question. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words ("a couple of products", "on the higher side", "we'll confirm the price on WhatsApp"). Warm, natural, and to the point — like a quick chat, not an essay.\n`
     : "";
   // When a concern is known, steer a focused, concern-specific conversation
   // using the concern's own content and the Skin Check's questions for it.
