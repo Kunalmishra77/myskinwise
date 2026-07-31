@@ -7,10 +7,10 @@ describe("ContactUsPage", () => {
   it("surfaces all 3 department phone numbers, sourced from SITE.phones (never hardcoded)", () => {
     render(<ContactUsPage />);
 
-    // SITE.whatsapp shares the same display text as SITE.phones.general
-    // (both "+91 93191 35065"), so a link's accessible name alone doesn't
-    // uniquely identify it — assert that a tel: link with the expected
-    // href exists among the links sharing that display text.
+    // All departments now share one canonical number, so several links carry
+    // the same display text — a link's accessible name alone doesn't uniquely
+    // identify it. Assert that a tel: link with the expected href exists among
+    // the links sharing that display text.
     for (const phone of [SITE.phones.general, SITE.phones.product, SITE.phones.shipment]) {
       const links = screen.getAllByRole("link", { name: phone.display });
       expect(links.some((link) => link.getAttribute("href") === telHref(phone.e164))).toBe(true);

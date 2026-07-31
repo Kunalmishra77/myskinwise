@@ -39,14 +39,15 @@ class OpenAiTts implements TextToSpeechProvider {
     // interface but only ElevenLabs acts on it.
     // Hard cap the spoken length: voice replies must be short, and this also
     // caps cost per turn regardless of what the model returned.
-    const input = text.slice(0, 700);
+    const input = normalizeForSpeech(text).slice(0, 700);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 20_000);
     try {
       const res = await fetch("https://api.openai.com/v1/audio/speech", {
         method: "POST",
         headers: { authorization: `Bearer ${this.apiKey}`, "content-type": "application/json" },
-        body: JSON.stringify({ model: this.model, voice: this.voice, input, response_format: "mp3" }),
+        // speed > 1 keeps the fallback voice from sounding sluggish too.
+        body: JSON.stringify({ model: this.model, voice: this.voice, input, response_format: "mp3", speed: 1.08 }),
         signal: controller.signal,
       });
       if (!res.ok) return { ok: false, reason: "failed" };
@@ -60,6 +61,33 @@ class OpenAiTts implements TextToSpeechProvider {
       clearTimeout(timer);
     }
   }
+}
+
+/**
+ * Cleans text so it is SPOKEN naturally rather than read literally.
+ *
+ * The model's reply is written to be READ, so it can contain things a
+ * text-to-speech engine mispronounces: markdown emphasis, a rupee sign, an
+ * ampersand, ellipses. This rewrites those into spoken forms (localised where
+ * it matters) before the audio is generated. It never changes meaning — the
+ * safety-checked text is unchanged on screen; only what the voice pronounces is
+ * tidied.
+ */
+export function normalizeForSpeech(text: string, lang?: "en" | "hi"): string {
+  const rupees = lang === "hi" ? "$1 रुपये" : "$1 rupees";
+  const and = lang === "hi" ? " और " : " and ";
+  return text
+    // Strip markdown/formatting the model may emit, so it isn't voiced aloud.
+    .replace(/[*_`#>]/g, "")
+    // "₹899" / "₹ 1,299" -> spoken currency in the reply's language.
+    .replace(/₹\s?([\d,]+)/g, rupees)
+    // Ampersand read as a word.
+    .replace(/\s&\s/g, and)
+    // Ellipsis / em-dash -> a natural pause rather than a spoken symbol.
+    .replace(/…/g, ", ")
+    .replace(/\s—\s/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 /**
@@ -85,7 +113,7 @@ class ElevenLabsTts implements TextToSpeechProvider {
   async speak(text: string, lang?: "en" | "hi"): Promise<SpeechResult> {
     // Same hard cap as OpenAI: voice replies stay short, which also bounds
     // ElevenLabs cost per turn regardless of what the model returned.
-    const input = text.slice(0, 700);
+    const input = normalizeForSpeech(text, lang).slice(0, 700);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 20_000);
     try {
@@ -100,10 +128,17 @@ class ElevenLabsTts implements TextToSpeechProvider {
             // language_code nudges pronunciation for the multilingual model,
             // so Hindi is read as Hindi rather than transliterated English.
             ...(lang ? { language_code: lang } : {}),
-            // Slightly higher stability + similarity than the defaults: a
-            // skincare assistant should sound calm and consistent, not
-            // theatrical.
-            voice_settings: { stability: 0.5, similarity_boost: 0.8 },
+            voice_settings: {
+              // A touch lower stability than before so she varies naturally and
+              // doesn't sound flat/monotone; higher similarity keeps her ON the
+              // chosen voice; speaker boost sharpens clarity for numbers and
+              // Hindi words; speed > 1 fixes the "too slow" delivery.
+              stability: 0.4,
+              similarity_boost: 0.85,
+              style: 0.15,
+              use_speaker_boost: true,
+              speed: 1.08,
+            },
           }),
           signal: controller.signal,
         },

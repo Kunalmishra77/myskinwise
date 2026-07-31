@@ -5,13 +5,13 @@ export const SITE = {
   legalEntity: "Razorbill Private Limited",
   url: "https://myskinwise.com",
   email: "support@myskinwise.com",
-  // TODO(client-confirm): canonical phone set (Contact-page 3-department split)
+  // Single canonical contact number, used across the whole site.
   phones: {
-    general: { label: "General Inquiries", display: "+91 93191 35065", e164: "+919319135065" },
-    product: { label: "Product Queries", display: "+91 99587 15003", e164: "+919958715003" },
-    shipment: { label: "Shipment Queries", display: "+91 96501 21669", e164: "+919650121669" },
+    general: { label: "General Inquiries", display: "+91 92660 48124", e164: "+919266048124" },
+    product: { label: "Product Queries", display: "+91 92660 48124", e164: "+919266048124" },
+    shipment: { label: "Shipment Queries", display: "+91 92660 48124", e164: "+919266048124" },
   } satisfies Record<string, Phone>,
-  whatsapp: { display: "+91 93191 35065", e164: "919319135065" },
+  whatsapp: { display: "+91 92660 48124", e164: "919266048124" },
   concerns: [
     { slug: "pigmentation", label: "Hyperpigmentation" },
     { slug: "acne", label: "Acne" },

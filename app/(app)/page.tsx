@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { MessageCircle, ScanFace, ShieldCheck, Sparkles, UserCheck } from "lucide-react";
-import { SITE, waHref } from "@/config/site";
+import { ScanFace, Sparkles, UserCheck } from "lucide-react";
+import { SITE } from "@/config/site";
 import { IMAGES } from "@/content/assets";
 import { CONCERNS } from "@/content/concerns";
 import { INGREDIENT_LIST } from "@/content/ingredients";
 import { SKIN_TYPE_LIST } from "@/content/skin-types";
+import { HomeHero } from "@/components/features/home-hero";
 import { StartPaths } from "@/components/features/start-paths";
 import { AnalyzerShowcase } from "@/components/features/analyzer-showcase";
 import { FeaturedFormulations } from "@/components/features/featured-formulations";
@@ -42,56 +43,11 @@ export default function HomePage() {
 
   return (
     <>
-      {/* 1 — HERO. Headline, subcopy and the primary CTA all sit within the
-          first viewport at 320px; the portrait follows below on mobile and
-          moves alongside from lg. */}
-      <section className="px-5 pt-8 lg:pt-16">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
-          <div>
-            <Eyebrow><T>{HOME.heroEyebrow}</T></Eyebrow>
-            <h1 className="mt-4 font-display text-display font-semibold text-ink">
-              <T>{HOME.heroTitle}</T>
-            </h1>
-            <p className="mt-5 max-w-md text-lg text-ink-soft">
-              <T>{HOME.heroBody}</T>
-            </p>
-
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg">
-                <Link href="/skin-check"><T>{HOME.startSkinCheck}</T></Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <a href={waHref(SITE.whatsapp.e164)} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle aria-hidden="true" className="size-4" />
-                  <T>{HOME.messageExpert}</T>
-                </a>
-              </Button>
-            </div>
-
-            <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-soft">
-              <li className="flex items-center gap-2">
-                <ShieldCheck aria-hidden="true" className="size-4 text-rose-ink" />
-                <T>{HOME.heroPointFree}</T>
-              </li>
-              <li className="flex items-center gap-2">
-                <UserCheck aria-hidden="true" className="size-4 text-rose-ink" />
-                <T>{HOME.heroPointReviewed}</T>
-              </li>
-            </ul>
-          </div>
-
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-blush lg:aspect-[4/4.4]">
-            <Image
-              src={IMAGES.heroModelPortrait.src}
-              alt={IMAGES.heroModelPortrait.alt}
-              fill
-              priority
-              sizes="(min-width: 1024px) 560px, 100vw"
-              className="object-cover"
-            />
-          </div>
-        </div>
-      </section>
+      {/* 1 — AI-FIRST HERO. "How can I help you?" with Talk to AI (primary) and
+          Chat with AI, over an ambient carousel of the brand banners. This is
+          the front door: the first thing a visitor meets is a way to start a
+          consultation, not a marketing headline. */}
+      <HomeHero />
 
       {/* 2 — WHAT YOU CAN DO HERE. Immediately below the hero, because an
           audit found the Skin Analyzer had no inbound links anywhere on the

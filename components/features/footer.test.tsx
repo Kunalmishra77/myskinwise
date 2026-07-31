@@ -42,7 +42,7 @@ describe("Footer", () => {
   it("renders a WhatsApp link matching SITE.whatsapp", () => {
     render(<Footer />);
     const waLink = screen.getByRole("link", { name: /whatsapp/i });
-    expect(waLink).toHaveAttribute("href", "https://wa.me/919319135065");
+    expect(waLink).toHaveAttribute("href", "https://wa.me/919266048124");
   });
 
   it("renders all Visit Links with correct hrefs", () => {
