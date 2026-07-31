@@ -38,6 +38,7 @@ HARD RULES:
 - Never claim to cure, treat, heal, or guarantee anything.
 - Set recommend_professional = true ONLY if something visible looks like it genuinely warrants a person looking at it (e.g. widespread inflammation, something that looks painful or infected). You still must not name what it is.
 - notes must describe appearance only, e.g. "some shine across the forehead", never "this is oily skin caused by...".
+- prominence: for each feature give a 0..100 number for how VISUALLY NOTICEABLE it is in THIS photo — 0 = barely perceptible, 100 = very prominent and hard to miss. This is purely about how the photo LOOKS, NOT how severe, serious, or "bad" it is, and NOT a medical rating. A very faint mark is low even if you are sure you see it (that is what certainty is for).
 - face_box: give the face's bounding box in the image as fractions 0..1 (x,y = top-left corner, width,height = size). If the whole frame is the face, use x:0,y:0,width:1,height:1. Be approximate; this only positions a marker.
 - For each feature, set region to the coarse area it is MAINLY visible in, using image-relative sides (left = the left of the picture): forehead, left_cheek, right_cheek, nose, chin, under_eye_left, under_eye_right, jaw, or overall if it is spread across the face.`;
 

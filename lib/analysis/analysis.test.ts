@@ -18,7 +18,13 @@ describe("observation schema", () => {
       image_quality: "good",
       face_box: FACE_BOX,
       features: [
-        { feature: "visible_redness", certainty: "observed", region: "right_cheek", note: "some redness on the cheeks" },
+        {
+          feature: "visible_redness",
+          certainty: "observed",
+          region: "right_cheek",
+          note: "some redness on the cheeks",
+          prominence: 60,
+        },
       ],
       limitations: "only the central face is visible",
       recommend_professional: false,

@@ -67,6 +67,17 @@ export const observationSchema = z.object({
         certainty: z.enum(["observed", "possible", "unclear"]),
         region: z.enum(FACE_REGIONS),
         note: z.string().max(240),
+        /**
+         * How visually PROMINENT this characteristic is in the photo, 0..100.
+         *
+         * This is an APPEARANCE property — how noticeable the thing looks in
+         * this image — NOT a medical severity, NOT how "bad" the skin is, NOT a
+         * diagnosis. It exists so the result screen can show an honest visual
+         * meter instead of pretending everything is equally strong. Lenient
+         * here (plain number) and clamped at the edges so one odd value never
+         * rejects the whole analysis.
+         */
+        prominence: z.number(),
       }),
     )
     .max(8),
@@ -106,8 +117,9 @@ export const OBSERVATION_JSON_SCHEMA = {
           certainty: { type: "string", enum: ["observed", "possible", "unclear"] },
           region: { type: "string", enum: [...FACE_REGIONS] },
           note: { type: "string" },
+          prominence: { type: "integer" },
         },
-        required: ["feature", "certainty", "region", "note"],
+        required: ["feature", "certainty", "region", "note", "prominence"],
       },
     },
     limitations: { type: "string" },
@@ -133,6 +145,23 @@ export const CERTAINTY_LABELS: Record<"observed" | "possible" | "unclear", strin
   possible: "Possibly present",
   unclear: "Hard to tell from this photo",
 };
+
+/** Clamp the model's prominence to a safe 0..100 integer. */
+export function clampProminence(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+/**
+ * A word for a prominence band, for text where a bar isn't shown. About
+ * APPEARANCE only ("how noticeable in the photo") — never severity.
+ */
+export function prominenceLabel(n: number): "Subtle" | "Noticeable" | "Prominent" {
+  const p = clampProminence(n);
+  if (p >= 66) return "Prominent";
+  if (p >= 33) return "Noticeable";
+  return "Subtle";
+}
 
 /**
  * Where each region sits WITHIN the face box, as a fraction of it (0..1).

@@ -68,6 +68,11 @@ export const RESULT = {
   observationSingular: "observation",
   observationPlural: "observations",
   clearlyVisible: "clearly visible.",
+  nonDiagnostic: "An AI visual observation — what the photo shows, not a medical diagnosis or a severity score. A Skinwise expert reads the full picture.",
+  prominence: "Visual prominence",
+  prominenceHint: "How noticeable it looks in this photo — not a severity or medical rating.",
+  photoQuality: "Photo quality",
+  mostNoticeable: "Most noticeable in your photo",
   disclaimer:
     "These are visible characteristics only — an AI observation, not a medical diagnosis. A photo cannot tell the whole story; a Skinwise expert can.",
   whatThisMayMean: "What this may mean",
@@ -98,6 +103,21 @@ export const CERTAINTY_LABELS_DISPLAY: Record<string, string> = {
   observed: "Clearly visible",
   possible: "Possibly present",
   unclear: "Hard to tell from this photo",
+};
+
+/** Words for a prominence band (see prominenceLabel in vision-schema). */
+export const PROMINENCE_WORDS: Record<string, string> = {
+  Subtle: "Subtle",
+  Noticeable: "Noticeable",
+  Prominent: "Prominent",
+};
+
+/** Words for the photo-quality bands. */
+export const QUALITY_WORDS: Record<string, string> = {
+  good: "Good",
+  fair: "Fair",
+  poor: "Low",
+  unusable: "Unreadable",
 };
 
 export const QUALITY_NOTE: Record<string, string> = {
