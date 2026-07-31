@@ -137,7 +137,7 @@ export async function POST(request: Request) {
     const ctx =
       body.concern && !context?.concern ? { ...(context ?? {}), concern: body.concern } : context;
     const instruction =
-      "The user has just completed a face scan. Warmly and simply, explain what the analysis showed — the visible characteristics and roughly how noticeable each was — then say what they might do next and offer to help. Keep it short and natural. Do not read out numbers like a list; speak like a person. Never give a diagnosis.";
+      "The user has just completed a face scan. In a warm, natural voice, tell them the main things you could see in the photo, then offer to talk them through which ingredients would help and a suggested routine. Keep it to two short sentences, speak like a person (no number lists), and never give a diagnosis.";
     const outcome = await respond([{ role: "user", content: instruction }], ctx, { lang, brief: true });
     let audioBase64: string | undefined;
     let audioMimeType: string | undefined;

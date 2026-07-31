@@ -75,11 +75,11 @@ export function FaceMarkers({
         // Point within the face box, then within the image.
         let left = (box.x + rp.x * box.width) * 100;
         let top = (box.y + rp.y * box.height) * 100;
-        // Nudge markers that share a region apart so they don't stack.
+        // Nudge highlights that share a region apart so they don't stack.
         const dup = shown.slice(0, i).filter((g) => (g.region ?? DEFAULT_REGION[g.feature]) === region).length;
         if (dup) {
-          left += (dup % 2 ? 1 : -1) * 4;
-          top += Math.ceil(dup / 2) * 4;
+          left += (dup % 2 ? 1 : -1) * 7;
+          top += Math.ceil(dup / 2) * 7;
         }
         const isActive = active === f.index;
         return (
@@ -88,19 +88,28 @@ export function FaceMarkers({
             type="button"
             onClick={() => onSelect(isActive ? null : f.index)}
             aria-label={`${label(f.feature)} — ${region.replace(/_/g, " ")}`}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
+            className={`absolute aspect-square w-[26%] -translate-x-1/2 -translate-y-1/2 transition-all sm:w-[23%] ${
+              isActive ? "z-20 scale-110" : "z-10"
+            }`}
             style={{ left: `${left}%`, top: `${top}%` }}
           >
+            {/* A highlighted region over the affected area (not a numbered dot).
+                It marks the AREA a characteristic shows in, not an exact pixel —
+                which is why it is a soft zone, not a precise circle. */}
             <span
-              className={`flex items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white shadow-lift transition-all ${
-                isActive ? "size-8 bg-rose-ink" : "size-6 bg-rose-ink/85"
+              className={`absolute inset-0 rounded-full border-2 transition-all ${
+                isActive
+                  ? "border-white bg-rose-ink/30 shadow-lift"
+                  : "border-rose-ink/90 bg-rose-ink/15"
               }`}
-            >
-              {i + 1}
-            </span>
+            />
             {!isActive && (
-              <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-rose-ink/40 motion-reduce:hidden" />
+              <span className="absolute inset-0 rounded-full border border-rose-ink/50 motion-safe:animate-ping" />
             )}
+            {/* The concern label, pinned just under the highlight. */}
+            <span className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded-full bg-plum/85 px-2 py-0.5 text-[10px] font-semibold text-white shadow-soft backdrop-blur">
+              {label(f.feature)}
+            </span>
           </button>
         );
       })}

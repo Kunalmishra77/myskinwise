@@ -152,7 +152,7 @@ export function ScanResult({
 
       {shown.length > 0 ? (
         <ul className="mt-6 flex flex-col gap-3">
-          {shown.map((f, i) => {
+          {shown.map((f) => {
             const isActive = active === f.index;
             const prominence = clampProminence(f.prominence);
             const word = prominenceLabel(f.prominence);
@@ -168,10 +168,8 @@ export function ScanResult({
                   onClick={() => setActive(isActive ? null : f.index)}
                   className="flex w-full items-start justify-between gap-3 px-4 pt-4 text-left"
                 >
-                  <span className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
-                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-rose-ink text-xs font-semibold text-white">
-                      {i + 1}
-                    </span>
+                  <span className="flex items-center gap-2.5 font-display text-lg font-semibold text-ink">
+                    <span className="size-2.5 shrink-0 rounded-full bg-rose-ink" aria-hidden="true" />
                     {tc(FEATURE_LABELS_DISPLAY[f.feature] ?? f.feature)}
                   </span>
                   <span
