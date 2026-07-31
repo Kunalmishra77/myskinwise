@@ -32,6 +32,10 @@ const SOURCES = [
   { file: "content/concerns/pigmentation.ts", keys: ["heading", "subheading", "title", "body", "name", "question", "answer", "label"] },
   { file: "content/concerns/acne.ts", keys: ["heading", "subheading", "title", "body", "name", "question", "answer", "label"] },
   { file: "content/concerns/other-issues.ts", keys: ["heading", "subheading", "title", "body", "name", "question", "answer", "label"] },
+  { file: "content/concerns/dark-circles.ts", keys: ["heading", "subheading", "title", "body", "name", "question", "answer", "label"] },
+  { file: "content/concerns/acne-scars.ts", keys: ["heading", "subheading", "title", "body", "name", "question", "answer", "label"] },
+  { file: "content/concerns/oily-skin.ts", keys: ["heading", "subheading", "title", "body", "name", "question", "answer", "label"] },
+  { file: "content/concerns/dry-skin.ts", keys: ["heading", "subheading", "title", "body", "name", "question", "answer", "label"] },
   // FAQs.
   { file: "content/faqs.ts", keys: ["question", "answer"] },
   // Products — DESCRIPTION prose only. Names and ingredient (INCI) lists are

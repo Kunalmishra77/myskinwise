@@ -33,7 +33,9 @@ const bodySchema = z.object({
   // Optional chosen concern, so the chat can run a focused, concern-specific
   // conversation. Anonymous and safe — it only steers which questions and
   // content the assistant draws on, never anything private.
-  concern: z.enum(["pigmentation", "acne", "other-issues"]).optional(),
+  concern: z
+    .enum(["pigmentation", "acne", "other-issues", "dark-circles", "acne-scars", "oily-skin", "dry-skin"])
+    .optional(),
   // Reply language. The client sends the active locale.
   lang: z.enum(["en", "hi"]).optional(),
 });

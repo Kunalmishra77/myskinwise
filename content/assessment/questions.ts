@@ -33,6 +33,10 @@ export const QUESTIONS: Question[] = [
     options: [
       { value: "pigmentation", label: "Dark spots and uneven tone" },
       { value: "acne", label: "Breakouts and congestion" },
+      { value: "acne-scars", label: "Acne scars and marks" },
+      { value: "dark-circles", label: "Dark circles and tired eyes" },
+      { value: "oily-skin", label: "Oily, shiny skin" },
+      { value: "dry-skin", label: "Dry, tight or flaky skin" },
       { value: "other-issues", label: "Texture, dullness or fine lines" },
     ],
   },

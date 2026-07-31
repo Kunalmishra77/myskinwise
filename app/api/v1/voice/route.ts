@@ -41,7 +41,9 @@ const bodySchema = z.object({
   // Optional chosen concern, so voice runs a focused, concern-specific
   // conversation — the SAME steering the text assistant already gets. Anonymous
   // and safe: it only picks which questions/content the assistant draws on.
-  concern: z.enum(["pigmentation", "acne", "other-issues"]).optional(),
+  concern: z
+    .enum(["pigmentation", "acne", "other-issues", "dark-circles", "acne-scars", "oily-skin", "dry-skin"])
+    .optional(),
   // Reply + speech language.
   lang: z.enum(["en", "hi"]).optional(),
 });

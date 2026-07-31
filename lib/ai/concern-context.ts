@@ -29,11 +29,27 @@ const CONCERN_FAQS: Record<string, FaqItem[]> = {
   acne: FAQS.acneObjections,
   pigmentation: FAQS.pigmentationObjections,
   "other-issues": FAQS.otherIssuesObjections,
+  "dark-circles": FAQS.darkCirclesObjections,
+  "acne-scars": FAQS.acneScarsObjections,
+  "oily-skin": FAQS.oilySkinObjections,
+  "dry-skin": FAQS.drySkinObjections,
 };
 
+const KNOWN_CONCERNS = [
+  "pigmentation",
+  "acne",
+  "other-issues",
+  "dark-circles",
+  "acne-scars",
+  "oily-skin",
+  "dry-skin",
+] as const;
+
+export type KnownConcern = (typeof KNOWN_CONCERNS)[number];
+
 /** True for a slug we have a concern context for. */
-export function isKnownConcern(slug: string | undefined): slug is "pigmentation" | "acne" | "other-issues" {
-  return slug === "pigmentation" || slug === "acne" || slug === "other-issues";
+export function isKnownConcern(slug: string | undefined): slug is KnownConcern {
+  return (KNOWN_CONCERNS as readonly string[]).includes(slug ?? "");
 }
 
 export function concernGuidance(slug: string): string | null {

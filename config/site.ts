@@ -15,6 +15,10 @@ export const SITE = {
   concerns: [
     { slug: "pigmentation", label: "Hyperpigmentation" },
     { slug: "acne", label: "Acne" },
+    { slug: "acne-scars", label: "Acne Scars" },
+    { slug: "dark-circles", label: "Dark Circles" },
+    { slug: "oily-skin", label: "Oily Skin" },
+    { slug: "dry-skin", label: "Dry Skin" },
     { slug: "other-issues", label: "Other Issues" },
   ],
   nav: [] as NavItem[],

@@ -156,6 +156,94 @@ const otherIssuesObjections: FaqItem[] = [
 ];
 
 /**
+ * Objection FAQs for the four newer first-class concerns. Written claim-safe:
+ * appearance-based, never "cure/heal/permanent/guaranteed", no medical promise.
+ */
+const darkCirclesObjections: FaqItem[] = [
+  {
+    id: "dark-circles-genetic",
+    question: "My dark circles are genetic. Can anything really help?",
+    answer:
+      "Some of what you see may be inherited, but a lot of it — dullness, puffiness, dehydration and pigmentation around the eyes — can still look brighter with the right routine. Our experts set honest expectations for your specific under-eye.",
+  },
+  {
+    id: "dark-circles-tried-everything",
+    question: "I've tried lots of eye creams and nothing changed. Why would this be different?",
+    answer:
+      "Under-eye darkness has more than one cause — pigment, visible vessels, hollowing, tiredness — and a single generic cream rarely matches yours. We look at what is actually driving it and build the routine around that.",
+  },
+  {
+    id: "dark-circles-need-more",
+    question: "What if my dark circles need more than skincare?",
+    answer:
+      "If the shadow is mostly structural (hollowing), skincare can support the look but won't reshape the area — and we'll tell you that plainly rather than overpromise, and point you to a professional if it's the right call.",
+  },
+];
+
+const acneScarsObjections: FaqItem[] = [
+  {
+    id: "acne-scars-old-marks",
+    question: "My acne is gone but the marks stayed. Can they still fade?",
+    answer:
+      "Flat marks left behind by past breakouts — brown or red — commonly fade with consistency and daily sunscreen. We build a routine around helping them look more even over time.",
+  },
+  {
+    id: "acne-scars-pitted",
+    question: "Are pitted, indented scars the same as dark marks?",
+    answer:
+      "No — indented (textural) scars sit deeper than flat marks. Skincare can support overall skin quality, but genuine pitted scars often need a professional procedure, and we're honest about that difference rather than overselling.",
+  },
+  {
+    id: "acne-scars-sunscreen",
+    question: "Do I really need sunscreen for scars?",
+    answer:
+      "Yes — unprotected sun makes post-acne marks look darker and last longer, so daily SPF is one of the most useful things you can do while marks fade.",
+  },
+];
+
+const oilySkinObjections: FaqItem[] = [
+  {
+    id: "oily-skin-strip",
+    question: "Won't washing more often fix the oiliness?",
+    answer:
+      "Usually the opposite — stripping the skin can push it to make even more oil to compensate. A balanced routine that cleans gently and hydrates lightly often calms shine better than over-washing.",
+  },
+  {
+    id: "oily-skin-moisturiser",
+    question: "My skin is oily — do I even need a moisturiser?",
+    answer:
+      "Yes. Skipping moisturiser can leave skin dehydrated, which can drive more oil. A lightweight, non-greasy formula keeps skin balanced without adding shine.",
+  },
+  {
+    id: "oily-skin-pores",
+    question: "Can I make my pores smaller?",
+    answer:
+      "Pore size is largely structural, so no routine truly shrinks them — but keeping them clear and reducing oil can make them look far less noticeable.",
+  },
+];
+
+const drySkinObjections: FaqItem[] = [
+  {
+    id: "dry-skin-drink-water",
+    question: "I drink plenty of water — why is my skin still dry?",
+    answer:
+      "Dryness is often about the skin's barrier and its oil, not just how much you drink. Supporting the barrier with the right ingredients usually helps more than water alone.",
+  },
+  {
+    id: "dry-skin-vs-dehydrated",
+    question: "What's the difference between dry and dehydrated skin?",
+    answer:
+      "Dry skin makes less oil; dehydrated skin lacks water — and skin can be both, even oily-dehydrated. The routine differs, which is why we check which one you're dealing with.",
+  },
+  {
+    id: "dry-skin-actives",
+    question: "Can I still use actives if my skin is dry and sensitive?",
+    answer:
+      "Often yes, but introduced gently and paired with barrier support. Our experts pace actives to what your skin can comfortably take, rather than all at once.",
+  },
+];
+
+/**
  * Contact page FAQs (WEBSITE_CONTENT.md §13). The source lists 3 real
  * answers (no questions were captured alongside them in the export, so
  * matching questions are inferred from the shared pigmentation/acne
@@ -202,5 +290,9 @@ export const FAQS = {
   pigmentationObjections,
   acneObjections,
   otherIssuesObjections,
+  darkCirclesObjections,
+  acneScarsObjections,
+  oilySkinObjections,
+  drySkinObjections,
   contactFaqs,
 };

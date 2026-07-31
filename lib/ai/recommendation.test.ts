@@ -19,9 +19,20 @@ describe("recommendationConcern", () => {
     expect(recommendationConcern(convo)).toBe("pigmentation");
   });
 
-  it("maps wrinkles / dark circles to other-issues", () => {
-    const convo = [user("hi"), bot("Hi!"), user("fine lines and dark circles are bothering me")];
+  it("maps wrinkles / fine lines to other-issues", () => {
+    const convo = [user("hi"), bot("Hi!"), user("fine lines and dullness are bothering me")];
     expect(recommendationConcern(convo)).toBe("other-issues");
+  });
+
+  it("maps the newer first-class concerns from the customer's words", () => {
+    const scars = [user("hi"), bot("Hi!"), user("I have acne scars and marks")];
+    expect(recommendationConcern(scars)).toBe("acne-scars");
+    const eyes = [user("hi"), bot("Hi!"), user("dark circles under my eyes")];
+    expect(recommendationConcern(eyes)).toBe("dark-circles");
+    const oily = [user("hi"), bot("Hi!"), user("my skin gets so oily and shiny")];
+    expect(recommendationConcern(oily)).toBe("oily-skin");
+    const dry = [user("hi"), bot("Hi!"), user("my skin is really dry and flaky")];
+    expect(recommendationConcern(dry)).toBe("dry-skin");
   });
 
   it("prefers an explicitly chosen concern over inference", () => {

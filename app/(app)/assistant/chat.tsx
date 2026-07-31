@@ -20,7 +20,14 @@ type Msg = {
   recommendConcern?: string;
 };
 
-type ConcernSlug = "acne" | "pigmentation" | "other-issues";
+type ConcernSlug =
+  | "acne"
+  | "pigmentation"
+  | "acne-scars"
+  | "dark-circles"
+  | "oily-skin"
+  | "dry-skin"
+  | "other-issues";
 
 /**
  * The concern picker that makes the chat condition-specific. Choosing one
@@ -35,6 +42,14 @@ const CONCERN_STARTERS: { slug: ConcernSlug; label: string; opener: string }[] =
     label: ASSISTANT.concernPigmentationLabel,
     opener: ASSISTANT.concernPigmentationOpener,
   },
+  { slug: "acne-scars", label: ASSISTANT.concernScarsLabel, opener: ASSISTANT.concernScarsOpener },
+  {
+    slug: "dark-circles",
+    label: ASSISTANT.concernDarkCirclesLabel,
+    opener: ASSISTANT.concernDarkCirclesOpener,
+  },
+  { slug: "oily-skin", label: ASSISTANT.concernOilyLabel, opener: ASSISTANT.concernOilyOpener },
+  { slug: "dry-skin", label: ASSISTANT.concernDryLabel, opener: ASSISTANT.concernDryOpener },
   {
     slug: "other-issues",
     label: ASSISTANT.concernOtherLabel,

@@ -5,7 +5,7 @@ import type { FaqItem } from "@/content/faqs";
  * Other Issues — WEBSITE_CONTENT.md §3, §6, §9). Task 19 consumes
  * `CONCERNS` (content/concerns/index.ts) to render each concern page.
  */
-export type ConcernSlug = "pigmentation" | "acne" | "other-issues";
+export type ConcernSlug = "pigmentation" | "acne" | "other-issues" | "acne-scars" | "dry-skin" | "dark-circles" | "oily-skin";
 
 export type ConcernContent = {
   slug: ConcernSlug;

@@ -30,7 +30,7 @@ export const PRODUCTS: Product[] = [
     ingredientsPartial: false,
     mrp: 1299,
     netQuantity: "50ml",
-    concerns: ["acne"],
+    concerns: ["acne", "oily-skin"],
     imageCount: 3,
   },
   {
@@ -50,7 +50,7 @@ export const PRODUCTS: Product[] = [
     ingredientsPartial: false,
     mrp: null,
     netQuantity: null,
-    concerns: ["pigmentation"],
+    concerns: ["pigmentation", "acne-scars"],
     imageCount: 4,
   },
   {
@@ -70,7 +70,7 @@ export const PRODUCTS: Product[] = [
     ingredientsPartial: false,
     mrp: null,
     netQuantity: null,
-    concerns: ["other-issues"],
+    concerns: ["other-issues", "dry-skin", "dark-circles"],
     imageCount: 4,
   },
   {
@@ -91,7 +91,7 @@ export const PRODUCTS: Product[] = [
     ingredientsPartial: true,
     mrp: null,
     netQuantity: null,
-    concerns: ["pigmentation"],
+    concerns: ["pigmentation", "acne-scars"],
     imageCount: 3,
   },
   {
@@ -107,7 +107,7 @@ export const PRODUCTS: Product[] = [
     ingredientsPartial: true,
     mrp: null,
     netQuantity: null,
-    concerns: ["other-issues"],
+    concerns: ["other-issues", "dry-skin"],
     imageCount: 4,
   },
   {
@@ -125,7 +125,7 @@ export const PRODUCTS: Product[] = [
     ingredientsPartial: false,
     mrp: null,
     netQuantity: null,
-    concerns: ["pigmentation", "acne", "other-issues"],
+    concerns: ["pigmentation", "acne", "other-issues", "oily-skin", "dry-skin"],
     imageCount: 4,
   },
   {
@@ -146,7 +146,7 @@ export const PRODUCTS: Product[] = [
     ingredientsPartial: false,
     mrp: 899,
     netQuantity: "50g",
-    concerns: ["pigmentation", "acne", "other-issues"],
+    concerns: ["pigmentation", "acne", "other-issues", "oily-skin", "dry-skin", "dark-circles", "acne-scars"],
     imageCount: 4,
   },
   {
@@ -187,7 +187,7 @@ export const PRODUCTS: Product[] = [
     ingredientsPartial: false,
     mrp: null,
     netQuantity: null,
-    concerns: ["other-issues"],
+    concerns: ["other-issues", "dark-circles"],
     imageCount: 3,
   },
 ];

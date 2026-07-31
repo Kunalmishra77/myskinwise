@@ -126,10 +126,17 @@ export async function respond(
  * customer never explicitly picked a concern chip. Deliberately conservative:
  * only the three concerns we build a combo for, appearance-led wording.
  */
+// Order matters: the first pattern that matches a message wins, so the more
+// specific concerns (acne SCARS, DARK circles) are listed before the broader
+// ones they share words with (acne, pigmentation).
 const CONCERN_KEYWORDS: { slug: string; re: RegExp }[] = [
+  { slug: "acne-scars", re: /\b(acne scar\w*|acne mark\w*|scar\b|scars|scarring|pitted|post.?acne)\b/i },
+  { slug: "dark-circles", re: /\b(dark circle\w*|under.?eye|under eye|eye bag\w*|puffy eye\w*|tired eyes)\b/i },
   { slug: "acne", re: /\b(acne|pimple|pimples|breakout|breakouts|blemish|blemishes|whitehead|whiteheads|blackhead|blackheads|zit|zits)\b/i },
   { slug: "pigmentation", re: /\b(pigment|pigmentation|hyperpigment\w*|dark spot|dark spots|uneven tone|uneven skin tone|tan|tanning|melasma)\b/i },
-  { slug: "other-issues", re: /\b(wrinkle|wrinkles|fine line|fine lines|dark circle|dark circles|dull|dullness|open pore|open pores|pores|aging|ageing|anti-aging|anti-ageing)\b/i },
+  { slug: "oily-skin", re: /\b(oily|oiliness|greasy|shiny skin|excess oil|too much oil|sebum)\b/i },
+  { slug: "dry-skin", re: /\b(dry skin|dryness|flaky|flaking|tight skin|dehydrated|rough patch\w*)\b/i },
+  { slug: "other-issues", re: /\b(wrinkle|wrinkles|fine line|fine lines|dull|dullness|open pore|open pores|pores|aging|ageing|anti-aging|anti-ageing)\b/i },
 ];
 
 /** Most recent concern the customer's own words point at, if any. */
