@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Keyboard, X, Send, Mic } from "lucide-react";
+import { Keyboard, X, Send, Mic, ScanFace } from "lucide-react";
 import { SITE, waHref } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useVoiceConversation, type CtaKind } from "@/lib/voice/use-voice-conversation";
 import { VoiceAvatar } from "@/components/voice/voice-avatar";
 import { RecommendedCombo } from "@/components/products/recommended-combo";
 import { useT } from "@/lib/i18n/provider";
+import { getSession, patchSession } from "@/lib/consultation/session";
 
 const CTA_LABEL: Record<CtaKind, string> = {
   skin_check: "Start your Skin Check",
@@ -69,6 +70,15 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
 
   const lastTurn = turns[turns.length - 1];
   const lastRecommend = !busy && lastTurn?.role === "assistant" ? lastTurn.recommendConcern : undefined;
+
+  // Whether the user arrived from a fresh scan Riya hasn't narrated yet — used
+  // to invite them to hear their results.
+  const [pendingScan, setPendingScan] = React.useState(false);
+  React.useEffect(() => {
+    const s = getSession();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPendingScan(Boolean(s.analysisReference && s.analysisReference !== s.explainedRef));
+  }, []);
 
   return (
     <div className="flex h-full flex-col bg-warm">
@@ -135,7 +145,17 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
           </ul>
         )}
         {lastRecommend && (
-          <div className="mt-3">
+          <div className="mt-3 flex flex-col gap-3">
+            {/* Voice → Scan handoff: continue the SAME consultation with a face
+                scan; the concern carries over so the scan stays on-topic. */}
+            <Link
+              href="/skin-check/analyzer"
+              onClick={() => patchSession({ concern: lastRecommend })}
+              className="flex items-center justify-center gap-2 rounded-full border border-rose-ink/30 bg-blush px-5 py-3 text-sm font-semibold text-rose-ink transition hover:bg-blush/70"
+            >
+              <ScanFace aria-hidden="true" className="size-4" />
+              {t("voice.scanCta")}
+            </Link>
             <RecommendedCombo concern={lastRecommend} />
           </div>
         )}
@@ -154,7 +174,9 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
           {statusText}
         </p>
         {turns.length === 0 && state === "idle" && (
-          <p className="max-w-xs text-center text-sm text-ink-soft/80">{t("voice.emptyHint")}</p>
+          <p className="max-w-xs text-center text-sm text-ink-soft/80">
+            {pendingScan ? t("voice.hearResults") : t("voice.emptyHint")}
+          </p>
         )}
       </div>
 

@@ -83,7 +83,7 @@ export const RESULT = {
   whatNext: "What next?",
   ctaSkinCheck: "Get a personalised Skin Check",
   ctaAssistant: "Ask Skinwise about these observations",
-  ctaVoice: "Talk it through with Skinwise",
+  ctaVoice: "Hear your results from Riya",
   ctaScanAnother: "Scan another photo",
 } as const;
 

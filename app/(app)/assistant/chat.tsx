@@ -2,14 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Send, Sparkles, Mic } from "lucide-react";
+import { Send, Sparkles, Mic, ScanFace } from "lucide-react";
 import { SITE, waHref } from "@/config/site";
 import { cn } from "@/lib/utils";
-import { useLocale } from "@/lib/i18n/provider";
+import { useLocale, useT } from "@/lib/i18n/provider";
 import { ASSISTANT } from "@/content/i18n/assistant-ui";
 import { useTContent } from "@/lib/i18n/use-content";
 import { T } from "@/components/i18n/t";
 import { RecommendedCombo } from "@/components/products/recommended-combo";
+import { getSession, patchSession } from "@/lib/consultation/session";
 
 type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
 type Msg = {
@@ -93,6 +94,7 @@ function Cta({ kind }: { kind: CtaKind }) {
 
 export function AssistantChat() {
   const tc = useTContent();
+  const t = useT();
   const [messages, setMessages] = React.useState<Msg[]>([]);
   const [input, setInput] = React.useState("");
   const [busy, setBusy] = React.useState(false);
@@ -124,6 +126,8 @@ export function AssistantChat() {
         body: JSON.stringify({
           messages: next.map((m) => ({ role: m.role, content: m.content })),
           ...(activeConcern ? { concern: activeConcern } : {}),
+          // Carry the unified session's scan so chat stays grounded in it too.
+          analysisReference: getSession().analysisReference,
           lang: locale,
         }),
       });
@@ -267,7 +271,17 @@ export function AssistantChat() {
           </ul>
         )}
         {lastRecommend && (
-          <div className="mt-5">
+          <div className="mt-5 flex flex-col gap-4">
+            {/* Chat → Scan handoff: same consultation continues with a face
+                scan; the concern carries across. */}
+            <Link
+              href="/skin-check/analyzer"
+              onClick={() => patchSession({ concern: lastRecommend })}
+              className="flex items-center justify-center gap-2 rounded-full border border-rose-ink/30 bg-blush px-5 py-3 text-sm font-semibold text-rose-ink transition hover:bg-blush/70"
+            >
+              <ScanFace aria-hidden="true" className="size-4" />
+              {t("voice.scanCta")}
+            </Link>
             <RecommendedCombo concern={lastRecommend} />
           </div>
         )}

@@ -74,6 +74,8 @@ export const DICTIONARY = {
   "voice.send": { en: "Send", hi: "भेजें" },
   "voice.typeMessage": { en: "Type your message…", hi: "अपना संदेश लिखें…" },
   "voice.useVoice": { en: "Use voice instead", hi: "इसके बजाय आवाज़ का उपयोग करें" },
+  "voice.scanCta": { en: "Scan your face for detailed analysis", hi: "विस्तृत विश्लेषण के लिए अपना चेहरा स्कैन करें" },
+  "voice.hearResults": { en: "Tap to hear your skin analysis", hi: "अपना त्वचा विश्लेषण सुनने के लिए टैप करें" },
   "voice.emptyHint": {
     en: "Tap the circle and Riya will say hello, then just talk — about a concern, an ingredient, your routine, anything.",
     hi: "गोले पर टैप करें, रिया नमस्ते कहेगी, फिर बस बात करें — किसी समस्या, सामग्री, अपनी रूटीन, कुछ भी के बारे में।",

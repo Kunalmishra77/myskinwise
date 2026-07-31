@@ -12,6 +12,7 @@ import { ScanResult } from "@/app/skin-check/analyzer/scan-result";
 import { SCANNER } from "@/content/i18n/scanner";
 import { useTContent } from "@/lib/i18n/use-content";
 import { T } from "@/components/i18n/t";
+import { patchSession } from "@/lib/consultation/session";
 
 const POLICY_VERSION = "2026-07-23";
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -78,6 +79,10 @@ export function Analyzer() {
       const data = await res.json();
       if (res.status === 201 && data.status === "completed") {
         setObservation(data.observation);
+        // Record the result in the unified session so Riya can read it back by
+        // voice afterwards. A NEW scan clears any previous "already explained"
+        // marker so the fresh result gets narrated.
+        patchSession({ analysisReference: data.reference, explainedRef: undefined });
         setStage("result");
       } else if (res.status === 422) {
         setMessage(data.message);

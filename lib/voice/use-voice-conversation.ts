@@ -9,6 +9,7 @@ import {
   playbackLevel,
 } from "@/lib/voice/audio-playback";
 import { useLocale } from "@/lib/i18n/provider";
+import { getSession, patchSession } from "@/lib/consultation/session";
 
 export type VoiceState = "idle" | "listening" | "transcribing" | "thinking" | "speaking" | "error";
 export type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
@@ -194,7 +195,16 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
         const res = await fetch("/api/v1/voice", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ history, wantAudio: true, lang: locale, ...body }),
+          // Carry the unified-session context so every voice turn stays grounded
+          // in what the user told us and in their scan, if they have one.
+          body: JSON.stringify({
+            history,
+            wantAudio: true,
+            lang: locale,
+            analysisReference: getSession().analysisReference,
+            concern: getSession().concern,
+            ...body,
+          }),
         });
         if (res.status === 429) {
           setNote("You've spoken a lot just now — please wait a little while.");
@@ -404,6 +414,63 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
     }
   }, [locale, startBargeMonitor, teardownBarge]);
 
+  /**
+   * Riya reads back the user's Skin Analyzer result — the scan → voice handoff.
+   * The reply is model-generated from the (customer-safe) analysis, so she
+   * describes what was visible in THIS person's scan, never a scripted line.
+   * Marked explained so she narrates a given scan once, not on every open.
+   */
+  const explain = React.useCallback(async () => {
+    const s = getSession();
+    if (!s.analysisReference) return;
+    greetedRef.current = true; // an explanation is her opener for this session
+    activeRef.current = true;
+    unlockAudio();
+    setNote(null);
+    setState("thinking");
+    patchSession({ explainedRef: s.analysisReference });
+    try {
+      const res = await fetch("/api/v1/voice", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          explain: true,
+          wantAudio: true,
+          lang: locale,
+          history: [],
+          analysisReference: s.analysisReference,
+          concern: s.concern,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (data?.status === "ok" && data.text) {
+        setTurns((prev) => [
+          ...prev,
+          { role: "assistant", content: data.text, cta: data.cta, recommendConcern: data.recommendConcern },
+        ]);
+      }
+      if (data?.audioBase64) {
+        bargingRef.current = false;
+        setState("speaking");
+        void startBargeMonitor();
+        await playClip(data.audioBase64, () => {
+          teardownBarge();
+          if (bargingRef.current) {
+            bargingRef.current = false;
+            return;
+          }
+          if (activeRef.current) startListeningRef.current();
+          else setState("idle");
+        });
+      } else {
+        setState("idle");
+        if (activeRef.current) startListeningRef.current();
+      }
+    } catch {
+      setState("idle");
+    }
+  }, [locale, startBargeMonitor, teardownBarge]);
+
   /** The single control the UI drives: tap to begin / end a turn / interrupt. */
   const toggle = React.useCallback(() => {
     unlockAudio();
@@ -422,12 +489,15 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
       void startListening();
       return;
     }
-    // idle / error -> begin. On the very first tap Riya greets herself; after
-    // that a tap just starts listening.
+    // idle / error -> begin. On the very first tap: if the user arrived from a
+    // fresh scan, Riya explains their results; otherwise she greets herself.
+    // After that, a tap just starts listening.
     activeRef.current = true;
-    if (!greetedRef.current) void greet();
+    const sess = getSession();
+    if (sess.analysisReference && sess.analysisReference !== sess.explainedRef) void explain();
+    else if (!greetedRef.current) void greet();
     else void startListening();
-  }, [startListening, greet, teardownBarge]);
+  }, [startListening, greet, explain, teardownBarge]);
 
   const sendText = React.useCallback(
     (text: string) => {

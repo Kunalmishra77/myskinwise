@@ -14,6 +14,7 @@ import {
 } from "@/content/i18n/scanner";
 import { useTContent } from "@/lib/i18n/use-content";
 import { T } from "@/components/i18n/t";
+import { getSession } from "@/lib/consultation/session";
 import { Button } from "@/components/ui/button";
 import { FaceMarkers, type ShownFeature } from "@/components/analyzer/face-markers";
 import { RecommendedCombo } from "@/components/products/recommended-combo";
@@ -62,6 +63,12 @@ export function ScanResult({
   onRestart: () => void;
 }) {
   const tc = useTContent();
+  // If the user arrived here from a Voice/Chat conversation, prefer the concern
+  // they told us over the one inferred from the photo — the combo then reflects
+  // the whole consultation, not just the scan.
+  const [sessionConcern, setSessionConcern] = React.useState<string | undefined>();
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  React.useEffect(() => setSessionConcern(getSession().concern), []);
   // Keep the ORIGINAL index so a marker and its card refer to the same thing,
   // then order the cards by how prominent each characteristic is in the photo —
   // most noticeable first — so the meter and the ordering tell the same story.
@@ -229,7 +236,7 @@ export function ScanResult({
       */}
       {shown.length > 0 && (
         <div className="mt-8">
-          <RecommendedCombo concern={suggestedConcern(observation)} />
+          <RecommendedCombo concern={sessionConcern ?? suggestedConcern(observation)} />
         </div>
       )}
 
@@ -243,17 +250,19 @@ export function ScanResult({
       */}
       <h2 className="mt-10 font-display text-2xl font-semibold text-ink"><T>{RESULT.whatNext}</T></h2>
       <div className="mt-4 flex flex-col gap-3">
+        {/* Primary next step: Riya reads the scan back by voice (she picks up
+            the analysis from the shared session). */}
         <Button size="lg" asChild>
-          <Link href="/skin-check"><T>{RESULT.ctaSkinCheck}</T></Link>
+          <Link href="/voice">
+            <Mic aria-hidden="true" className="size-4" />
+            <T>{RESULT.ctaVoice}</T>
+          </Link>
         </Button>
         <Button size="lg" variant="outline" asChild>
           <Link href="/assistant"><T>{RESULT.ctaAssistant}</T></Link>
         </Button>
         <Button size="lg" variant="outline" asChild>
-          <Link href="/voice">
-            <Mic aria-hidden="true" className="size-4" />
-            <T>{RESULT.ctaVoice}</T>
-          </Link>
+          <Link href="/skin-check"><T>{RESULT.ctaSkinCheck}</T></Link>
         </Button>
         <Button size="lg" variant="outline" onClick={onRestart}>
           <T>{RESULT.ctaScanAnother}</T>

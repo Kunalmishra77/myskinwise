@@ -27,6 +27,9 @@ const bodySchema = z.object({
   // When true, skip STT + the model entirely and just speak Riya's fixed
   // greeting — so she can introduce herself the instant the conversation opens.
   greeting: z.boolean().optional(),
+  // When true, Riya explains the user's Skin Analyzer result out loud — the
+  // scan → voice handoff. Needs analysisReference for the grounding.
+  explain: z.boolean().optional(),
   // EITHER a transcript (browser Web Speech API — the primary path) …
   transcript: z.string().min(1).max(2000).optional(),
   // … OR audio for the server STT fallback (iOS Safari etc.).
@@ -101,6 +104,42 @@ export async function POST(request: Request) {
       }
     }
     return NextResponse.json({ status: "ok", transcript: "", text, cta: null, kind: "greeting", audioBase64, audioMimeType });
+  }
+
+  // Explain-the-scan handoff: Riya narrates the analyzer result. The instruction
+  // is synthetic (the user never sees it); the reply is the SAME grounded,
+  // safety-filtered respond() output, using the analysis as customer-safe
+  // context — so she describes what was VISIBLE, never a diagnosis.
+  if (body.explain) {
+    const context = await resolveCustomerContext({
+      reference: body.reference,
+      phone: body.phone,
+      analysisReference: body.analysisReference,
+    });
+    const ctx =
+      body.concern && !context?.concern ? { ...(context ?? {}), concern: body.concern } : context;
+    const instruction =
+      "The user has just completed a face scan. Warmly and simply, explain what the analysis showed — the visible characteristics and roughly how noticeable each was — then say what they might do next and offer to help. Keep it short and natural. Do not read out numbers like a list; speak like a person. Never give a diagnosis.";
+    const outcome = await respond([{ role: "user", content: instruction }], ctx, { lang: body.lang });
+    let audioBase64: string | undefined;
+    let audioMimeType: string | undefined;
+    if (body.wantAudio) {
+      const speech = await getTtsProvider().speak(outcome.text, body.lang);
+      if (speech.ok) {
+        audioBase64 = speech.audioBase64;
+        audioMimeType = speech.mimeType;
+      }
+    }
+    return NextResponse.json({
+      status: "ok",
+      transcript: "",
+      text: outcome.text,
+      cta: "cta" in outcome ? outcome.cta : null,
+      kind: "explanation",
+      recommendConcern: "recommendConcern" in outcome ? outcome.recommendConcern : (ctx?.concern ?? undefined),
+      audioBase64,
+      audioMimeType,
+    });
   }
 
   // 1. STT (fallback path only). Browser STT sends `transcript` directly.
