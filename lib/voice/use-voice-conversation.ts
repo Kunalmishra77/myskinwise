@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { unlockAudio, playClip, cancelPlayback, sharedAudioContext } from "@/lib/voice/audio-playback";
+import {
+  unlockAudio,
+  playClip,
+  cancelPlayback,
+  sharedAudioContext,
+  playbackLevel,
+} from "@/lib/voice/audio-playback";
 import { useLocale } from "@/lib/i18n/provider";
 
 export type VoiceState = "idle" | "listening" | "transcribing" | "thinking" | "speaking" | "error";
@@ -37,6 +43,15 @@ const END_SILENCE_MS = 1300; // silence after speech before we finalise the turn
 const GRACE_MS = 8000; // wait this long for speech to START before giving up
 const MAX_TURN_MS = 20000; // hard cap on one spoken turn
 
+// Barge-in: while Riya is SPEAKING, the mic stays open (echo-cancelled) and
+// watches for the user starting to talk. The bar is set deliberately HIGHER
+// than SPEAK_RMS and requires a short sustained burst, because the mic also
+// hears Riya's own voice from the speaker; echo cancellation removes most of
+// it, and this margin absorbs the rest so a stray echo peak doesn't self-
+// interrupt her.
+const BARGE_RMS = 0.055;
+const BARGE_SUSTAIN_FRAMES = 4;
+
 export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
   const autoListen = opts.autoListen ?? true;
   const locale = useLocale();
@@ -52,6 +67,84 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
   const analyserRef = React.useRef<AnalyserNode | null>(null);
   const rafRef = React.useRef<number | null>(null);
   const activeRef = React.useRef(false); // conversation is running (vs stopped)
+
+  // Barge-in monitor (a second, lightweight mic open only while speaking).
+  const bargeStreamRef = React.useRef<MediaStream | null>(null);
+  const bargeRafRef = React.useRef<number | null>(null);
+  const bargingRef = React.useRef(false);
+  // Latest mic loudness (0..1) while listening, for the avatar animation.
+  const levelRef = React.useRef(0);
+  const greetedRef = React.useRef(false);
+  // Lets the barge monitor call the latest startListening without a dep cycle.
+  const startListeningRef = React.useRef<() => void>(() => {});
+
+  /**
+   * Current audio level, 0..1, for the avatar: the user's mic while listening,
+   * Riya's own speech while speaking, and a calm 0 otherwise.
+   */
+  const getLevel = React.useCallback(() => {
+    const s = stateRef.current;
+    if (s === "listening") return levelRef.current;
+    if (s === "speaking") return playbackLevel();
+    return 0;
+  }, []);
+
+  const teardownBarge = React.useCallback(() => {
+    if (bargeRafRef.current) {
+      cancelAnimationFrame(bargeRafRef.current);
+      bargeRafRef.current = null;
+    }
+    bargeStreamRef.current?.getTracks().forEach((t) => t.stop());
+    bargeStreamRef.current = null;
+  }, []);
+
+  // Opens the mic DURING playback and, when the user starts talking, cancels
+  // Riya mid-sentence and switches to listening — hands-free interruption.
+  const startBargeMonitor = React.useCallback(async () => {
+    const ctx = sharedAudioContext();
+    if (!ctx || bargeStreamRef.current) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
+      });
+      // If playback already ended while we were awaiting permission, bail.
+      if (stateRef.current !== "speaking") {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      bargeStreamRef.current = stream;
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      const data = new Float32Array(analyser.fftSize);
+      let over = 0;
+
+      const tick = () => {
+        if (stateRef.current !== "speaking" || !bargeStreamRef.current) return;
+        analyser.getFloatTimeDomainData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) sum += data[i]! * data[i]!;
+        const rms = Math.sqrt(sum / data.length);
+        if (rms > BARGE_RMS) {
+          over++;
+          if (over >= BARGE_SUSTAIN_FRAMES) {
+            // The user is talking over her — stop Riya and start listening.
+            bargingRef.current = true;
+            cancelPlayback();
+            teardownBarge();
+            startListeningRef.current();
+            return;
+          }
+        } else {
+          over = 0;
+        }
+        bargeRafRef.current = requestAnimationFrame(tick);
+      };
+      bargeRafRef.current = requestAnimationFrame(tick);
+    } catch {
+      // No barge-in available (permission/hardware); tapping still interrupts.
+    }
+  }, [teardownBarge]);
 
   React.useEffect(() => {
     stateRef.current = state;
@@ -76,6 +169,7 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     analyserRef.current = null;
+    levelRef.current = 0;
   }, []);
 
   // Full stop: end the conversation and release the mic + playback.
@@ -83,8 +177,9 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
     activeRef.current = false;
     cancelPlayback();
     teardownMic();
+    teardownBarge();
     setState("idle");
-  }, [teardownMic]);
+  }, [teardownMic, teardownBarge]);
 
   React.useEffect(() => () => stop(), [stop]);
 
@@ -125,11 +220,21 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
           { role: "assistant", content: data.text, cta: data.cta, recommendConcern: data.recommendConcern },
         ]);
 
-        // Speak the reply, then re-open the mic so the conversation continues
-        // on its own.
+        // Speak the reply. The barge monitor opens the mic DURING playback so
+        // the user can just start talking to interrupt; when playback ends on
+        // its own, re-open the mic so the conversation continues hands-free.
         if (data.audioBase64) {
+          bargingRef.current = false;
           setState("speaking");
+          void startBargeMonitor();
           await playClip(data.audioBase64, () => {
+            teardownBarge();
+            // If the user barged in, the monitor already switched us to
+            // listening — don't start a second turn on top of it.
+            if (bargingRef.current) {
+              bargingRef.current = false;
+              return;
+            }
             if (activeRef.current && autoListen) void startListening();
             else setState("idle");
           });
@@ -202,6 +307,7 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
           let sum = 0;
           for (let i = 0; i < data.length; i++) sum += data[i]! * data[i]!;
           const rms = Math.sqrt(sum / data.length);
+          levelRef.current = Math.min(1, rms * 6); // drive the avatar
           const now = Date.now();
 
           if (rms > SPEAK_RMS) {
@@ -237,6 +343,12 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
     }
   }, [autoListen, submit]);
 
+  // Always point at the freshest startListening, so the barge monitor and the
+  // greeting can trigger listening without being memoised against a stale one.
+  React.useEffect(() => {
+    startListeningRef.current = startListening;
+  }, [startListening]);
+
   function stopRecording() {
     if (recRef.current && recRef.current.state === "recording") {
       try {
@@ -246,6 +358,51 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
       }
     }
   }
+
+  /**
+   * Riya introduces herself. Fetches her fixed greeting's speech, shows it, and
+   * speaks it — then opens the mic so the conversation just continues. Runs at
+   * most once per conversation. If audio isn't available she still appears in
+   * the transcript and we go straight to listening.
+   */
+  const greet = React.useCallback(async () => {
+    if (greetedRef.current) return;
+    greetedRef.current = true;
+    activeRef.current = true;
+    unlockAudio();
+    setNote(null);
+    setState("thinking");
+    try {
+      const res = await fetch("/api/v1/voice", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ greeting: true, wantAudio: true, lang: locale, history: [] }),
+      });
+      const data = await res.json().catch(() => null);
+      if (data?.status === "ok" && data.text) {
+        setTurns([{ role: "assistant", content: data.text }]);
+      }
+      if (data?.audioBase64) {
+        bargingRef.current = false;
+        setState("speaking");
+        void startBargeMonitor();
+        await playClip(data.audioBase64, () => {
+          teardownBarge();
+          if (bargingRef.current) {
+            bargingRef.current = false;
+            return;
+          }
+          if (activeRef.current) startListeningRef.current();
+          else setState("idle");
+        });
+      } else {
+        setState("idle");
+        if (activeRef.current) startListeningRef.current();
+      }
+    } catch {
+      setState("idle");
+    }
+  }, [locale, startBargeMonitor, teardownBarge]);
 
   /** The single control the UI drives: tap to begin / end a turn / interrupt. */
   const toggle = React.useCallback(() => {
@@ -257,16 +414,20 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
       return;
     }
     if (s === "speaking") {
-      // Barge-in.
+      // Manual barge-in (the tap version of the auto barge monitor).
+      bargingRef.current = true;
       cancelPlayback();
+      teardownBarge();
       activeRef.current = true;
       void startListening();
       return;
     }
-    // idle / error -> begin.
+    // idle / error -> begin. On the very first tap Riya greets herself; after
+    // that a tap just starts listening.
     activeRef.current = true;
-    void startListening();
-  }, [startListening]);
+    if (!greetedRef.current) void greet();
+    else void startListening();
+  }, [startListening, greet, teardownBarge]);
 
   const sendText = React.useCallback(
     (text: string) => {
@@ -281,9 +442,10 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
     stop();
     setTurns([]);
     setNote(null);
+    greetedRef.current = false;
   }, [stop]);
 
-  return { state, turns, note, toggle, stop, reset, sendText };
+  return { state, turns, note, toggle, stop, reset, sendText, greet, getLevel };
 }
 
 function blobToBase64(blob: Blob): Promise<string> {

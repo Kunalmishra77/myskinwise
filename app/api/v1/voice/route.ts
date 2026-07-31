@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { respond, type ChatTurn } from "@/lib/ai/assistant";
+import { respond, RIYA_GREETING, type ChatTurn } from "@/lib/ai/assistant";
 import { resolveCustomerContext } from "@/lib/ai/context";
 import { getSttProvider } from "@/lib/voice/stt";
 import { getTtsProvider } from "@/lib/voice/tts";
@@ -24,6 +24,9 @@ const bodySchema = z.object({
   // Match the text assistant's window (20) so voice is no more
   // forgetful than chat — the same brain, the same memory.
   history: z.array(turnSchema).max(20).default([]),
+  // When true, skip STT + the model entirely and just speak Riya's fixed
+  // greeting — so she can introduce herself the instant the conversation opens.
+  greeting: z.boolean().optional(),
   // EITHER a transcript (browser Web Speech API — the primary path) …
   transcript: z.string().min(1).max(2000).optional(),
   // … OR audio for the server STT fallback (iOS Safari etc.).
@@ -79,6 +82,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: "invalid", errors: parsed.error.flatten() }, { status: 400 });
   }
   const body = parsed.data;
+
+  // Greeting shortcut: no STT, no model — just TTS of Riya's fixed intro. The
+  // text is safety-approved and never model-authored, so this is safe to speak
+  // verbatim.
+  if (body.greeting) {
+    const lang = body.lang ?? "en";
+    const text = RIYA_GREETING[lang];
+    let audioBase64: string | undefined;
+    let audioMimeType: string | undefined;
+    if (body.wantAudio) {
+      const speech = await getTtsProvider().speak(text, lang);
+      if (speech.ok) {
+        audioBase64 = speech.audioBase64;
+        audioMimeType = speech.mimeType;
+      }
+    }
+    return NextResponse.json({ status: "ok", transcript: "", text, cta: null, kind: "greeting", audioBase64, audioMimeType });
+  }
 
   // 1. STT (fallback path only). Browser STT sends `transcript` directly.
   let transcript = body.transcript?.trim() ?? "";

@@ -22,6 +22,24 @@
 let ctx: AudioContext | null = null;
 let currentSource: AudioBufferSourceNode | null = null;
 let currentAudio: HTMLAudioElement | null = null;
+// An analyser sits on the playback path while a Web Audio clip is playing, so
+// the voice avatar can pulse in time with Riya's actual speech amplitude.
+let playbackAnalyser: AnalyserNode | null = null;
+let playbackData: Float32Array<ArrayBuffer> | null = null;
+
+/**
+ * Current playback loudness, 0..1, or 0 when nothing is playing (or on the
+ * HTMLAudio fallback path, which exposes no analyser). Cheap to poll per frame.
+ */
+export function playbackLevel(): number {
+  if (!playbackAnalyser || !playbackData) return 0;
+  playbackAnalyser.getFloatTimeDomainData(playbackData);
+  let sum = 0;
+  for (let i = 0; i < playbackData.length; i++) sum += playbackData[i]! * playbackData[i]!;
+  const rms = Math.sqrt(sum / playbackData.length);
+  // Speech RMS rarely exceeds ~0.3; normalise into a lively 0..1 range.
+  return Math.min(1, rms * 3.2);
+}
 // Monotonic token: a newer play() or stop() invalidates any in-flight decode,
 // so two clips can never overlap (e.g. an interrupted turn).
 let seq = 0;
@@ -93,6 +111,8 @@ export function cancelPlayback(): void {
     }
     currentSource = null;
   }
+  playbackAnalyser = null;
+  playbackData = null;
   if (currentAudio) {
     try {
       currentAudio.pause();
@@ -145,9 +165,19 @@ export async function playClip(base64: string, onEnd?: () => void): Promise<void
 
       const source = c.createBufferSource();
       source.buffer = buffer;
-      source.connect(c.destination);
+      // source -> analyser -> speakers, so playbackLevel() can read amplitude.
+      const analyser = c.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(analyser);
+      analyser.connect(c.destination);
+      playbackAnalyser = analyser;
+      playbackData = new Float32Array(analyser.fftSize);
       source.onended = () => {
         if (currentSource === source) currentSource = null;
+        if (playbackAnalyser === analyser) {
+          playbackAnalyser = null;
+          playbackData = null;
+        }
         finish();
       };
       currentSource = source;
