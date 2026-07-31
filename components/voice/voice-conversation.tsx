@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useVoiceConversation, type CtaKind } from "@/lib/voice/use-voice-conversation";
 import { VoiceAvatar } from "@/components/voice/voice-avatar";
 import { RecommendedCombo } from "@/components/products/recommended-combo";
+import { LanguagePicker } from "@/components/voice/language-picker";
 import { useT } from "@/lib/i18n/provider";
 import { getSession, patchSession } from "@/lib/consultation/session";
 
@@ -93,16 +94,21 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
             <p className="text-xs text-ink-soft">{t("voice.personaTag")}</p>
           </div>
         </div>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("voice.close")}
-            className="inline-flex size-11 items-center justify-center rounded-full text-ink transition hover:bg-blush"
-          >
-            <X aria-hidden="true" className="size-6" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Pick the language Riya speaks; changing it restarts the chat so her
+              next words are in that language. */}
+          <LanguagePicker onChange={() => reset()} />
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t("voice.close")}
+              className="inline-flex size-11 items-center justify-center rounded-full text-ink transition hover:bg-blush"
+            >
+              <X aria-hidden="true" className="size-6" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Transcript — the upper band, capped so the orb keeps the centre. */}

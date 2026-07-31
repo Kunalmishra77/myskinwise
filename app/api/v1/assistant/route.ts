@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { respond, type ChatTurn } from "@/lib/ai/assistant";
 import { resolveCustomerContext } from "@/lib/ai/context";
+import { isAiLang } from "@/lib/i18n/languages";
 import { clientKey, MemoryRateLimiter } from "@/lib/rate-limit";
 import { logEvent } from "@/lib/analytics";
 
@@ -36,8 +37,8 @@ const bodySchema = z.object({
   concern: z
     .enum(["pigmentation", "acne", "other-issues", "dark-circles", "acne-scars", "oily-skin", "dry-skin"])
     .optional(),
-  // Reply language. The client sends the active locale.
-  lang: z.enum(["en", "hi"]).optional(),
+  // Reply language — any of Riya's supported languages; unknown falls back to en.
+  lang: z.string().max(8).optional(),
 });
 
 export async function POST(request: Request) {
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
 
   void logEvent("assistant_used");
   const outcome = await respond(parsed.data.messages as ChatTurn[], context, {
-    lang: parsed.data.lang,
+    lang: isAiLang(parsed.data.lang) ? parsed.data.lang : "en",
   });
   return NextResponse.json({ status: "ok", ...outcome });
 }

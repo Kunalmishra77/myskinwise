@@ -200,7 +200,7 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
           body: JSON.stringify({
             history,
             wantAudio: true,
-            lang: locale,
+            lang: getSession().aiLang ?? locale,
             analysisReference: getSession().analysisReference,
             concern: getSession().concern,
             ...body,
@@ -386,7 +386,7 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
       const res = await fetch("/api/v1/voice", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ greeting: true, wantAudio: true, lang: locale, history: [] }),
+        body: JSON.stringify({ greeting: true, wantAudio: true, lang: getSession().aiLang ?? locale, history: [] }),
       });
       const data = await res.json().catch(() => null);
       if (data?.status === "ok" && data.text) {
@@ -436,7 +436,7 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
         body: JSON.stringify({
           explain: true,
           wantAudio: true,
-          lang: locale,
+          lang: getSession().aiLang ?? locale,
           history: [],
           analysisReference: s.analysisReference,
           concern: s.concern,

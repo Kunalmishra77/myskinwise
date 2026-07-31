@@ -26,6 +26,8 @@ export type ConsultSession = {
   concern?: string;
   analysisReference?: string;
   explainedRef?: string;
+  /** The language Riya converses in (voice + chat), if the user picked one. */
+  aiLang?: string;
 };
 
 export function getSession(): ConsultSession {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { respond, RIYA_GREETING, type ChatTurn } from "@/lib/ai/assistant";
+import { isAiLang, type AiLang } from "@/lib/i18n/languages";
 import { resolveCustomerContext } from "@/lib/ai/context";
 import { getSttProvider } from "@/lib/voice/stt";
 import { getTtsProvider } from "@/lib/voice/tts";
@@ -47,8 +48,9 @@ const bodySchema = z.object({
   concern: z
     .enum(["pigmentation", "acne", "other-issues", "dark-circles", "acne-scars", "oily-skin", "dry-skin"])
     .optional(),
-  // Reply + speech language.
-  lang: z.enum(["en", "hi"]).optional(),
+  // Reply + speech language — any of Riya's supported Indian languages
+  // (validated below; unknown values fall back to English).
+  lang: z.string().max(8).optional(),
 });
 
 /**
@@ -87,13 +89,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: "invalid", errors: parsed.error.flatten() }, { status: 400 });
   }
   const body = parsed.data;
+  const lang: AiLang = isAiLang(body.lang) ? body.lang : "en";
 
-  // Greeting shortcut: no STT, no model — just TTS of Riya's fixed intro. The
-  // text is safety-approved and never model-authored, so this is safe to speak
-  // verbatim.
+  // Greeting shortcut. In English/Hindi it speaks Riya's fixed, safety-approved
+  // intro verbatim; in any other language the model writes an equivalent short
+  // greeting in that language (still just an intro — no advice).
   if (body.greeting) {
-    const lang = body.lang ?? "en";
-    const text = RIYA_GREETING[lang];
+    let text: string;
+    if (lang === "en" || lang === "hi") {
+      text = RIYA_GREETING[lang];
+    } else {
+      const outcome = await respond(
+        [
+          {
+            role: "user",
+            content:
+              "Greet me warmly as Riya from Skinwise and ask, in one or two short sentences, what skin concern I would like help with. Only a greeting — no advice yet.",
+          },
+        ],
+        undefined,
+        { lang },
+      );
+      text = outcome.text;
+    }
     let audioBase64: string | undefined;
     let audioMimeType: string | undefined;
     if (body.wantAudio) {
@@ -120,11 +138,11 @@ export async function POST(request: Request) {
       body.concern && !context?.concern ? { ...(context ?? {}), concern: body.concern } : context;
     const instruction =
       "The user has just completed a face scan. Warmly and simply, explain what the analysis showed — the visible characteristics and roughly how noticeable each was — then say what they might do next and offer to help. Keep it short and natural. Do not read out numbers like a list; speak like a person. Never give a diagnosis.";
-    const outcome = await respond([{ role: "user", content: instruction }], ctx, { lang: body.lang });
+    const outcome = await respond([{ role: "user", content: instruction }], ctx, { lang });
     let audioBase64: string | undefined;
     let audioMimeType: string | undefined;
     if (body.wantAudio) {
-      const speech = await getTtsProvider().speak(outcome.text, body.lang);
+      const speech = await getTtsProvider().speak(outcome.text, lang);
       if (speech.ok) {
         audioBase64 = speech.audioBase64;
         audioMimeType = speech.mimeType;
@@ -180,7 +198,7 @@ export async function POST(request: Request) {
   // outbound safety -> CTA.
   const messages: ChatTurn[] = [...body.history, { role: "user", content: transcript }];
   void logEvent("voice_used");
-  const outcome = await respond(messages, context, { lang: body.lang });
+  const outcome = await respond(messages, context, { lang });
 
   // 4. TTS of the FINAL text (never raw model output). Best-effort: a TTS
   // failure still returns the text, and the client speaks it with the
@@ -188,7 +206,7 @@ export async function POST(request: Request) {
   let audioBase64: string | undefined;
   let audioMimeType: string | undefined;
   if (body.wantAudio) {
-    const speech = await getTtsProvider().speak(outcome.text, body.lang);
+    const speech = await getTtsProvider().speak(outcome.text, lang);
     if (speech.ok) {
       audioBase64 = speech.audioBase64;
       audioMimeType = speech.mimeType;

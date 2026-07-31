@@ -1,3 +1,5 @@
+import type { AiLang } from "@/lib/i18n/languages";
+
 export type SpeechResult =
   | { ok: true; audioBase64: string; mimeType: string }
   | { ok: false; reason: "not-configured" | "timeout" | "failed" };
@@ -12,7 +14,7 @@ export type SpeechResult =
 export interface TextToSpeechProvider {
   isConfigured(): boolean;
   /** @param lang optional language hint ("hi" nudges Hindi pronunciation). */
-  speak(text: string, lang?: "en" | "hi"): Promise<SpeechResult>;
+  speak(text: string, lang?: AiLang): Promise<SpeechResult>;
 }
 
 class UnconfiguredTts implements TextToSpeechProvider {
@@ -73,7 +75,7 @@ class OpenAiTts implements TextToSpeechProvider {
  * safety-checked text is unchanged on screen; only what the voice pronounces is
  * tidied.
  */
-export function normalizeForSpeech(text: string, lang?: "en" | "hi"): string {
+export function normalizeForSpeech(text: string, lang?: AiLang): string {
   const rupees = lang === "hi" ? "$1 रुपये" : "$1 rupees";
   const and = lang === "hi" ? " और " : " and ";
   return text
@@ -110,7 +112,7 @@ class ElevenLabsTts implements TextToSpeechProvider {
     return true;
   }
 
-  async speak(text: string, lang?: "en" | "hi"): Promise<SpeechResult> {
+  async speak(text: string, lang?: AiLang): Promise<SpeechResult> {
     // Same hard cap as OpenAI: voice replies stay short, which also bounds
     // ElevenLabs cost per turn regardless of what the model returned.
     const input = normalizeForSpeech(text, lang).slice(0, 700);

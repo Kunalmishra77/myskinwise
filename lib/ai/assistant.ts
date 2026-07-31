@@ -9,6 +9,7 @@ import {
   ESCALATION_MESSAGE,
   ASSISTANT_DISCLAIMER,
 } from "@/lib/ai/safety";
+import { type AiLang, englishName } from "@/lib/i18n/languages";
 
 export type CustomerContext = {
   concern?: string;
@@ -67,7 +68,13 @@ const LOCALISED = {
   },
 } as const;
 
-export type RespondOptions = { lang?: "en" | "hi" };
+export type RespondOptions = { lang?: AiLang };
+
+/** Safety copy is hand-written for en/hi only; any other language falls back to
+ * English (the model is never asked to write these deterministic messages). */
+function safeLang(lang: AiLang): "en" | "hi" {
+  return lang === "hi" ? "hi" : "en";
+}
 
 /**
  * Riya's opening line. A fixed, safety-approved greeting (never model-authored)
@@ -84,24 +91,26 @@ export async function respond(
   context?: CustomerContext,
   opts?: RespondOptions,
 ): Promise<AssistantOutcome> {
-  const lang = opts?.lang ?? "en";
+  const lang: AiLang = opts?.lang ?? "en";
+  const sl = safeLang(lang);
   const latest = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
 
   // 1. Inbound safety. Deterministic, runs before any model call — and its
-  // wording is localised, never model-generated.
+  // wording is localised (en/hi hand-written, other languages fall back to en),
+  // never model-generated.
   if (assessRisk(latest) === "escalate") {
-    return { kind: "escalation", text: LOCALISED.escalation[lang], cta: "whatsapp" };
+    return { kind: "escalation", text: LOCALISED.escalation[sl], cta: "whatsapp" };
   }
 
   const provider = getAiProvider();
   if (!provider.isConfigured()) {
-    return { kind: "unavailable", text: LOCALISED.unavailable[lang], cta: "whatsapp" };
+    return { kind: "unavailable", text: LOCALISED.unavailable[sl], cta: "whatsapp" };
   }
 
   // 2. Model call. The system prompt asks for the reply language.
   const result = await provider.complete(systemPrompt(context, lang), messages);
   if (!result.ok) {
-    return { kind: "unavailable", text: LOCALISED.error[lang], cta: "whatsapp" };
+    return { kind: "unavailable", text: LOCALISED.error[sl], cta: "whatsapp" };
   }
 
   // 3. Outbound safety.
@@ -187,7 +196,7 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
  * forbidden from making, and requires the "I don't have verified
  * information" fallback rather than invention.
  */
-function systemPrompt(context?: CustomerContext, lang: "en" | "hi" = "en"): string {
+function systemPrompt(context?: CustomerContext, lang: AiLang = "en"): string {
   // When a concern is known, steer a focused, concern-specific conversation
   // using the concern's own content and the Skin Check's questions for it.
   const concernBlock = context?.concern ? concernGuidance(context.concern) : null;
@@ -196,9 +205,9 @@ function systemPrompt(context?: CustomerContext, lang: "en" | "hi" = "en"): stri
   // is asked to ANSWER in Hindi. Product and ingredient names stay as-is —
   // they are proper nouns and label text.
   const langBlock =
-    lang === "hi"
-      ? `\nIMPORTANT — LANGUAGE: Reply entirely in natural, simple, warm Hindi (Devanagari script), the way you would speak to a customer in India. Keep every rule above. Do NOT translate product names or ingredient names — write those as they are. Numbers, prices and references stay as digits.\n`
-      : "";
+    lang === "en"
+      ? ""
+      : `\nIMPORTANT — LANGUAGE: Reply entirely in natural, simple, warm ${englishName(lang)}, in its own native script, the way you would speak to a customer in India. Keep every rule above. Do NOT translate product names or ingredient names — write those as they are. Numbers, prices and references stay as digits. Stay Riya, whatever the language.\n`;
   const contextLines: string[] = [];
   if (context?.concern) contextLines.push(`- Their main concern: ${context.concern}`);
   if (context?.skinType) contextLines.push(`- Their skin type: ${context.skinType}`);

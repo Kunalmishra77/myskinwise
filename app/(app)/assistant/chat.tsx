@@ -11,6 +11,7 @@ import { useTContent } from "@/lib/i18n/use-content";
 import { T } from "@/components/i18n/t";
 import { RecommendedCombo } from "@/components/products/recommended-combo";
 import { getSession, patchSession } from "@/lib/consultation/session";
+import { LanguagePicker } from "@/components/voice/language-picker";
 
 type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
 type Msg = {
@@ -128,7 +129,8 @@ export function AssistantChat() {
           ...(activeConcern ? { concern: activeConcern } : {}),
           // Carry the unified session's scan so chat stays grounded in it too.
           analysisReference: getSession().analysisReference,
-          lang: locale,
+          // Same conversation language the user picked in Voice, if any.
+          lang: getSession().aiLang ?? locale,
         }),
       });
       if (res.status === 429) {
@@ -170,6 +172,9 @@ export function AssistantChat() {
             <p className="mt-2 max-w-sm text-ink-soft">
               <T>{ASSISTANT.heroBody}</T>
             </p>
+            <div className="mt-4">
+              <LanguagePicker />
+            </div>
 
             {/*
               Text and voice presented as two peer choices rather than a chat
