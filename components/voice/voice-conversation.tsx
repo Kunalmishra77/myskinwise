@@ -173,9 +173,12 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
         <div ref={endRef} />
       </div>
 
-      {/* Centre stage — Riya's orb + status. */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-5">
+      {/* Centre stage — Riya's orb sits dead-centre; the status + hint live in
+          their own strip just below it so the orb itself is what's centred. */}
+      <div className="flex flex-1 items-center justify-center px-5">
         <VoiceAvatar state={state} getLevel={getLevel} onTap={toggle} disabled={busy} label={statusText} />
+      </div>
+      <div className="flex flex-col items-center gap-2 px-5 pb-3">
         <p role="status" className="min-h-6 text-center text-sm font-medium text-ink-soft">
           {statusText}
         </p>

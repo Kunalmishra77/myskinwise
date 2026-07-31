@@ -108,7 +108,7 @@ export async function POST(request: Request) {
           },
         ],
         undefined,
-        { lang },
+        { lang, brief: true },
       );
       text = outcome.text;
     }
@@ -138,7 +138,7 @@ export async function POST(request: Request) {
       body.concern && !context?.concern ? { ...(context ?? {}), concern: body.concern } : context;
     const instruction =
       "The user has just completed a face scan. Warmly and simply, explain what the analysis showed — the visible characteristics and roughly how noticeable each was — then say what they might do next and offer to help. Keep it short and natural. Do not read out numbers like a list; speak like a person. Never give a diagnosis.";
-    const outcome = await respond([{ role: "user", content: instruction }], ctx, { lang });
+    const outcome = await respond([{ role: "user", content: instruction }], ctx, { lang, brief: true });
     let audioBase64: string | undefined;
     let audioMimeType: string | undefined;
     if (body.wantAudio) {
@@ -198,7 +198,7 @@ export async function POST(request: Request) {
   // outbound safety -> CTA.
   const messages: ChatTurn[] = [...body.history, { role: "user", content: transcript }];
   void logEvent("voice_used");
-  const outcome = await respond(messages, context, { lang });
+  const outcome = await respond(messages, context, { lang, brief: true });
 
   // 4. TTS of the FINAL text (never raw model output). Best-effort: a TTS
   // failure still returns the text, and the client speaks it with the

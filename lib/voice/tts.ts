@@ -83,6 +83,8 @@ export function normalizeForSpeech(text: string, lang?: AiLang): string {
     .replace(/[*_`#>]/g, "")
     // "₹899" / "₹ 1,299" -> spoken currency in the reply's language.
     .replace(/₹\s?([\d,]+)/g, rupees)
+    // "72%" -> "72 percent" / "72 प्रतिशत" so the symbol is never voiced.
+    .replace(/(\d)\s?%/g, lang === "hi" ? "$1 प्रतिशत" : "$1 percent")
     // Ampersand read as a word.
     .replace(/\s&\s/g, and)
     // Ellipsis / em-dash -> a natural pause rather than a spoken symbol.
@@ -102,7 +104,10 @@ export function normalizeForSpeech(text: string, lang?: AiLang): string {
  * generates content, so swapping the voice vendor cannot affect what is said.
  */
 class ElevenLabsTts implements TextToSpeechProvider {
-  private readonly model = process.env.ELEVENLABS_MODEL || "eleven_multilingual_v2";
+  // Turbo is markedly faster to first audio than multilingual_v2 (which made
+  // Riya feel like she was "thinking" for too long), and still speaks the same
+  // 30+ languages. Override with ELEVENLABS_MODEL if a voice needs v2 quality.
+  private readonly model = process.env.ELEVENLABS_MODEL || "eleven_turbo_v2_5";
   constructor(
     private readonly apiKey: string,
     private readonly voiceId: string,

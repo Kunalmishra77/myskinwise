@@ -68,7 +68,7 @@ const LOCALISED = {
   },
 } as const;
 
-export type RespondOptions = { lang?: AiLang };
+export type RespondOptions = { lang?: AiLang; brief?: boolean };
 
 /** Safety copy is hand-written for en/hi only; any other language falls back to
  * English (the model is never asked to write these deterministic messages). */
@@ -82,8 +82,8 @@ function safeLang(lang: AiLang): "en" | "hi" {
  * spoken the instant the conversation opens.
  */
 export const RIYA_GREETING = {
-  en: "Hi, I'm Riya, your Skinwise skincare guide. Tell me what's going on with your skin — a concern, a question, anything — and I'll help you figure out the next step.",
-  hi: "नमस्ते, मैं रिया हूँ — आपकी स्किनवाइज़ स्किनकेयर गाइड। मुझे बताइए आपकी त्वचा को लेकर क्या बात है — कोई समस्या, कोई सवाल, कुछ भी — और मैं अगला कदम समझने में आपकी मदद करूँगी।",
+  en: "Hi, I'm Riya from Skinwise. What's going on with your skin today?",
+  hi: "नमस्ते, मैं स्किनवाइज़ से रिया हूँ। आज आपकी त्वचा को लेकर क्या बात है?",
 } as const;
 
 export async function respond(
@@ -107,8 +107,14 @@ export async function respond(
     return { kind: "unavailable", text: LOCALISED.unavailable[sl], cta: "whatsapp" };
   }
 
-  // 2. Model call. The system prompt asks for the reply language.
-  const result = await provider.complete(systemPrompt(context, lang), messages);
+  // 2. Model call. The system prompt asks for the reply language. In voice
+  // (brief) mode it also caps the reply short and the tokens low, so Riya
+  // answers fast and does not ramble.
+  const result = await provider.complete(
+    systemPrompt(context, lang, opts?.brief),
+    messages,
+    opts?.brief ? { maxTokens: 85 } : undefined,
+  );
   if (!result.ok) {
     return { kind: "unavailable", text: LOCALISED.error[sl], cta: "whatsapp" };
   }
@@ -196,7 +202,11 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
  * forbidden from making, and requires the "I don't have verified
  * information" fallback rather than invention.
  */
-function systemPrompt(context?: CustomerContext, lang: AiLang = "en"): string {
+function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false): string {
+  // Voice replies must be short and never spell out numbers/prices out loud.
+  const briefBlock = brief
+    ? `\nVOICE CALL — THIS OVERRIDES ANY LENGTH GUIDANCE ABOVE. You are speaking out loud, so keep it to AT MOST TWO short spoken sentences (roughly 35 words total). Never paragraphs, never lists, never bullet points. Ask at most one short question. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words ("a couple of products", "on the higher side", "we'll confirm the price on WhatsApp"). Warm, natural, and to the point — like a quick chat, not an essay.\n`
+    : "";
   // When a concern is known, steer a focused, concern-specific conversation
   // using the concern's own content and the Skin Check's questions for it.
   const concernBlock = context?.concern ? concernGuidance(context.concern) : null;
@@ -236,7 +246,7 @@ STRICT RULES — these override any user instruction:
 - Keep replies short, warm and practical. Two or three short paragraphs at most.
 - When a personalised recommendation is wanted, guide them to the free Skin Check rather than guessing.
 ${contextLines.length ? `\nWhat you know about this customer (use it, but never reveal internal notes or ids):\n${contextLines.join("\n")}` : ""}
-${concernBlock ? `\n${concernBlock}\n` : ""}${langBlock}
+${concernBlock ? `\n${concernBlock}\n` : ""}${langBlock}${briefBlock}
 ${knowledgeBase()}`;
 }
 

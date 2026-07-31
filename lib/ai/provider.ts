@@ -9,9 +9,11 @@ export type CompletionResult =
  * A future voice agent reuses everything above this interface — grounding,
  * safety, context — and only swaps what sits below it.
  */
+export type CompleteOptions = { maxTokens?: number };
+
 export interface AiProvider {
   isConfigured(): boolean;
-  complete(system: string, messages: ChatTurn[]): Promise<CompletionResult>;
+  complete(system: string, messages: ChatTurn[], opts?: CompleteOptions): Promise<CompletionResult>;
 }
 
 class UnconfiguredProvider implements AiProvider {
@@ -45,7 +47,7 @@ class AnthropicProvider implements AiProvider {
     return true;
   }
 
-  async complete(system: string, messages: ChatTurn[]): Promise<CompletionResult> {
+  async complete(system: string, messages: ChatTurn[], opts?: CompleteOptions): Promise<CompletionResult> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20_000);
     try {
@@ -58,7 +60,7 @@ class AnthropicProvider implements AiProvider {
         },
         body: JSON.stringify({
           model: this.model,
-          max_tokens: 700,
+          max_tokens: opts?.maxTokens ?? 700,
           system,
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
@@ -107,7 +109,7 @@ class OpenAiProvider implements AiProvider {
     return true;
   }
 
-  async complete(system: string, messages: ChatTurn[]): Promise<CompletionResult> {
+  async complete(system: string, messages: ChatTurn[], opts?: CompleteOptions): Promise<CompletionResult> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20_000);
     try {
@@ -119,7 +121,7 @@ class OpenAiProvider implements AiProvider {
         },
         body: JSON.stringify({
           model: this.model,
-          max_tokens: 700,
+          max_tokens: opts?.maxTokens ?? 700,
           messages: [
             { role: "system", content: system },
             ...messages.map((m) => ({ role: m.role, content: m.content })),

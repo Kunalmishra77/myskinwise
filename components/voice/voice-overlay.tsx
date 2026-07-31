@@ -34,12 +34,11 @@ export function VoiceOverlay() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   React.useEffect(() => setMounted(true), []);
 
-  // Auto-open once per session, shortly after load — but NOT on the dedicated
-  // /voice page, and NOT on the homepage, whose AI-first hero ("How can I help
-  // you?" → Talk / Chat) is itself the front door and must be what a first-time
-  // visitor sees. Opening the overlay on top of it would bury that choice.
+  // Auto-open once per session, shortly after load — the welcome consultation
+  // popup (mic primary + "type instead"). Not on the dedicated /voice page,
+  // which is already that experience full-screen.
   React.useEffect(() => {
-    if (pathname === "/voice" || pathname === "/") return;
+    if (pathname === "/voice") return;
     if (typeof sessionStorage === "undefined") return;
     if (sessionStorage.getItem(SESSION_KEY)) return;
     const t = setTimeout(() => {

@@ -81,13 +81,15 @@
    *                                         is ~6.0:1, safe and on-brand.
    *   white on rose-deep (#C05E78) ~4.11:1  Fails normal-text AA (4.5:1).
    *                                         Large/bold text only.
-   *   white on rose-ink  (#A8506A) ~5.22:1  PASSES AA. The accessible
+   *   white on rose-ink  (#B74A68) ~5.0:1   PASSES AA. The accessible
    *                                         text-bearing shade of the brand
    *                                         pink: any button fill carrying
-   *                                         white text uses this. It is the
-   *                                         same hue as the logo, darkened
-   *                                         only as far as accessibility
-   *                                         demands — not a different colour.
+   *                                         white text uses this. It is a
+   *                                         brighter, more coral shade of the
+   *                                         logo hue (was #A8506A, which read
+   *                                         too mauve next to the logo),
+   *                                         darkened only as far as
+   *                                         accessibility demands.
    *
    * So "make it match the logo" is answered on two fronts: the brand pink is
    * now exactly the logo's, and white-text buttons use the darkest-necessary
@@ -98,7 +100,7 @@
    */
   --color-rose: #e5859a;
   --color-rose-deep: #c05e78;
-  --color-rose-ink: #a8506a;
+  --color-rose-ink: #b74a68;
 
   /* --- Type ---------------------------------------------------------- */
   /* Devanagari is appended so Hindi glyphs fall through to Noto while Latin
