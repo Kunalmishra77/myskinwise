@@ -83,6 +83,7 @@ export async function POST(request: Request) {
   void logEvent("assistant_used");
   const outcome = await respond(parsed.data.messages as ChatTurn[], context, {
     lang: isAiLang(parsed.data.lang) ? parsed.data.lang : "en",
+    concise: true,
   });
   return NextResponse.json({ status: "ok", ...outcome });
 }

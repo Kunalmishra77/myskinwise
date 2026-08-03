@@ -105,6 +105,10 @@ export function AssistantChat() {
   const locale = useLocale();
 
   React.useEffect(() => {
+    // Only follow the conversation once it has started. Scrolling to the bottom
+    // on the empty state would hide the intro/hero behind the composer and make
+    // the user scroll back up — the "chat opens in the wrong place" bug.
+    if (messages.length === 0) return;
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, busy]);
 
@@ -162,7 +166,7 @@ export function AssistantChat() {
     <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-2xl flex-col px-4 lg:min-h-[calc(100dvh-4rem)]">
       <div className="flex-1 overflow-y-auto py-6" aria-live="polite" aria-label={tc(ASSISTANT.conversationLabel)}>
         {empty ? (
-          <div className="flex flex-col items-center pt-8 text-center">
+          <div className="flex flex-col items-center pt-6 text-center">
             <span className="flex size-14 items-center justify-center rounded-2xl bg-blush text-rose-ink">
               <Sparkles aria-hidden="true" className="size-7" />
             </span>

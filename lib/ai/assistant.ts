@@ -68,7 +68,7 @@ const LOCALISED = {
   },
 } as const;
 
-export type RespondOptions = { lang?: AiLang; brief?: boolean };
+export type RespondOptions = { lang?: AiLang; brief?: boolean; concise?: boolean };
 
 /** Safety copy is hand-written for en/hi only; any other language falls back to
  * English (the model is never asked to write these deterministic messages). */
@@ -111,9 +111,9 @@ export async function respond(
   // (brief) mode it also caps the reply short and the tokens low, so Riya
   // answers fast and does not ramble.
   const result = await provider.complete(
-    systemPrompt(context, lang, opts?.brief),
+    systemPrompt(context, lang, opts?.brief, opts?.concise),
     messages,
-    opts?.brief ? { maxTokens: 120 } : undefined,
+    opts?.brief ? { maxTokens: 120 } : opts?.concise ? { maxTokens: 300 } : undefined,
   );
   if (!result.ok) {
     return { kind: "unavailable", text: LOCALISED.error[sl], cta: "whatsapp" };
@@ -300,11 +300,13 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
  * forbidden from making, and requires the "I don't have verified
  * information" fallback rather than invention.
  */
-function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false): string {
+function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false, concise = false): string {
   // Voice replies must be short and never spell out numbers/prices out loud.
   const briefBlock = brief
     ? `\nVOICE CALL — THIS OVERRIDES ANY LENGTH GUIDANCE ABOVE. You are speaking out loud, so keep it to TWO or at most THREE short spoken sentences and finish your thought (never trail off mid-sentence). Never paragraphs, never lists, never bullet points. Ask at most one short question. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words ("a couple of products", "on the higher side", "we'll confirm the price on WhatsApp"). Warm, natural, and to the point — like a quick chat, not an essay.\n`
-    : "";
+    : concise
+      ? `\nCHAT STYLE — THIS OVERRIDES ANY LENGTH GUIDANCE ABOVE. Reply like a friendly chat, not an article: a few short sentences, never a wall of text or long bullet lists. EARLY in the conversation focus on UNDERSTANDING, not selling: briefly acknowledge what they said and ask ONE clarifying question about their skin (e.g. "are your breakouts mostly small bumps, whiteheads, blackheads, or inflamed pimples?") before recommending anything. Only once you understand their concern, explain the helpful ingredients and then the products. Don't dump everything at once — keep the conversation moving.\n`
+      : "";
   // When a concern is known, steer a focused, concern-specific conversation
   // using the concern's own content and the Skin Check's questions for it.
   const concernBlock = context?.concern ? concernGuidance(context.concern) : null;

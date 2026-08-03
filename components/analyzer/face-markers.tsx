@@ -64,22 +64,40 @@ export function FaceMarkers({
   const label = (feature: string) => tc(FEATURE_LABELS_DISPLAY[feature] ?? feature);
   const box = clampBox(observation.face_box);
 
+  // Give each concern its OWN area instead of letting them pile up in one spot.
+  // The model often returns a vague/"overall" region for several features at
+  // once; when it does, we fall back to the feature's natural anatomical home
+  // (shine→nose, blemishes→chin, dark spots→cheek, pores→nose, …) and avoid
+  // reusing a region already taken, so the highlights spread across the face.
+  const usedRegions = new Set<string>();
+  const regionFor: Record<number, (typeof shown)[number]["region"]> = {};
+  for (const f of shown) {
+    const modelRegion = f.region && f.region !== "overall" ? f.region : DEFAULT_REGION[f.feature];
+    let region = modelRegion;
+    if (usedRegions.has(region)) {
+      const home = DEFAULT_REGION[f.feature];
+      if (!usedRegions.has(home)) region = home;
+    }
+    usedRegions.add(region);
+    regionFor[f.index] = region;
+  }
+
   return (
     <div className="relative aspect-[3/4] w-full overflow-hidden rounded-3xl bg-plum shadow-soft">
       {/* eslint-disable-next-line @next/next/no-img-element -- local data URL, deliberately not routed through next/image */}
       <img src={photo} alt="The photo you submitted" className="h-full w-full object-cover" />
 
       {shown.map((f, i) => {
-        const region = f.region ?? DEFAULT_REGION[f.feature];
+        const region = regionFor[f.index] ?? DEFAULT_REGION[f.feature];
         const rp = REGION_POINTS[region] ?? REGION_POINTS.overall;
         // Point within the face box, then within the image.
         let left = (box.x + rp.x * box.width) * 100;
         let top = (box.y + rp.y * box.height) * 100;
-        // Nudge highlights that share a region apart so they don't stack.
-        const dup = shown.slice(0, i).filter((g) => (g.region ?? DEFAULT_REGION[g.feature]) === region).length;
+        // Nudge the rare remaining highlights that still share a region apart.
+        const dup = shown.slice(0, i).filter((g) => regionFor[g.index] === region).length;
         if (dup) {
-          left += (dup % 2 ? 1 : -1) * 7;
-          top += Math.ceil(dup / 2) * 7;
+          left += (dup % 2 ? 1 : -1) * 8;
+          top += Math.ceil(dup / 2) * 8;
         }
         const isActive = active === f.index;
         return (
@@ -88,7 +106,7 @@ export function FaceMarkers({
             type="button"
             onClick={() => onSelect(isActive ? null : f.index)}
             aria-label={`${label(f.feature)} — ${region.replace(/_/g, " ")}`}
-            className={`absolute aspect-square w-[26%] -translate-x-1/2 -translate-y-1/2 transition-all sm:w-[23%] ${
+            className={`absolute aspect-square w-[22%] -translate-x-1/2 -translate-y-1/2 transition-all sm:w-[20%] ${
               isActive ? "z-20 scale-110" : "z-10"
             }`}
             style={{ left: `${left}%`, top: `${top}%` }}
