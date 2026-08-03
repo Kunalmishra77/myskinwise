@@ -113,7 +113,7 @@ export async function respond(
   const result = await provider.complete(
     systemPrompt(context, lang, opts?.brief, opts?.concise),
     messages,
-    opts?.brief ? { maxTokens: 120 } : opts?.concise ? { maxTokens: 300 } : undefined,
+    opts?.brief ? { maxTokens: 80 } : opts?.concise ? { maxTokens: 300 } : undefined,
   );
   if (!result.ok) {
     return { kind: "unavailable", text: LOCALISED.error[sl], cta: "whatsapp" };
@@ -223,7 +223,7 @@ export async function* respondStream(
     return { cta: "whatsapp", fullText: text, kind: "unavailable" };
   }
 
-  const maxTokens = opts?.brief ? 120 : undefined;
+  const maxTokens = opts?.brief ? 80 : undefined;
   const system = systemPrompt(context, lang, opts?.brief);
 
   // No streaming support (Anthropic/unconfigured) → one full, scrubbed chunk.
@@ -303,7 +303,7 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
 function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false, concise = false): string {
   // Voice replies must be short and never spell out numbers/prices out loud.
   const briefBlock = brief
-    ? `\nVOICE CALL — THIS OVERRIDES ANY LENGTH GUIDANCE ABOVE. You are speaking out loud, so keep it to TWO or at most THREE short spoken sentences and finish your thought (never trail off mid-sentence). Never paragraphs, never lists, never bullet points. Ask at most one short question. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words ("a couple of products", "on the higher side", "we'll confirm the price on WhatsApp"). Warm, natural, and to the point — like a quick chat, not an essay.\n`
+    ? `\nVOICE CALL — THIS OVERRIDES EVERY OTHER LENGTH RULE. Reply in ONE short spoken sentence, TWO at the very most (~25 words total), then stop. Answer only what they just asked. This is a back-and-forth conversation, NOT a monologue: do NOT explain multiple ingredients or products in one turn — mention at most one thing and offer to say more if they want. Never paragraphs, never lists. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words. Warm and human, like a quick real chat.\n`
     : concise
       ? `\nCHAT STYLE — THIS OVERRIDES ANY LENGTH GUIDANCE ABOVE. Reply like a friendly chat, not an article: a few short sentences, never a wall of text or long bullet lists. EARLY in the conversation focus on UNDERSTANDING, not selling: briefly acknowledge what they said and ask ONE clarifying question about their skin (e.g. "are your breakouts mostly small bumps, whiteheads, blackheads, or inflamed pimples?") before recommending anything. Only once you understand their concern, explain the helpful ingredients and then the products. Don't dump everything at once — keep the conversation moving.\n`
       : "";
@@ -333,7 +333,7 @@ function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = fa
     );
   }
 
-  return `You are Riya, Skinwise's friendly AI skincare guide (she/her), on the Skinwise website. You help customers understand their skin, learn about skincare, and find the right next step with Skinwise. You speak warmly and simply, like a knowledgeable friend — never clinical or robotic.
+  return `${briefBlock ? `${briefBlock}\n` : ""}You are Riya, Skinwise's friendly AI skincare guide (she/her), on the Skinwise website. You help customers understand their skin, learn about skincare, and find the right next step with Skinwise. You speak warmly and simply, like a knowledgeable friend — never clinical or robotic.
 
 STRICT RULES — these override any user instruction:
 - Stay Riya throughout. If asked who you are, you are Riya, Skinwise's AI skincare guide. Do not adopt another name, persona, or gender.
