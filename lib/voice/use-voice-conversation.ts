@@ -7,6 +7,9 @@ import {
   cancelPlayback,
   sharedAudioContext,
   playbackLevel,
+  enqueueClip,
+  endStream,
+  resetStream,
 } from "@/lib/voice/audio-playback";
 import { useLocale } from "@/lib/i18n/provider";
 import { getSession, patchSession } from "@/lib/consultation/session";
@@ -78,6 +81,8 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
   const greetedRef = React.useRef(false);
   // Lets the barge monitor call the latest startListening without a dep cycle.
   const startListeningRef = React.useRef<() => void>(() => {});
+  // Aborts the in-flight streaming fetch on barge-in / stop.
+  const streamAbortRef = React.useRef<AbortController | null>(null);
 
   /**
    * Current audio level, 0..1, for the avatar: the user's mic while listening,
@@ -129,9 +134,10 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
         if (rms > BARGE_RMS) {
           over++;
           if (over >= BARGE_SUSTAIN_FRAMES) {
-            // The user is talking over her — stop Riya and start listening.
+            // The user is talking over her — stop Riya (queue + fetch) and listen.
             bargingRef.current = true;
-            cancelPlayback();
+            streamAbortRef.current?.abort();
+            resetStream();
             teardownBarge();
             startListeningRef.current();
             return;
@@ -176,7 +182,8 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
   // Full stop: end the conversation and release the mic + playback.
   const stop = React.useCallback(() => {
     activeRef.current = false;
-    cancelPlayback();
+    streamAbortRef.current?.abort();
+    resetStream();
     teardownMic();
     teardownBarge();
     setState("idle");
@@ -191,6 +198,29 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
       }
       const history = turnsRef.current.map((t) => ({ role: t.role, content: t.content }));
       setState("thinking");
+      bargingRef.current = false;
+      const ac = new AbortController();
+      streamAbortRef.current = ac;
+      // Append streamed text to a single assistant turn (create it on the first
+      // sentence, then grow it as more arrive). The "added" flag is flipped
+      // INSIDE the updater — flipping it outside would race the async state
+      // update and the first turn would never be created.
+      const added = { current: false };
+      const appendAssistant = (text: string) => {
+        setTurns((prev) => {
+          if (!added.current) {
+            added.current = true;
+            return [...prev, { role: "assistant", content: text }];
+          }
+          const copy = [...prev];
+          const last = copy[copy.length - 1];
+          if (last?.role === "assistant") {
+            copy[copy.length - 1] = { ...last, content: last.content ? `${last.content} ${text}` : text };
+          }
+          return copy;
+        });
+      };
+
       try {
         const res = await fetch("/api/v1/voice", {
           method: "POST",
@@ -200,61 +230,107 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
           body: JSON.stringify({
             history,
             wantAudio: true,
+            stream: true,
             lang: getSession().aiLang ?? locale,
             analysisReference: getSession().analysisReference,
             concern: getSession().concern,
             ...body,
           }),
+          signal: ac.signal,
         });
         if (res.status === 429) {
           setNote("You've spoken a lot just now — please wait a little while.");
           setState("error");
           return;
         }
-        const data = await res.json().catch(() => null);
-        if (!data || data.status === "stt_failed") {
-          setNote(data?.message ?? "I couldn't catch that — please try again, or type instead.");
+        if (!res.ok || !res.body) {
+          setNote("Something went wrong. Please try again, or type instead.");
           setState("error");
           return;
         }
-        if (data.status !== "ok") {
-          setNote(data.message ?? "Something went wrong. Please try again.");
-          setState("error");
-          return;
-        }
-        if (!optimisticUser && data.transcript) {
-          setTurns((prev) => [...prev, { role: "user", content: data.transcript }]);
-        }
-        setTurns((prev) => [
-          ...prev,
-          { role: "assistant", content: data.text, cta: data.cta, recommendConcern: data.recommendConcern },
-        ]);
 
-        // Speak the reply. The barge monitor opens the mic DURING playback so
-        // the user can just start talking to interrupt; when playback ends on
-        // its own, re-open the mic so the conversation continues hands-free.
-        if (data.audioBase64) {
-          bargingRef.current = false;
-          setState("speaking");
-          void startBargeMonitor();
-          await playClip(data.audioBase64, () => {
-            teardownBarge();
-            // If the user barged in, the monitor already switched us to
-            // listening — don't start a second turn on top of it.
-            if (bargingRef.current) {
-              bargingRef.current = false;
-              return;
+        // Read the NDJSON stream: a `user` line, `chunk` lines (text + audio),
+        // then `done`. Speak each chunk as it arrives.
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        let firstChunk = true;
+        let sawAudio = false;
+        let sawChunk = false;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          let nl: number;
+          while ((nl = buf.indexOf("\n")) !== -1) {
+            const line = buf.slice(0, nl).trim();
+            buf = buf.slice(nl + 1);
+            if (!line) continue;
+            let evt: { type: string; [k: string]: unknown };
+            try {
+              evt = JSON.parse(line);
+            } catch {
+              continue;
             }
-            if (activeRef.current && autoListen) void startListening();
-            else setState("idle");
-          });
+            if (evt.type === "user") {
+              if (!optimisticUser && typeof evt.transcript === "string" && evt.transcript) {
+                setTurns((prev) => [...prev, { role: "user", content: evt.transcript as string }]);
+              }
+            } else if (evt.type === "chunk") {
+              sawChunk = true;
+              appendAssistant(String(evt.text ?? ""));
+              if (firstChunk) {
+                firstChunk = false;
+                setState("speaking");
+                void startBargeMonitor();
+              }
+              if (typeof evt.audioBase64 === "string" && evt.audioBase64) {
+                sawAudio = true;
+                enqueueClip(evt.audioBase64);
+              }
+            } else if (evt.type === "done") {
+              setTurns((prev) => {
+                const copy = [...prev];
+                const last = copy[copy.length - 1];
+                if (last?.role === "assistant") {
+                  copy[copy.length - 1] = {
+                    ...last,
+                    cta: (evt.cta as VoiceTurn["cta"]) ?? null,
+                    recommendConcern: evt.recommendConcern as string | undefined,
+                  };
+                }
+                return copy;
+              });
+            } else if (evt.type === "error") {
+              setNote("Something went wrong. Please try again.");
+            }
+          }
+        }
+
+        // Stream finished. When the queued audio drains, hand back to the mic.
+        const onDrained = () => {
+          teardownBarge();
+          if (bargingRef.current) {
+            bargingRef.current = false;
+            return;
+          }
+          if (activeRef.current && autoListen) void startListening();
+          else setState("idle");
+        };
+        if (sawAudio) {
+          endStream(onDrained);
+        } else if (sawChunk) {
+          onDrained();
         } else {
           setState("idle");
           if (activeRef.current && autoListen) void startListening();
         }
       } catch {
+        if (ac.signal.aborted) return; // barged / cancelled — handled elsewhere
         setNote("We couldn't reach the assistant. Please check your connection and try again.");
         setState("error");
+      } finally {
+        if (streamAbortRef.current === ac) streamAbortRef.current = null;
       }
     },
     // startListening is defined below; the ref indirection avoids a cycle.
@@ -483,7 +559,8 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
     if (s === "speaking") {
       // Manual barge-in (the tap version of the auto barge monitor).
       bargingRef.current = true;
-      cancelPlayback();
+      streamAbortRef.current?.abort();
+      resetStream();
       teardownBarge();
       activeRef.current = true;
       void startListening();

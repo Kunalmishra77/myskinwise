@@ -186,6 +186,104 @@ export function recommendationConcern(messages: ChatTurn[], context?: CustomerCo
   return comboForConcern(candidate) ? candidate : undefined;
 }
 
+export type StreamMeta = {
+  cta: CtaKind | null;
+  recommendConcern?: string;
+  fullText: string;
+  kind: "answer" | "escalation" | "unavailable";
+};
+
+/**
+ * Streaming twin of respond(): yields the reply SENTENCE BY SENTENCE (each one
+ * already claim-scrubbed) so the voice pipeline can speak the first sentence
+ * while the rest is still being generated. Same safety guarantees — inbound
+ * risk is checked before any model call, and every sentence is scrubbed before
+ * it leaves here, so a streamed token can never carry a banned claim. Returns
+ * the final CTA + recommendation once the whole reply is in.
+ */
+export async function* respondStream(
+  messages: ChatTurn[],
+  context?: CustomerContext,
+  opts?: RespondOptions,
+): AsyncGenerator<string, StreamMeta, unknown> {
+  const lang: AiLang = opts?.lang ?? "en";
+  const sl = safeLang(lang);
+  const latest = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+
+  if (assessRisk(latest) === "escalate") {
+    const text = LOCALISED.escalation[sl];
+    yield text;
+    return { cta: "whatsapp", fullText: text, kind: "escalation" };
+  }
+
+  const provider = getAiProvider();
+  if (!provider.isConfigured()) {
+    const text = LOCALISED.unavailable[sl];
+    yield text;
+    return { cta: "whatsapp", fullText: text, kind: "unavailable" };
+  }
+
+  const maxTokens = opts?.brief ? 120 : undefined;
+  const system = systemPrompt(context, lang, opts?.brief);
+
+  // No streaming support (Anthropic/unconfigured) → one full, scrubbed chunk.
+  if (!provider.stream) {
+    const result = await provider.complete(system, messages, maxTokens ? { maxTokens } : undefined);
+    if (!result.ok) {
+      const text = LOCALISED.error[sl];
+      yield text;
+      return { cta: "whatsapp", fullText: text, kind: "unavailable" };
+    }
+    const safe = scrubClaims(result.text);
+    yield safe;
+    return {
+      cta: chooseCta(latest, context),
+      recommendConcern: recommendationConcern(messages, context),
+      fullText: safe,
+      kind: "answer",
+    };
+  }
+
+  // Streaming path — emit each completed sentence as it forms.
+  let buffer = "";
+  let full = "";
+  const push = (raw: string) => {
+    const safe = scrubClaims(raw.trim());
+    if (!safe) return null;
+    full += (full ? " " : "") + safe;
+    return safe;
+  };
+  try {
+    for await (const delta of provider.stream(system, messages, maxTokens ? { maxTokens } : undefined)) {
+      buffer += delta;
+      // A sentence is "done" once it has terminal punctuation followed by space
+      // (handles en punctuation and the Hindi danda ।).
+      let m: RegExpMatchArray | null;
+      while ((m = buffer.match(/^([\s\S]*?[.!?…।])\s+/)) !== null) {
+        const sentence = push(m[1] ?? "");
+        buffer = buffer.slice(m[0]?.length ?? 0);
+        if (sentence) yield sentence;
+      }
+    }
+  } catch {
+    /* fall through — flush whatever we have */
+  }
+  const rest = push(buffer);
+  if (rest) yield rest;
+
+  if (!full) {
+    const text = LOCALISED.error[sl];
+    yield text;
+    return { cta: "whatsapp", fullText: text, kind: "unavailable" };
+  }
+  return {
+    cta: chooseCta(latest, context),
+    recommendConcern: recommendationConcern(messages, context),
+    fullText: full,
+    kind: "answer",
+  };
+}
+
 function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
   const m = message.toLowerCase();
   if (context?.hasPublishedRegimen && /\b(routine|regimen|my plan|how (do|to) i use|morning|night)\b/.test(m)) {

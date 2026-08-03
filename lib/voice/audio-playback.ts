@@ -94,6 +94,60 @@ function base64ToBytes(base64: string): Uint8Array {
   return bytes;
 }
 
+// --- Streaming playback queue -------------------------------------------------
+// Streamed replies arrive as a series of short clips (one per sentence). They
+// must play back-to-back in order, and a single callback fires when the whole
+// stream has finished playing so the caller can re-open the mic.
+let chunkQueue: string[] = [];
+let pumping = false;
+let streamDone = false;
+let onAllPlayed: (() => void) | null = null;
+
+/** Queue one streamed clip; starts the pump if idle. */
+export function enqueueClip(base64: string): void {
+  chunkQueue.push(base64);
+  if (!pumping) void pump();
+}
+
+/** Mark the stream complete; `cb` fires once the queue has fully drained. */
+export function endStream(cb: () => void): void {
+  streamDone = true;
+  onAllPlayed = cb;
+  if (!pumping && chunkQueue.length === 0) {
+    streamDone = false;
+    onAllPlayed = null;
+    cb();
+  }
+}
+
+async function pump(): Promise<void> {
+  pumping = true;
+  while (chunkQueue.length) {
+    const next = chunkQueue.shift()!;
+    await new Promise<void>((resolve) => playClip(next, () => resolve()));
+  }
+  pumping = false;
+  if (streamDone) {
+    const cb = onAllPlayed;
+    streamDone = false;
+    onAllPlayed = null;
+    cb?.();
+  }
+}
+
+/**
+ * Fully stops streamed playback: clears the queue AND the current clip. Use
+ * this for a barge-in or a hard stop (cancelPlayback alone only stops the clip
+ * that is playing, which the pump relies on when advancing between chunks).
+ */
+export function resetStream(): void {
+  chunkQueue = [];
+  streamDone = false;
+  onAllPlayed = null;
+  pumping = false;
+  cancelPlayback();
+}
+
 /** Stops any current playback and invalidates in-flight decodes. */
 export function cancelPlayback(): void {
   seq++;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { respond, RIYA_GREETING, type ChatTurn } from "@/lib/ai/assistant";
+import { respond, respondStream, RIYA_GREETING, type ChatTurn } from "@/lib/ai/assistant";
+import type { CustomerContext } from "@/lib/ai/assistant";
 import { isAiLang, type AiLang } from "@/lib/i18n/languages";
 import { resolveCustomerContext } from "@/lib/ai/context";
 import { getSttProvider } from "@/lib/voice/stt";
@@ -31,6 +32,9 @@ const bodySchema = z.object({
   // When true, Riya explains the user's Skin Analyzer result out loud — the
   // scan → voice handoff. Needs analysisReference for the grounding.
   explain: z.boolean().optional(),
+  // When true, stream the reply sentence-by-sentence (NDJSON) so the client can
+  // start speaking the first sentence while the rest is still being generated.
+  stream: z.boolean().optional(),
   // EITHER a transcript (browser Web Speech API — the primary path) …
   transcript: z.string().min(1).max(2000).optional(),
   // … OR audio for the server STT fallback (iOS Safari etc.).
@@ -198,6 +202,13 @@ export async function POST(request: Request) {
   // outbound safety -> CTA.
   const messages: ChatTurn[] = [...body.history, { role: "user", content: transcript }];
   void logEvent("voice_used");
+
+  // Streaming path: sentence-by-sentence NDJSON so the client speaks the first
+  // sentence while the rest generates. Same brief/safety pipeline.
+  if (body.stream) {
+    return streamVoice(messages, context, lang, transcript, body.wantAudio);
+  }
+
   const outcome = await respond(messages, context, { lang, brief: true });
 
   // 4. TTS of the FINAL text (never raw model output). Best-effort: a TTS
@@ -222,5 +233,55 @@ export async function POST(request: Request) {
     recommendConcern: "recommendConcern" in outcome ? outcome.recommendConcern : undefined,
     audioBase64,
     audioMimeType,
+  });
+}
+
+/**
+ * Streams the reply as NDJSON: one `user` line, a `chunk` line per spoken
+ * sentence (text + its own TTS audio), then a `done` line with the CTA. TTS
+ * runs per sentence so the first audio is ready as soon as the model has
+ * produced one sentence — that is the latency win.
+ */
+function streamVoice(
+  messages: ChatTurn[],
+  context: CustomerContext | undefined,
+  lang: AiLang,
+  transcript: string,
+  wantAudio: boolean,
+): Response {
+  const encoder = new TextEncoder();
+  const tts = getTtsProvider();
+  const readable = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (obj: unknown) => controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
+      send({ type: "user", transcript });
+      try {
+        const gen = respondStream(messages, context, { lang, brief: true });
+        let res = await gen.next();
+        while (!res.done) {
+          const sentence = res.value;
+          let audioBase64: string | undefined;
+          let audioMimeType: string | undefined;
+          if (wantAudio && sentence.trim()) {
+            const speech = await tts.speak(sentence, lang);
+            if (speech.ok) {
+              audioBase64 = speech.audioBase64;
+              audioMimeType = speech.mimeType;
+            }
+          }
+          send({ type: "chunk", text: sentence, audioBase64, audioMimeType });
+          res = await gen.next();
+        }
+        const meta = res.value;
+        send({ type: "done", cta: meta.cta, recommendConcern: meta.recommendConcern, kind: meta.kind });
+      } catch {
+        send({ type: "error", message: "Something went wrong. Please try again." });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+  return new Response(readable, {
+    headers: { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store" },
   });
 }

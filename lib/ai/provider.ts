@@ -14,6 +14,12 @@ export type CompleteOptions = { maxTokens?: number };
 export interface AiProvider {
   isConfigured(): boolean;
   complete(system: string, messages: ChatTurn[], opts?: CompleteOptions): Promise<CompletionResult>;
+  /**
+   * Streams the reply as text deltas, for the voice pipeline (so TTS can start
+   * on the first sentence instead of waiting for the whole reply). Optional:
+   * providers without it fall back to complete().
+   */
+  stream?(system: string, messages: ChatTurn[], opts?: CompleteOptions): AsyncGenerator<string, void, unknown>;
 }
 
 class UnconfiguredProvider implements AiProvider {
@@ -140,6 +146,61 @@ class OpenAiProvider implements AiProvider {
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") return { ok: false, reason: "timeout" };
       return { ok: false, reason: "failed" };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async *stream(
+    system: string,
+    messages: ChatTurn[],
+    opts?: CompleteOptions,
+  ): AsyncGenerator<string, void, unknown> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25_000);
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${this.apiKey}` },
+        body: JSON.stringify({
+          model: this.model,
+          max_tokens: opts?.maxTokens ?? 700,
+          stream: true,
+          messages: [
+            { role: "system", content: system },
+            ...messages.map((m) => ({ role: m.role, content: m.content })),
+          ],
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok || !res.body) throw new Error(`openai stream ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        // SSE frames are separated by blank lines; each has a `data:` payload.
+        let nl: number;
+        while ((nl = buffer.indexOf("\n")) !== -1) {
+          const line = buffer.slice(0, nl).trim();
+          buffer = buffer.slice(nl + 1);
+          if (!line.startsWith("data:")) continue;
+          const payload = line.slice(5).trim();
+          if (payload === "[DONE]") return;
+          try {
+            const json = JSON.parse(payload) as {
+              choices?: { delta?: { content?: string } }[];
+            };
+            const delta = json.choices?.[0]?.delta?.content;
+            if (delta) yield delta;
+          } catch {
+            /* ignore keep-alive / partial frames */
+          }
+        }
+      }
     } finally {
       clearTimeout(timeout);
     }

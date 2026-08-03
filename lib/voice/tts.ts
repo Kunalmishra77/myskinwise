@@ -104,10 +104,11 @@ export function normalizeForSpeech(text: string, lang?: AiLang): string {
  * generates content, so swapping the voice vendor cannot affect what is said.
  */
 class ElevenLabsTts implements TextToSpeechProvider {
-  // Turbo is markedly faster to first audio than multilingual_v2 (which made
-  // Riya feel like she was "thinking" for too long), and still speaks the same
-  // 30+ languages. Override with ELEVENLABS_MODEL if a voice needs v2 quality.
-  private readonly model = process.env.ELEVENLABS_MODEL || "eleven_turbo_v2_5";
+  // Flash is ElevenLabs' lowest-latency model (built for real-time), which is
+  // what the streaming voice needs so audio starts fast. Still multilingual.
+  // Override with ELEVENLABS_MODEL=eleven_turbo_v2_5 (or multilingual_v2) if a
+  // voice needs richer quality at the cost of a little latency.
+  private readonly model = process.env.ELEVENLABS_MODEL || "eleven_flash_v2_5";
   constructor(
     private readonly apiKey: string,
     private readonly voiceId: string,
