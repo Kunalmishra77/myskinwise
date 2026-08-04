@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { Footer } from "@/components/features/footer";
 import { VoiceOverlay } from "@/components/voice/voice-overlay";
 import { FloatingActions } from "@/components/layout/floating-actions";
+import { HideOnChat } from "@/components/layout/hide-on-chat";
 
 /**
  * The application shell: sticky header, page content, footer, and the
@@ -30,7 +31,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         {children}
       </main>
-      <Footer />
+      <HideOnChat>
+        <Footer />
+      </HideOnChat>
       <BottomNav />
       {/* Floating voice assistant, available on every shell page. Portals to
           <body>; not shown on /voice or the full-screen flows. */}

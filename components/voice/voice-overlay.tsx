@@ -24,6 +24,10 @@ import { VoiceConversation } from "@/components/voice/voice-conversation";
  */
 const SESSION_KEY = "sw_voice_opened";
 
+/** Pages that are already a "talk to the AI" surface with their own voice
+ *  controls — the floating launcher would only collide with their composer. */
+const HIDE_ON = new Set(["/voice", "/assistant"]);
+
 export function VoiceOverlay() {
   const pathname = usePathname();
   const [mounted, setMounted] = React.useState(false);
@@ -35,10 +39,12 @@ export function VoiceOverlay() {
   React.useEffect(() => setMounted(true), []);
 
   // Auto-open once per session, shortly after load — the welcome consultation
-  // popup (mic primary + "type instead"). Not on the dedicated /voice page,
-  // which is already that experience full-screen.
+  // popup (mic primary + "type instead"). Not on the dedicated /voice page or
+  // the /assistant chat, which are already "talk to the AI" surfaces with their
+  // own voice controls — a floating launcher there just collides with the
+  // sticky composer.
   React.useEffect(() => {
-    if (pathname === "/voice") return;
+    if (HIDE_ON.has(pathname)) return;
     if (typeof sessionStorage === "undefined") return;
     if (sessionStorage.getItem(SESSION_KEY)) return;
     const t = setTimeout(() => {
@@ -58,7 +64,7 @@ export function VoiceOverlay() {
     };
   }, [open]);
 
-  if (!mounted || pathname === "/voice") return null;
+  if (!mounted || HIDE_ON.has(pathname)) return null;
 
   const launcher = (
     <button

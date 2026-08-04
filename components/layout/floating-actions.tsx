@@ -23,9 +23,12 @@ import { useT } from "@/lib/i18n/provider";
  * backdrop-filter creates a containing block that would otherwise clip a fixed
  * descendant.
  *
- * Hidden on /voice (its own full-screen surface) and never rendered inside the
+ * Hidden on /voice (its own full-screen surface) and on /assistant (whose
+ * sticky chat composer these would overlap) and never rendered inside the
  * immersive Skin Check / Analyzer flows, which live outside this shell.
  */
+const HIDE_ON = new Set(["/voice", "/assistant"]);
+
 export function FloatingActions() {
   const pathname = usePathname();
   const t = useT();
@@ -44,7 +47,7 @@ export function FloatingActions() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (!mounted || pathname === "/voice") return null;
+  if (!mounted || HIDE_ON.has(pathname)) return null;
 
   const scrollTop = () =>
     window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });

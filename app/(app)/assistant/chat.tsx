@@ -216,7 +216,7 @@ export function AssistantChat() {
   const lastRecommend = !busy && last?.role === "assistant" ? last.recommendConcern : undefined;
 
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-2xl flex-col px-4 lg:min-h-[calc(100dvh-4rem)]">
+    <div className="mx-auto flex h-[calc(100dvh-3.5rem-var(--spacing-bottom-nav))] w-full max-w-2xl flex-col px-4 lg:h-[calc(100dvh-4rem)]">
       <div className="flex-1 overflow-y-auto py-6" aria-live="polite" aria-label={tc(ASSISTANT.conversationLabel)}>
         {empty ? (
           <div className="flex flex-col items-center pt-6 text-center">
