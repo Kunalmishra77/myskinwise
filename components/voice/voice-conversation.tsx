@@ -7,7 +7,6 @@ import { SITE, waHref } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useVoiceConversation, type CtaKind } from "@/lib/voice/use-voice-conversation";
 import { VoiceAvatar } from "@/components/voice/voice-avatar";
-import { RecommendedCombo } from "@/components/products/recommended-combo";
 import { LanguagePicker } from "@/components/voice/language-picker";
 import { useT } from "@/lib/i18n/provider";
 import { getSession, patchSession } from "@/lib/consultation/session";
@@ -150,10 +149,14 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
             ))}
           </ul>
         )}
+        {/* Voice → Scan handoff ONLY. The voice chat guides the consultation
+            (questions → suggest a scan); it deliberately does NOT show a product
+            combo or an order button here. Those belong AFTER the scan, on the
+            result page — surfacing a bulky product card inside this small
+            transcript band pushed the scan button out of view and made the
+            recommendation feel premature and repetitive. */}
         {lastRecommend && (
-          <div className="mt-3 flex flex-col gap-3">
-            {/* Voice → Scan handoff: continue the SAME consultation with a face
-                scan; the concern carries over so the scan stays on-topic. */}
+          <div className="mt-3">
             <Link
               href="/skin-check/analyzer"
               onClick={() => patchSession({ concern: lastRecommend })}
@@ -162,7 +165,6 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
               <ScanFace aria-hidden="true" className="size-4" />
               {t("voice.scanCta")}
             </Link>
-            <RecommendedCombo concern={lastRecommend} />
           </div>
         )}
         {note && (
