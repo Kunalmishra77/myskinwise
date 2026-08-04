@@ -13,6 +13,8 @@ export const COMBO = {
   body: "A simple set our experts often build from. Each one is customised for you — your expert confirms the final routine after your Skin Check.",
   addCombo: "Add the combo to cart",
   inCart: "Combo in cart",
+  orderWhatsapp: "Order this combo on WhatsApp",
+  orderHint: "We'll open WhatsApp with your items to finish the order.",
 } as const;
 
 export const CART_PAGE = {

@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus, MessageCircle } from "lucide-react";
 import { comboForConcern } from "@/content/products/combos";
 import { primaryProductImage } from "@/content/products";
-import { useCart, formatPrice } from "@/lib/cart/use-cart";
+import { useCart, formatPrice, buildOrderMessage } from "@/lib/cart/use-cart";
+import { SITE, waHref } from "@/config/site";
 import { COMBO } from "@/content/i18n/checkout";
 import { T } from "@/components/i18n/t";
 
@@ -24,6 +25,11 @@ export function RecommendedCombo({ concern }: { concern: string }) {
 
   const slugs = combo.products.map((p) => p.slug);
   const allIn = slugs.every((s) => has(s));
+  // A one-tap order: opens WhatsApp pre-filled with this combo. No account, no
+  // checkout page needed — the team confirms price/quantity/address there.
+  const orderHref = `${waHref(SITE.whatsapp.e164)}?text=${encodeURIComponent(
+    buildOrderMessage(combo.products.map((p) => ({ product: p, qty: 1 }))),
+  )}`;
 
   return (
     <section className="rounded-3xl bg-surface p-5 shadow-soft sm:p-6">
@@ -71,21 +77,36 @@ export function RecommendedCombo({ concern }: { concern: string }) {
         })}
       </ul>
 
+      {/* Primary: order this combo now — redirects straight to WhatsApp. */}
+      <a
+        href={orderHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-rose-ink px-6 py-3.5 font-semibold text-white transition hover:bg-rose-deep"
+      >
+        <MessageCircle aria-hidden="true" className="size-5" />
+        <T>{COMBO.orderWhatsapp}</T>
+      </a>
+      <p className="mt-2 text-center text-xs text-ink-soft"><T>{COMBO.orderHint}</T></p>
+
+      {/* Secondary: add to cart to keep shopping / combine with other products. */}
       <button
         type="button"
         onClick={() => (allIn ? slugs.forEach(remove) : addMany(slugs))}
-        className={`mt-5 flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold transition ${
-          allIn ? "bg-sage/40 text-ink hover:bg-sage/60" : "bg-rose-ink text-white hover:bg-rose-deep"
+        className={`mt-3 flex w-full items-center justify-center gap-2 rounded-full border px-6 py-3 font-semibold transition ${
+          allIn
+            ? "border-sage/60 bg-sage/30 text-ink hover:bg-sage/50"
+            : "border-rose-ink/25 bg-surface text-ink hover:bg-blush"
         }`}
       >
         {allIn ? (
           <>
-            <Check aria-hidden="true" className="size-5" />
+            <Check aria-hidden="true" className="size-5 text-rose-ink" />
             <T>{COMBO.inCart}</T>
           </>
         ) : (
           <>
-            <Plus aria-hidden="true" className="size-5" />
+            <Plus aria-hidden="true" className="size-5 text-rose-ink" />
             <T>{COMBO.addCombo}</T>
           </>
         )}
