@@ -43,7 +43,9 @@ export type VoiceTurn = {
 // Tuning, in milliseconds / normalised RMS.
 const SILENCE_RMS = 0.012; // below this counts as silence
 const SPEAK_RMS = 0.02; // above this counts as speech having started
-const END_SILENCE_MS = 1300; // silence after speech before we finalise the turn
+const END_SILENCE_MS = 700; // silence after speech before we finalise the turn
+// (kept snappy — this is pure perceived latency between the user stopping and
+// the reply starting; too low and it cuts people off mid-pause).
 const GRACE_MS = 8000; // wait this long for speech to START before giving up
 const MAX_TURN_MS = 20000; // hard cap on one spoken turn
 
@@ -232,6 +234,9 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
             wantAudio: true,
             stream: true,
             lang: getSession().aiLang ?? locale,
+            // If the user picked a language, honour it; otherwise the server
+            // follows the language it detects them speaking.
+            langLocked: Boolean(getSession().aiLang),
             analysisReference: getSession().analysisReference,
             concern: getSession().concern,
             ...body,
@@ -289,6 +294,12 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
                 enqueueClip(evt.audioBase64);
               }
             } else if (evt.type === "done") {
+              // Lock the whole session to the language Riya replied in (the one
+              // the user is speaking) so every later turn — including the
+              // post-scan explanation — stays in it. Only when not user-locked.
+              if (!getSession().aiLang && typeof evt.lang === "string" && evt.lang) {
+                patchSession({ aiLang: evt.lang });
+              }
               setTurns((prev) => {
                 const copy = [...prev];
                 const last = copy[copy.length - 1];

@@ -78,6 +78,20 @@ export const observationSchema = z.object({
          * rejects the whole analysis.
          */
         prominence: z.number(),
+        /**
+         * Where this specific characteristic appears, as a normalised box
+         * (0..1, top-left origin) over the WHOLE image. Model-estimated, so it
+         * is approximate — but it lets each concern be highlighted at its own
+         * spot (left cheek vs forehead vs under-eye) instead of a shared
+         * region template. The client clamps it and falls back to the region
+         * anchor when it is missing or implausible.
+         */
+        area: z.object({
+          x: z.number(),
+          y: z.number(),
+          width: z.number(),
+          height: z.number(),
+        }),
       }),
     )
     .max(8),
@@ -118,8 +132,19 @@ export const OBSERVATION_JSON_SCHEMA = {
           region: { type: "string", enum: [...FACE_REGIONS] },
           note: { type: "string" },
           prominence: { type: "integer" },
+          area: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              x: { type: "number" },
+              y: { type: "number" },
+              width: { type: "number" },
+              height: { type: "number" },
+            },
+            required: ["x", "y", "width", "height"],
+          },
         },
-        required: ["feature", "certainty", "region", "note", "prominence"],
+        required: ["feature", "certainty", "region", "note", "prominence", "area"],
       },
     },
     limitations: { type: "string" },

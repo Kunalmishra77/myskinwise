@@ -55,6 +55,9 @@ const bodySchema = z.object({
   // Reply + speech language — any of Riya's supported Indian languages
   // (validated below; unknown values fall back to English).
   lang: z.string().max(8).optional(),
+  // True when the user explicitly picked a language (the picker). Then we honour
+  // it; otherwise we follow whatever language the STT detects them speaking.
+  langLocked: z.boolean().optional(),
 });
 
 /**
@@ -166,6 +169,7 @@ export async function POST(request: Request) {
 
   // 1. STT (fallback path only). Browser STT sends `transcript` directly.
   let transcript = body.transcript?.trim() ?? "";
+  let detectedLang: string | undefined;
   if (!transcript && body.audioBase64) {
     const stt = getSttProvider();
     const result = await stt.transcribe(
@@ -179,7 +183,15 @@ export async function POST(request: Request) {
       );
     }
     transcript = result.text;
+    detectedLang = result.language;
   }
+
+  // The reply language: a language the user explicitly picked wins; otherwise
+  // follow the language they were just detected speaking. This is what keeps
+  // Riya in the user's own language across the whole session, including after
+  // the face scan.
+  const detected = isAiLang(detectedLang) ? detectedLang : isAiLang(detectedLang?.slice(0, 2)) ? (detectedLang!.slice(0, 2) as AiLang) : undefined;
+  const replyLang: AiLang = body.langLocked && isAiLang(body.lang) ? lang : (detected ?? lang);
   if (!transcript) {
     return NextResponse.json({ status: "invalid", message: "No speech provided." }, { status: 400 });
   }
@@ -206,10 +218,10 @@ export async function POST(request: Request) {
   // Streaming path: sentence-by-sentence NDJSON so the client speaks the first
   // sentence while the rest generates. Same brief/safety pipeline.
   if (body.stream) {
-    return streamVoice(messages, context, lang, transcript, body.wantAudio);
+    return streamVoice(messages, context, replyLang, transcript, body.wantAudio);
   }
 
-  const outcome = await respond(messages, context, { lang, brief: true });
+  const outcome = await respond(messages, context, { lang: replyLang, brief: true });
 
   // 4. TTS of the FINAL text (never raw model output). Best-effort: a TTS
   // failure still returns the text, and the client speaks it with the
@@ -217,7 +229,7 @@ export async function POST(request: Request) {
   let audioBase64: string | undefined;
   let audioMimeType: string | undefined;
   if (body.wantAudio) {
-    const speech = await getTtsProvider().speak(outcome.text, lang);
+    const speech = await getTtsProvider().speak(outcome.text, replyLang);
     if (speech.ok) {
       audioBase64 = speech.audioBase64;
       audioMimeType = speech.mimeType;
@@ -228,6 +240,7 @@ export async function POST(request: Request) {
     status: "ok",
     transcript,
     text: outcome.text,
+    lang: replyLang,
     cta: "cta" in outcome ? outcome.cta : null,
     kind: outcome.kind,
     recommendConcern: "recommendConcern" in outcome ? outcome.recommendConcern : undefined,
@@ -273,7 +286,7 @@ function streamVoice(
           res = await gen.next();
         }
         const meta = res.value;
-        send({ type: "done", cta: meta.cta, recommendConcern: meta.recommendConcern, kind: meta.kind });
+        send({ type: "done", cta: meta.cta, recommendConcern: meta.recommendConcern, kind: meta.kind, lang });
       } catch {
         send({ type: "error", message: "Something went wrong. Please try again." });
       } finally {

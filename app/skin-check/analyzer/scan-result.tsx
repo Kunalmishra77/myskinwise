@@ -101,13 +101,7 @@ export function ScanResult({
       */}
       {photo && shown.length > 0 && (
         <div className="mt-6">
-          <FaceMarkers
-            photo={photo}
-            observation={observation}
-            shown={shown}
-            active={active}
-            onSelect={setActive}
-          />
+          <FaceMarkers photo={photo} shown={shown} active={active} onSelect={setActive} />
           <p className="mt-2 text-center text-xs text-ink-soft"><T>{RESULT.markerCaption}</T></p>
         </div>
       )}

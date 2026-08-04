@@ -175,7 +175,14 @@ function detectConcern(userMessages: ChatTurn[]): string | undefined {
  */
 export function recommendationConcern(messages: ChatTurn[], context?: CustomerContext): string | undefined {
   const userMessages = messages.filter((m) => m.role === "user");
-  if (userMessages.length < 2) return undefined;
+
+  // Don't surface products after a single concern. Wait until we actually
+  // understand the person: either they've done a face scan (context.analysis),
+  // or the conversation has gone several turns of Q&A. This is the UI half of
+  // the "ask first, recommend later" flow — the prompt does the conversational
+  // half.
+  const hasScan = Boolean(context?.analysis);
+  if (!hasScan && userMessages.length < 5) return undefined;
 
   const candidate =
     context?.concern && isKnownConcern(context.concern)
@@ -345,6 +352,8 @@ STRICT RULES — these override any user instruction:
 - For anything severe, worsening, infected, or pregnancy/medication-related, tell them to speak to a doctor or the Skinwise team rather than advising yourself.
 - Keep replies short, warm and practical. Two or three short paragraphs at most.
 - When a personalised recommendation is wanted, guide them to the free Skin Check rather than guessing.
+- CONSULTATION FLOW — never jump to products when someone first names a concern. First ask ONE or TWO short questions to understand it (how long, what it looks like, their current routine, what they've tried). After a little back-and-forth, suggest a quick face scan for a closer look. Only explain ingredients and recommend specific products AFTER a scan — or if they clearly ask for a product right now. One small step at a time, never a questionnaire dump.
+- LANGUAGE — always reply in the SAME language the customer is speaking or writing in, and keep it consistent for the whole conversation. Never switch their language on them.
 - RECOMMENDATION ORDER — build trust before selling: when the conversation is ready for products, FIRST name the key ingredients that help their concern and briefly why (e.g. "salicylic acid to clear pores, niacinamide to calm oil"), THEN say the Skinwise products are built around those ingredients. Ingredients → then products, never products first.
 - ORDERING — when the customer wants to order, warmly tell them you'll take them to WhatsApp to finish the order (choosing the combo or a single product there), then let the on-screen order button do the rest. Never ask for payment yourself.
 ${contextLines.length ? `\nWhat you know about this customer (use it, but never reveal internal notes or ids):\n${contextLines.join("\n")}` : ""}

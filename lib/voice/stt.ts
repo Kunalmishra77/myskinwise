@@ -1,5 +1,5 @@
 export type TranscriptionResult =
-  | { ok: true; text: string }
+  | { ok: true; text: string; language?: string }
   | { ok: false; reason: "not-configured" | "empty" | "timeout" | "failed" };
 
 /**
@@ -128,10 +128,12 @@ class ElevenLabsStt implements SpeechToTextProvider {
         signal: controller.signal,
       });
       if (!res.ok) return { ok: false, reason: "failed" };
-      const data = (await res.json()) as { text?: string };
+      // Scribe returns the detected language too, which lets the reply + TTS
+      // continue in the language the user actually spoke.
+      const data = (await res.json()) as { text?: string; language_code?: string };
       const text = data.text?.trim();
       if (!text) return { ok: false, reason: "empty" };
-      return { ok: true, text };
+      return { ok: true, text, language: data.language_code };
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") return { ok: false, reason: "timeout" };
       return { ok: false, reason: "failed" };

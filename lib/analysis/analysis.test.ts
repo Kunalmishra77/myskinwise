@@ -24,6 +24,7 @@ describe("observation schema", () => {
           region: "right_cheek",
           note: "some redness on the cheeks",
           prominence: 60,
+          area: { x: 0.6, y: 0.45, width: 0.2, height: 0.2 },
         },
       ],
       limitations: "only the central face is visible",
