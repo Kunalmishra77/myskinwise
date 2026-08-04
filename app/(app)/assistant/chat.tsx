@@ -130,6 +130,9 @@ export function AssistantChat() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           messages: next.map((m) => ({ role: m.role, content: m.content })),
+          // Stream the reply so it types itself into the chat in real time
+          // instead of appearing all at once after a few seconds.
+          stream: true,
           ...(activeConcern ? { concern: activeConcern } : {}),
           // Carry the unified session's scan so chat stays grounded in it too.
           analysisReference: getSession().analysisReference,
@@ -142,11 +145,61 @@ export function AssistantChat() {
         setBusy(false);
         return;
       }
-      const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.text, cta: data.cta, recommendConcern: data.recommendConcern },
-      ]);
+      if (!res.body) {
+        // No stream (shouldn't happen) — fall back to a single JSON read.
+        const data = await res.json();
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: data.text, cta: data.cta, recommendConcern: data.recommendConcern },
+        ]);
+        return;
+      }
+
+      // Consume the NDJSON stream: append each sentence to a single assistant
+      // bubble as it arrives, so the reply builds up live.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let acc = "";
+      let added = false;
+      const updateLast = (patch: Partial<Msg>) =>
+        setMessages((prev) => {
+          const copy = [...prev];
+          const i = copy.length - 1;
+          if (copy[i]?.role === "assistant") copy[i] = { ...copy[i]!, ...patch };
+          return copy;
+        });
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!line) continue;
+          const evt = JSON.parse(line) as {
+            type: string;
+            text?: string;
+            cta?: CtaKind | null;
+            recommendConcern?: string;
+          };
+          if (evt.type === "chunk") {
+            acc += (acc ? " " : "") + (evt.text ?? "");
+            if (!added) {
+              added = true;
+              setMessages((prev) => [...prev, { role: "assistant", content: acc }]);
+            } else {
+              updateLast({ content: acc });
+            }
+          } else if (evt.type === "done") {
+            if (added) updateLast({ cta: evt.cta, recommendConcern: evt.recommendConcern });
+          } else if (evt.type === "error") {
+            setError(ASSISTANT.errorGeneric);
+          }
+        }
+      }
+      if (!added) setError(ASSISTANT.errorGeneric);
     } catch {
       setError(ASSISTANT.errorGeneric);
     } finally {
@@ -266,7 +319,7 @@ export function AssistantChat() {
                 </div>
               </li>
             ))}
-            {busy && (
+            {busy && last?.role === "user" && (
               <li className="flex justify-start">
                 <div className="rounded-3xl bg-surface px-4 py-3 shadow-soft" role="status" aria-label={tc(ASSISTANT.typingLabel)}>
                   <span className="flex gap-1">

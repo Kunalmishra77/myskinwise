@@ -230,8 +230,8 @@ export async function* respondStream(
     return { cta: "whatsapp", fullText: text, kind: "unavailable" };
   }
 
-  const maxTokens = opts?.brief ? 80 : undefined;
-  const system = systemPrompt(context, lang, opts?.brief);
+  const maxTokens = opts?.brief ? 80 : opts?.concise ? 300 : undefined;
+  const system = systemPrompt(context, lang, opts?.brief, opts?.concise);
 
   // No streaming support (Anthropic/unconfigured) → one full, scrubbed chunk.
   if (!provider.stream) {

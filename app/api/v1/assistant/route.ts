@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { respond, type ChatTurn } from "@/lib/ai/assistant";
+import { respond, respondStream, type ChatTurn, type CustomerContext } from "@/lib/ai/assistant";
 import { resolveCustomerContext } from "@/lib/ai/context";
-import { isAiLang } from "@/lib/i18n/languages";
+import { isAiLang, type AiLang } from "@/lib/i18n/languages";
 import { clientKey, MemoryRateLimiter } from "@/lib/rate-limit";
 import { logEvent } from "@/lib/analytics";
 
@@ -39,6 +39,9 @@ const bodySchema = z.object({
     .optional(),
   // Reply language — any of Riya's supported languages; unknown falls back to en.
   lang: z.string().max(8).optional(),
+  // When true, stream the reply as NDJSON (sentence-by-sentence) so it appears
+  // progressively in the chat instead of arriving all at once after a wait.
+  stream: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -81,9 +84,52 @@ export async function POST(request: Request) {
       : resolved;
 
   void logEvent("assistant_used");
-  const outcome = await respond(parsed.data.messages as ChatTurn[], context, {
-    lang: isAiLang(parsed.data.lang) ? parsed.data.lang : "en",
-    concise: true,
-  });
+  const lang: AiLang = isAiLang(parsed.data.lang) ? parsed.data.lang : "en";
+  const messages = parsed.data.messages as ChatTurn[];
+
+  // Streaming path: sentence-by-sentence NDJSON so the reply types itself into
+  // the chat in real time instead of the user waiting several seconds for the
+  // whole thing. Same grounding + per-sentence claim scrub as the blocking path.
+  if (parsed.data.stream) {
+    return streamAssistant(messages, context, lang);
+  }
+
+  const outcome = await respond(messages, context, { lang, concise: true });
   return NextResponse.json({ status: "ok", ...outcome });
+}
+
+/**
+ * Streams the reply as NDJSON: a `chunk` line per sentence as it forms, then a
+ * `done` line carrying the CTA and any product recommendation. Each sentence is
+ * already claim-scrubbed inside respondStream, so streaming never leaks a banned
+ * claim mid-generation.
+ */
+function streamAssistant(
+  messages: ChatTurn[],
+  context: CustomerContext | undefined,
+  lang: AiLang,
+): Response {
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (obj: unknown) => controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
+      try {
+        const gen = respondStream(messages, context, { lang, concise: true });
+        let res = await gen.next();
+        while (!res.done) {
+          send({ type: "chunk", text: res.value });
+          res = await gen.next();
+        }
+        const meta = res.value;
+        send({ type: "done", cta: meta.cta, recommendConcern: meta.recommendConcern, kind: meta.kind });
+      } catch {
+        send({ type: "error" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+  return new Response(readable, {
+    headers: { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store" },
+  });
 }
