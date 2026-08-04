@@ -13,6 +13,7 @@ import { SCANNER } from "@/content/i18n/scanner";
 import { useTContent } from "@/lib/i18n/use-content";
 import { T } from "@/components/i18n/t";
 import { patchSession } from "@/lib/consultation/session";
+import { preloadFaceDetector } from "@/lib/analysis/face-detect";
 
 const POLICY_VERSION = "2026-07-23";
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -35,6 +36,11 @@ function toBase64(dataUrl: string): string {
 
 export function Analyzer() {
   const tc = useTContent();
+  // Warm the face-detection model while the user frames their shot, so the
+  // markers are ready the moment the analysis returns.
+  React.useEffect(() => {
+    preloadFaceDetector();
+  }, []);
   const [stage, setStage] = React.useState<Stage>("intro");
   const [preview, setPreview] = React.useState<{ dataUrl: string; type: string; bytes: number } | null>(null);
   const [consent, setConsent] = React.useState(false);

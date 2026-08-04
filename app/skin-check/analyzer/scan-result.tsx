@@ -15,6 +15,7 @@ import {
 import { useTContent } from "@/lib/i18n/use-content";
 import { T } from "@/components/i18n/t";
 import { getSession } from "@/lib/consultation/session";
+import { detectFaceGeometry, type FaceGeometry } from "@/lib/analysis/face-detect";
 import { Button } from "@/components/ui/button";
 import { FaceMarkers, type ShownFeature } from "@/components/analyzer/face-markers";
 import { RecommendedCombo } from "@/components/products/recommended-combo";
@@ -69,13 +70,29 @@ export function ScanResult({
   const [sessionConcern, setSessionConcern] = React.useState<string | undefined>();
   // eslint-disable-next-line react-hooks/set-state-in-effect
   React.useEffect(() => setSessionConcern(getSession().concern), []);
-  // Keep the ORIGINAL index so a marker and its card refer to the same thing,
-  // then order the cards by how prominent each characteristic is in the photo —
-  // most noticeable first — so the meter and the ordering tell the same story.
+
+  // Real on-device face geometry so markers land on the actual face, not on
+  // hair/background. Null until it resolves (or if no face is found).
+  const [geometry, setGeometry] = React.useState<FaceGeometry | null>(null);
+  React.useEffect(() => {
+    let live = true;
+    if (photo) void detectFaceGeometry(photo).then((g) => live && setGeometry(g));
+    return () => {
+      live = false;
+    };
+  }, [photo]);
+
+  // Keep the ORIGINAL index so a marker and its card refer to the same thing;
+  // order by prominence (most noticeable first); and show each characteristic
+  // ONCE — the model sometimes reports the same thing twice, which produced
+  // duplicate circles. Cap the count so the photo stays readable.
+  const seenFeature = new Set<string>();
   const shown: ShownFeature[] = observation.features
     .map((f, index) => ({ ...f, index }))
     .filter((f) => f.certainty !== "unclear")
-    .sort((a, b) => clampProminence(b.prominence) - clampProminence(a.prominence));
+    .sort((a, b) => clampProminence(b.prominence) - clampProminence(a.prominence))
+    .filter((f) => (seenFeature.has(f.feature) ? false : (seenFeature.add(f.feature), true)))
+    .slice(0, 6);
   const clear = shown.filter((f) => f.certainty === "observed").length;
   const [active, setActive] = React.useState<number | null>(null);
 
@@ -101,7 +118,7 @@ export function ScanResult({
       */}
       {photo && shown.length > 0 && (
         <div className="mt-6">
-          <FaceMarkers photo={photo} shown={shown} active={active} onSelect={setActive} />
+          <FaceMarkers photo={photo} shown={shown} geometry={geometry} active={active} onSelect={setActive} />
           <p className="mt-2 text-center text-xs text-ink-soft"><T>{RESULT.markerCaption}</T></p>
         </div>
       )}
