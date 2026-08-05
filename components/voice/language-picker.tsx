@@ -33,7 +33,9 @@ export function LanguagePicker({ onChange }: { onChange?: (code: string) => void
         onChange={(e) => {
           const code = e.target.value;
           setValue(code);
-          patchSession({ aiLang: code });
+          // An explicit pick is a HARD lock: pin it so speech detection can't
+          // override it on later turns.
+          patchSession({ aiLang: code, aiLangPinned: true });
           onChange?.(code);
         }}
         className="bg-transparent pr-1 focus-visible:outline-none"

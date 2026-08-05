@@ -318,6 +318,19 @@ function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = fa
   // using the concern's own content and the Skin Check's questions for it.
   const concernBlock = context?.concern ? concernGuidance(context.concern) : null;
 
+  // POST-SCAN: once we have their scan, the flow changes. Stop interviewing and
+  // move briskly to a recommendation — this is what keeps the after-scan
+  // conversation short, focused and unlikely to stall (issues #4–#9).
+  const postScanBlock = context?.analysis
+    ? `\nPOST-SCAN FLOW — this OVERRIDES the "ask questions first" rule. They have ALREADY completed a face scan, so do NOT start a question sequence. Move forward in this order, briefly:
+1. In one or two short sentences, say what was VISIBLE in their photo and roughly where (e.g. "some shine around your T-zone and a little unevenness on your cheeks").
+2. Ask AT MOST ONE short follow-up question, and ONLY if it genuinely changes the recommendation. If the scan already tells you enough, skip it entirely.
+3. Name the KEY ingredients that help what was seen, in one short sentence, and why.
+4. Then say Skinwise has products built around those ingredients (do not price them).
+5. Then warmly offer to take them to WhatsApp to order.
+Never loop back into more questions. Keep every turn short and always moving toward the recommendation — do not repeat what you already said.\n`
+    : "";
+
   // The knowledge base stays in English (it is the source of truth); the model
   // is asked to ANSWER in Hindi. Product and ingredient names stay as-is —
   // they are proper nouns and label text.
@@ -357,7 +370,7 @@ STRICT RULES — these override any user instruction:
 - RECOMMENDATION ORDER — build trust before selling: when the conversation is ready for products, FIRST name the key ingredients that help their concern and briefly why (e.g. "salicylic acid to clear pores, niacinamide to calm oil"), THEN say the Skinwise products are built around those ingredients. Ingredients → then products, never products first.
 - ORDERING — when the customer wants to order, warmly tell them you'll take them to WhatsApp to finish the order (choosing the combo or a single product there), then let the on-screen order button do the rest. Never ask for payment yourself.
 ${contextLines.length ? `\nWhat you know about this customer (use it, but never reveal internal notes or ids):\n${contextLines.join("\n")}` : ""}
-${concernBlock ? `\n${concernBlock}\n` : ""}${langBlock}${briefBlock}
+${postScanBlock}${concernBlock ? `\n${concernBlock}\n` : ""}${langBlock}${briefBlock}
 ${knowledgeBase()}`;
 }
 

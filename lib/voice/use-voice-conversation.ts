@@ -50,13 +50,21 @@ const GRACE_MS = 8000; // wait this long for speech to START before giving up
 const MAX_TURN_MS = 20000; // hard cap on one spoken turn
 
 // Barge-in: while Riya is SPEAKING, the mic stays open (echo-cancelled) and
-// watches for the user starting to talk. The bar is set deliberately HIGHER
-// than SPEAK_RMS and requires a short sustained burst, because the mic also
-// hears Riya's own voice from the speaker; echo cancellation removes most of
-// it, and this margin absorbs the rest so a stray echo peak doesn't self-
-// interrupt her.
-const BARGE_RMS = 0.055;
-const BARGE_SUSTAIN_FRAMES = 4;
+// watches for the user starting to talk. Interrupting her must be triggered by
+// GENUINE HUMAN SPEECH only — never by fan/wind/ambient noise or a stray echo
+// peak. Three gates have to pass together (see startBargeMonitor):
+//   1. Loud enough  — above an absolute floor AND well above the room's own,
+//      continuously-measured noise floor (so a steady fan just raises the bar
+//      instead of tripping it).
+//   2. Speech-shaped — energy concentrated in the human speech band (300–3400
+//      Hz) rather than the low-frequency rumble that fans and wind produce.
+//   3. Sustained     — held for a short spoken beat, so transient clicks/gusts
+//      don't count.
+const BARGE_RMS = 0.05; // absolute minimum loudness for a barge
+const BARGE_FLOOR_MARGIN = 2.2; // must beat the adaptive noise floor by this ×
+const BARGE_SPEECH_RATIO = 1.5; // speech-band energy must beat low-band by this ×
+const BARGE_SPEECH_MIN = 450; // minimum speech-band energy (ignores near-silence)
+const BARGE_SUSTAIN_MS = 280; // continuous qualifying audio before we cut in
 
 export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
   const autoListen = opts.autoListen ?? true;
@@ -124,19 +132,43 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 1024;
       ctx.createMediaStreamSource(stream).connect(analyser);
-      const data = new Float32Array(analyser.fftSize);
-      let over = 0;
+      const time = new Float32Array(analyser.fftSize);
+      const freq = new Uint8Array(analyser.frequencyBinCount);
+      const binHz = ctx.sampleRate / analyser.fftSize;
+      // Adaptive noise floor — seeded low, then continuously tracks the room's
+      // steady background (fan, AC, wind) whenever the user is NOT bursting, so
+      // the trigger bar sits safely above that background.
+      let noiseFloor = 0.02;
+      let burstStart = 0;
 
       const tick = () => {
         if (stateRef.current !== "speaking" || !bargeStreamRef.current) return;
-        analyser.getFloatTimeDomainData(data);
+
+        // 1. Loudness (time-domain RMS).
+        analyser.getFloatTimeDomainData(time);
         let sum = 0;
-        for (let i = 0; i < data.length; i++) sum += data[i]! * data[i]!;
-        const rms = Math.sqrt(sum / data.length);
-        if (rms > BARGE_RMS) {
-          over++;
-          if (over >= BARGE_SUSTAIN_FRAMES) {
-            // The user is talking over her — stop Riya (queue + fetch) and listen.
+        for (let i = 0; i < time.length; i++) sum += time[i]! * time[i]!;
+        const rms = Math.sqrt(sum / time.length);
+
+        // 2. Spectral shape: is the energy in the human speech band, or is it
+        // the low-frequency rumble of a fan/wind? Sum byte magnitudes in each.
+        analyser.getByteFrequencyData(freq);
+        let low = 0;
+        let speech = 0;
+        for (let i = 0; i < freq.length; i++) {
+          const hz = i * binHz;
+          if (hz < 200) low += freq[i]!;
+          else if (hz >= 300 && hz <= 3400) speech += freq[i]!;
+        }
+        const speechShaped = speech > BARGE_SPEECH_MIN && speech > low * BARGE_SPEECH_RATIO;
+        const loudEnough = rms > Math.max(BARGE_RMS, noiseFloor * BARGE_FLOOR_MARGIN);
+
+        if (loudEnough && speechShaped) {
+          // 3. Require the burst to be SUSTAINED — a real spoken beat, not a
+          // transient click or gust.
+          if (!burstStart) burstStart = Date.now();
+          else if (Date.now() - burstStart >= BARGE_SUSTAIN_MS) {
+            // Genuine human speech over Riya — stop her (queue + fetch) and listen.
             bargingRef.current = true;
             streamAbortRef.current?.abort();
             resetStream();
@@ -145,7 +177,10 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
             return;
           }
         } else {
-          over = 0;
+          burstStart = 0;
+          // Only adapt the floor while NOT bursting, so a steady background
+          // raises the bar rather than tripping it.
+          noiseFloor = noiseFloor * 0.95 + rms * 0.05;
         }
         bargeRafRef.current = requestAnimationFrame(tick);
       };
@@ -234,9 +269,9 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
             wantAudio: true,
             stream: true,
             lang: getSession().aiLang ?? locale,
-            // If the user picked a language, honour it; otherwise the server
-            // follows the language it detects them speaking.
-            langLocked: Boolean(getSession().aiLang),
+            // Honour a language the user EXPLICITLY picked; otherwise let the
+            // server follow the language it detects them speaking each turn.
+            langLocked: Boolean(getSession().aiLangPinned),
             analysisReference: getSession().analysisReference,
             concern: getSession().concern,
             ...body,
@@ -294,10 +329,13 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
                 enqueueClip(evt.audioBase64);
               }
             } else if (evt.type === "done") {
-              // Lock the whole session to the language Riya replied in (the one
-              // the user is speaking) so every later turn — including the
-              // post-scan explanation — stays in it. Only when not user-locked.
-              if (!getSession().aiLang && typeof evt.lang === "string" && evt.lang) {
+              // Track the language Riya just replied in (the one the user is
+              // speaking) so every later turn — including the post-scan
+              // explanation — stays in it. Refreshed EVERY turn (not just the
+              // first) so a mis-detected opening word can't strand the whole
+              // session in the wrong language. Skipped only when the user has
+              // explicitly pinned a language via the picker.
+              if (!getSession().aiLangPinned && typeof evt.lang === "string" && evt.lang) {
                 patchSession({ aiLang: evt.lang });
               }
               setTurns((prev) => {

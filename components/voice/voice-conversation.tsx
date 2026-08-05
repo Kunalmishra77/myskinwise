@@ -7,6 +7,7 @@ import { SITE, waHref } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useVoiceConversation, type CtaKind } from "@/lib/voice/use-voice-conversation";
 import { VoiceAvatar } from "@/components/voice/voice-avatar";
+import { RecommendedCombo } from "@/components/products/recommended-combo";
 import { LanguagePicker } from "@/components/voice/language-picker";
 import { useT } from "@/lib/i18n/provider";
 import { getSession, patchSession } from "@/lib/consultation/session";
@@ -72,13 +73,17 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
   const lastRecommend = !busy && lastTurn?.role === "assistant" ? lastTurn.recommendConcern : undefined;
 
   // Whether the user arrived from a fresh scan Riya hasn't narrated yet — used
-  // to invite them to hear their results.
+  // to invite them to hear their results. `hasScanned` tells the two halves of
+  // the recommendation apart: BEFORE a scan we nudge them to scan; AFTER a scan
+  // we show the actual product combo + WhatsApp order (the end of the journey).
   const [pendingScan, setPendingScan] = React.useState(false);
+  const [hasScanned, setHasScanned] = React.useState(false);
   React.useEffect(() => {
     const s = getSession();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPendingScan(Boolean(s.analysisReference && s.analysisReference !== s.explainedRef));
-  }, []);
+    setHasScanned(Boolean(s.analysisReference));
+  }, [turns]);
 
   return (
     <div className="flex h-full flex-col bg-warm">
@@ -149,13 +154,12 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
             ))}
           </ul>
         )}
-        {/* Voice → Scan handoff ONLY. The voice chat guides the consultation
-            (questions → suggest a scan); it deliberately does NOT show a product
-            combo or an order button here. Those belong AFTER the scan, on the
-            result page — surfacing a bulky product card inside this small
-            transcript band pushed the scan button out of view and made the
-            recommendation feel premature and repetitive. */}
-        {lastRecommend && (
+        {/* The recommendation has two halves, split by whether they've scanned:
+            BEFORE a scan we show ONLY the scan handoff (no product — a combo
+            here is premature and pushed the scan button out of view). AFTER a
+            scan the journey ends in products, so we show the combo with its
+            WhatsApp order button. */}
+        {lastRecommend && !hasScanned && (
           <div className="mt-3">
             <Link
               href="/skin-check/analyzer"
@@ -165,6 +169,11 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
               <ScanFace aria-hidden="true" className="size-4" />
               {t("voice.scanCta")}
             </Link>
+          </div>
+        )}
+        {lastRecommend && hasScanned && (
+          <div className="mt-3">
+            <RecommendedCombo concern={lastRecommend} />
           </div>
         )}
         {note && (

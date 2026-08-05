@@ -26,8 +26,20 @@ export type ConsultSession = {
   concern?: string;
   analysisReference?: string;
   explainedRef?: string;
-  /** The language Riya converses in (voice + chat), if the user picked one. */
+  /**
+   * The language Riya converses in (voice + chat). It TRACKS the language the
+   * user is actually speaking — updated from speech detection every turn — so
+   * it stays correct across the whole session, including after the face scan.
+   */
   aiLang?: string;
+  /**
+   * True only when the user EXPLICITLY picked a language from the picker. Then
+   * `aiLang` is a hard lock and speech detection must not override it. When
+   * false/absent, `aiLang` is a soft, auto-detected value that each turn may
+   * refine — which is what keeps a Hindi conversation in Hindi even if the very
+   * first word was mis-detected as English.
+   */
+  aiLangPinned?: boolean;
 };
 
 export function getSession(): ConsultSession {
