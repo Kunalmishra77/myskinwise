@@ -112,7 +112,9 @@ export async function detectFaceGeometry(dataUrl: string): Promise<FaceGeometry 
   const eyeY = (eyeL.y + eyeR.y) / 2;
 
   const regions: Record<FaceRegion, { x: number; y: number }> = {
-    forehead: { x: cx, y: by + bh * 0.14 },
+    // Mid-forehead, not the hairline — the detected box top often includes hair,
+    // so anchor low enough that the marker sits on skin.
+    forehead: { x: cx, y: by + bh * 0.2 },
     left_cheek: { x: bx + bw * 0.24, y: eyeY + bh * 0.28 },
     right_cheek: { x: bx + bw * 0.76, y: eyeY + bh * 0.28 },
     nose: { x: nose?.x ?? cx, y: nose?.y ?? by + bh * 0.55 },

@@ -29,19 +29,22 @@ export type ShownFeature = Observation["features"][number] & { index: number };
 type Box = { x: number; y: number; width: number; height: number };
 
 /**
- * For N markers, a set of face slots known to be well separated — so the
- * circles form a clean spread (a triangle for three, a quad for four…) and can
- * never stack, whatever regions the model happened to return. Concerns are then
- * matched to the nearest slot, so a localised one still gravitates to its area.
+ * Anatomically distinct regions a colliding marker can be nudged to, in order
+ * of preference. Used ONLY when two concerns land on the same region — the
+ * marker keeps the concern's OWN reported region wherever possible (credibility:
+ * a "dark spots" marker belongs on the cheek the model saw it on, not on an
+ * arbitrary layout slot), and moves to the nearest of these only to avoid a
+ * literal stack.
  */
-const SPREAD_LAYOUTS: FaceRegion[][] = [
-  [],
-  ["nose"],
-  ["left_cheek", "right_cheek"],
-  ["forehead", "left_cheek", "right_cheek"],
-  ["forehead", "left_cheek", "right_cheek", "chin"],
-  ["forehead", "left_cheek", "right_cheek", "chin", "nose"],
-  ["forehead", "left_cheek", "right_cheek", "under_eye_left", "under_eye_right", "chin"],
+const NUDGE_REGIONS: FaceRegion[] = [
+  "forehead",
+  "left_cheek",
+  "right_cheek",
+  "chin",
+  "under_eye_left",
+  "under_eye_right",
+  "nose",
+  "jaw",
 ];
 
 /** A sane on-image box for a feature: its model box if usable, else its region. */
@@ -89,50 +92,52 @@ export function FaceMarkers({
   // Match the container to the photo's real aspect ratio so the boxes line up.
   const [ratio, setRatio] = React.useState(3 / 4);
 
-  // When we have a real detected face, place each concern at its anatomical
-  // anchor INSIDE the actual face box, sized relative to the face — so markers
-  // are always ON the face and never drift into hair or background.
-  //
-  // The model tends to bunch several concerns into the same central region
-  // (nose/cheek), which piles the circles on top of each other. So we give
-  // each marker its OWN region: use the model's region when it's still free,
-  // otherwise hand out the next free spot from a spread across the face. Result
-  // — one marker per area, evenly distributed, never stacked.
+  // When we have a real detected face, place each concern at the anatomical
+  // region the MODEL actually reported for it (credibility: the marker sits
+  // where the analysis said it saw the thing — dark spots on the cheek it named,
+  // shine on the T-zone — not on an arbitrary layout slot). Anchored inside the
+  // real detected face box and sized to it, so markers are always ON the face.
+  // The only adjustment is de-stacking: if two concerns share a region, the
+  // later (less prominent) one is nudged to the nearest free, distinct region so
+  // the circles never pile up — its own region still wins whenever it's free.
   const placed = geometry
     ? (() => {
         const g = geometry;
         const dia = Math.max(0.12, g.box.width * 0.24);
-        // Pick the pre-separated slot set for this many markers, then greedily
-        // give each concern (most prominent first) its NEAREST free slot — so
-        // the layout is always cleanly spread AND a localised concern still
-        // lands near its real area.
-        const slots = [...(SPREAD_LAYOUTS[shown.length] ?? SPREAD_LAYOUTS[6]!)];
+        const used = new Set<FaceRegion>();
         return shown.map((f) => {
-          const preferred = ((f.region as FaceRegion) ?? DEFAULT_REGION[f.feature]) as FaceRegion;
-          const pa = g.regions[preferred] ?? g.regions.overall;
-          let best = 0;
-          let bestD = Infinity;
-          slots.forEach((s, i) => {
-            const a = g.regions[s] ?? g.regions.overall;
-            const d = Math.hypot(a.x - pa.x, a.y - pa.y);
-            if (d < bestD) {
-              bestD = d;
-              best = i;
-            }
-          });
-          const region = slots.splice(best, 1)[0] ?? "overall";
+          const own = ((f.region as FaceRegion) ?? DEFAULT_REGION[f.feature]) as FaceRegion;
+          let region = own;
+          if (used.has(region) || !g.regions[region]) {
+            // Collision: keep it close to where the model saw it — pick the
+            // nearest free region to the concern's own anchor.
+            const pa = g.regions[own] ?? g.regions.overall;
+            const free = NUDGE_REGIONS.filter((r) => !used.has(r) && g.regions[r]);
+            region =
+              free.sort(
+                (a, b) =>
+                  Math.hypot(g.regions[a]!.x - pa.x, g.regions[a]!.y - pa.y) -
+                  Math.hypot(g.regions[b]!.x - pa.x, g.regions[b]!.y - pa.y),
+              )[0] ?? "overall";
+          }
+          used.add(region);
           const anchor = g.regions[region] ?? g.regions.overall;
           // Upper-face markers show their label ABOVE the circle so it doesn't
           // drop into the eye zone where a lower marker's circle sits.
           const up = anchor.y < g.box.y + g.box.height * 0.42;
-          return {
-            f,
-            up,
-            box: { x: anchor.x - dia / 2, y: anchor.y - dia / 2, width: dia, height: dia },
-          };
+          return { f, up, cx: anchor.x, cy: anchor.y, dia };
         });
       })()
-    : shown.map((f) => ({ f, up: false, box: boxFor(f) }));
+    : shown.map((f) => {
+        const b = boxFor(f);
+        return { f, up: false, cx: b.x + b.width / 2, cy: b.y + b.height / 2, dia: b.width };
+      });
+
+  // A marker is a true CIRCLE on the photo. Because width% and height% are
+  // measured against a NON-square container, equal fractions would draw an
+  // ellipse — so the height fraction is scaled by the image aspect ratio, which
+  // makes the pixel height equal the pixel width.
+  const clamp01 = (n: number, half: number) => Math.min(Math.max(n, half), 1 - half);
 
   return (
     <div
@@ -150,8 +155,11 @@ export function FaceMarkers({
         className="h-full w-full object-cover"
       />
 
-      {placed.map(({ f, box, up }) => {
+      {placed.map(({ f, cx, cy, dia, up }) => {
         const isActive = active === f.index;
+        const diaH = dia * ratio; // height fraction that yields equal pixels → circle
+        const left = clamp01(cx, dia / 2) - dia / 2;
+        const top = clamp01(cy, diaH / 2) - diaH / 2;
         return (
           <button
             key={f.index}
@@ -160,10 +168,10 @@ export function FaceMarkers({
             aria-label={`${label(f.feature)} — ${(f.region ?? "").replace(/_/g, " ")}`}
             className={`absolute transition-all ${isActive ? "z-20" : "z-10"}`}
             style={{
-              left: `${box.x * 100}%`,
-              top: `${box.y * 100}%`,
-              width: `${box.width * 100}%`,
-              height: `${box.height * 100}%`,
+              left: `${left * 100}%`,
+              top: `${top * 100}%`,
+              width: `${dia * 100}%`,
+              height: `${diaH * 100}%`,
             }}
           >
             {/* The highlight over the affected area. */}
