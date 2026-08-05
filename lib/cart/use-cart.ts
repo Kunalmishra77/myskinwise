@@ -214,25 +214,18 @@ export function formatPrice(mrp: number | null): string {
 export type OrderContact = { name?: string; phone?: string; note?: string };
 
 /**
- * Formats the cart as a WhatsApp order message. Quantities and per-line prices
- * are included; the total sums ONLY the priced lines and says so, never
- * inventing a figure for compounded items whose price is confirmed on the call.
+ * Formats the cart as a WhatsApp order message — deliberately simple: a
+ * headline and the list of products (name × quantity), nothing more. Prices,
+ * subtotals and boilerplate ("please confirm availability / price / payment")
+ * are intentionally left out; the team confirms all of that in the chat, so
+ * repeating it in the pre-filled text just makes the message look cluttered.
  *
  * Optional contact (name / phone / note) is folded in so the team knows who
  * placed the order — it travels only inside this WhatsApp message, never to our
  * own server.
  */
 export function buildOrderMessage(lines: CartLine[], contact?: OrderContact): string {
-  const rows = lines.map(({ product, qty }) => {
-    const price = product.mrp !== null ? `₹${product.mrp.toLocaleString("en-IN")}` : "price to confirm";
-    return `• ${product.name} × ${qty} (${price})`;
-  });
-  const pricedTotal = lines.reduce((sum, l) => sum + (l.product.mrp ?? 0) * l.qty, 0);
-  const anyUnpriced = lines.some((l) => l.product.mrp === null);
-  const totalLine =
-    pricedTotal > 0
-      ? `Subtotal (priced items): ₹${pricedTotal.toLocaleString("en-IN")}${anyUnpriced ? " + items confirmed on this chat" : ""}`
-      : "Final price confirmed on this chat";
+  const rows = lines.map(({ product, qty }) => `• ${product.name} × ${qty}`);
 
   const contactLines: string[] = [];
   if (contact?.name?.trim()) contactLines.push(`Name: ${contact.name.trim()}`);
@@ -244,10 +237,6 @@ export function buildOrderMessage(lines: CartLine[], contact?: OrderContact): st
     "",
     "I'd like to order:",
     ...rows,
-    "",
-    totalLine,
     ...(contactLines.length ? ["", ...contactLines] : []),
-    "",
-    "Please confirm availability, the final price for any custom items, and how to pay. Thank you!",
   ].join("\n");
 }

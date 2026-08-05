@@ -41,7 +41,7 @@ describe("combo derivation", () => {
 });
 
 describe("WhatsApp order message", () => {
-  it("shows a real price where one exists and never invents one", () => {
+  it("lists products and quantities but no prices or subtotal", () => {
     const priced = PRODUCTS_BY_SLUG.get("spf-30" as never)!; // ₹899
     const unpriced = PRODUCTS_BY_SLUG.get("d-tan-pack" as never)!; // no printed price
     const msg = buildOrderMessage([
@@ -50,15 +50,13 @@ describe("WhatsApp order message", () => {
     ]);
 
     expect(msg).toContain("Customised SPF-30");
-    expect(msg).toContain("₹899");
-    expect(msg).toContain("price to confirm");
     // Quantities are shown.
     expect(msg).toContain("× 2");
-    // The subtotal sums only the priced line (2 × 899 = 1,798), and flags the
-    // unpriced item rather than inventing a figure for it.
-    expect(msg).toContain("₹1,798");
-    // The unpriced product must NOT get a rupee figure.
-    expect(msg).not.toMatch(/D-Tan Pack × \d+ \(₹/);
+    // The message is intentionally price-free: no rupee figures, no subtotal,
+    // no "confirm availability / price / payment" boilerplate.
+    expect(msg).not.toContain("₹");
+    expect(msg).not.toMatch(/subtotal/i);
+    expect(msg).not.toMatch(/confirm availability|how to pay/i);
   });
 
   it("is a plain order request, not a payment or a claim", () => {
