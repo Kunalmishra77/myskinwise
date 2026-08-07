@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { analyzeScan } from "@/lib/skin/client";
+import { persistScan } from "@/lib/skin/persist";
 import { clientKey, MemoryRateLimiter } from "@/lib/rate-limit";
 import { logEvent } from "@/lib/analytics";
 
@@ -46,8 +47,11 @@ export async function POST(request: Request) {
 
   const outcome = await analyzeScan(parsed.data.imageBase64, parsed.data.contentType);
   if (outcome.ok) {
+    // Save against the lead so the scan shows in the admin Leads funnel
+    // ("Skin Scan completed"). Best-effort — never fails the scan.
+    const reference = await persistScan(outcome.result, parsed.data.leadId);
     void logEvent("analyzer_completed", { engine: "deterministic" });
-    return NextResponse.json({ status: "completed", result: outcome.result }, { status: 201 });
+    return NextResponse.json({ status: "completed", result: outcome.result, reference }, { status: 201 });
   }
 
   void logEvent("analyzer_failed", { engine: "deterministic", reason: outcome.failure.reason_code ?? outcome.failure.error });
