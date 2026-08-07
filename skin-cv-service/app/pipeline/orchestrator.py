@@ -55,6 +55,116 @@ def _empty_concerns() -> list[dict[str, Any]]:
     ]
 
 
+# Which metric extractor feeds which concern id. Acne (M1) is ML → Phase 5.
+_METRIC_FOR = {
+    "pigmentation": "pigmentation",
+    "redness": "redness",
+    "dark_circles": "dark_circles",
+    "wrinkles": "wrinkles",
+    "pores": "pores",
+    "oiliness": "oiliness",
+    "texture": "texture",
+}
+
+
+def _fitzpatrick_from_ita(ita: float) -> str:
+    if ita > 55:
+        return "I"
+    if ita > 41:
+        return "II"
+    if ita > 28:
+        return "III"
+    if ita > 10:
+        return "IV"
+    if ita > -30:
+        return "V"
+    return "VI"
+
+
+def _skin_type(tzone_shine: float, cheek_shine: float) -> str:
+    if tzone_shine >= 25 and cheek_shine >= 20:
+        return "oily"
+    if tzone_shine >= 15 and cheek_shine < 20:
+        return "combination"
+    if tzone_shine < 8 and cheek_shine < 8:
+        return "dry"
+    return "normal"
+
+
+def _measure(image_bgr, landmarks) -> dict[str, Any]:
+    """Stages 3–6: normalise → regions → metrics → scores. Pure of I/O."""
+    import numpy as np
+
+    from app.pipeline import s3_photometric, s4_geometric, s5_regions, s6_metrics
+    from app.scoring import calibrate
+
+    shape = image_bgr.shape[:2]
+    masks = s5_regions.build(landmarks, shape)
+    norm_bgr, wb_method = s3_photometric.normalise(image_bgr, masks["skin"])
+    mmpp = s4_geometric.mm_per_px(landmarks)
+    L, a, b = s6_metrics.lab_channels(norm_bgr)
+
+    extractors = {
+        "pigmentation": s6_metrics.pigmentation,
+        "redness": s6_metrics.redness,
+        "dark_circles": s6_metrics.dark_circles,
+        "wrinkles": s6_metrics.wrinkles,
+        "pores": s6_metrics.pores,
+        "oiliness": s6_metrics.oiliness,
+        "texture": s6_metrics.texture,
+    }
+
+    results: dict[str, dict[str, Any]] = {}
+    for key, fn in extractors.items():
+        try:
+            raw, value, by_region = fn(norm_bgr, L, a, b, masks, mmpp)
+            results[key] = {
+                "score": calibrate.score_for(key, value),
+                "severity": None,
+                "raw": raw,
+                "by_region": by_region,
+            }
+            results[key]["severity"] = calibrate.severity_for(results[key]["score"])
+        except Exception as exc:  # one metric's bug shouldn't lose the others
+            results[key] = {"score": None, "severity": None, "raw": {"error": f"{type(exc).__name__}: {exc}"}, "by_region": {}}
+
+    concerns = []
+    for concern in _CONCERNS:
+        if concern == "acne":
+            concerns.append({"id": "acne", "score": None, "severity": None, "confidence": None,
+                             "raw": {"note": "ML model lands in Phase 5"}, "by_region": {}, "mask_url": None})
+            continue
+        r = results.get(concern, {})
+        concerns.append({
+            "id": concern,
+            "score": r.get("score"),
+            "severity": r.get("severity"),
+            "confidence": None if r.get("score") is None else 0.7,
+            "raw": r.get("raw", {}),
+            "by_region": r.get("by_region", {}),
+            "mask_url": None,  # overlay serving lands in Phase 6/7
+        })
+
+    # Skin tone (descriptive, never a "concern") + derived attributes.
+    skin = masks["skin"] > 0
+    ita_med = float(np.median(s6_metrics._ita(L, b)[skin])) if skin.sum() > 50 else 0.0
+    oil = results.get("oiliness", {}).get("by_region", {})
+    return {
+        "skin_tone": {
+            "median_ita_deg": round(ita_med, 1),
+            "fitzpatrick_estimate": _fitzpatrick_from_ita(ita_med),
+            "note": "descriptive_only_not_a_concern",
+        },
+        "concerns": concerns,
+        "derived": {
+            "skin_type": _skin_type(float(oil.get("tzone", 0.0)), float(oil.get("cheeks", 0.0))),
+            "skin_age_estimate": None,  # needs a calibrated model
+            "skin_age_confidence": None,
+            "white_balance_method": wb_method,
+        },
+    }
+
+
 def analyze_bytes(data: bytes) -> dict[str, Any]:
     """Return a ScanResult for the given image bytes.
 
@@ -97,6 +207,15 @@ def analyze_bytes(data: bytes) -> dict[str, Any]:
     min_conf = config.get("gate_v1", "face", "min_detection_confidence")
     faces = s2_landmarks.extract_landmarks(img, min_conf)
     quality = s1_gate.run_gate(img, faces)
+
+    # Gate passed → run the measurement engine (Stages 3–6). Guarded so a bug in
+    # measurement degrades to null scores + an error note, never a 500.
+    if quality.get("passed"):
+        try:
+            measured = _measure(img, faces[0])
+            return {**base, "quality": quality, **measured}
+        except Exception as exc:  # measurement failed after a passing gate
+            quality = {**quality, "measurement_error": f"{type(exc).__name__}: {exc}"}
 
     return {
         **base,

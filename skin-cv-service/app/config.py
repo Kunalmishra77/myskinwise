@@ -20,7 +20,7 @@ from typing import Any
 # Bump on ANY change to a model, a threshold, or a dependency version. This is
 # what makes the result cache correct — an old cached result for a superseded
 # pipeline is never returned. Keep in lockstep with config/*.yaml revisions.
-PIPELINE_VERSION = "0.2.0"
+PIPELINE_VERSION = "0.3.0"
 
 _CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 

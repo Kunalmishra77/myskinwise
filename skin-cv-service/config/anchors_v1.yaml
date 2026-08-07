@@ -1,0 +1,53 @@
+# Score calibration anchors (blueprint §5.2 Phase A).
+#
+# Each metric maps a raw measured value -> a 0..100 score by piecewise-linear
+# interpolation between the anchor points below. Anchors are [raw_value, score],
+# and MUST be ordered by raw_value ascending. `direction` documents intent:
+#   lower_is_better -> a bigger raw value gives a lower score (more concern).
+#   higher_is_better -> a bigger raw value gives a higher score.
+#
+# These are literature/expert-seeded starting points, deliberately labelled
+# "Beta" until replaced by real population percentiles (Phase B, after ~5k scans).
+# Every number is here, never in code; changing one is a PIPELINE_VERSION bump.
+
+pigmentation:
+  metric: affected_area_pct
+  direction: lower_is_better
+  anchors: [[0.0, 100], [1.0, 85], [3.0, 65], [7.0, 45], [15.0, 20], [30.0, 0]]
+
+redness:
+  metric: red_area_pct
+  direction: lower_is_better
+  anchors: [[0.0, 100], [1.0, 85], [4.0, 60], [10.0, 35], [20.0, 15], [40.0, 0]]
+
+dark_circles:
+  metric: mean_delta_ita
+  direction: lower_is_better
+  anchors: [[0.0, 100], [3.0, 80], [8.0, 55], [15.0, 30], [25.0, 10], [40.0, 0]]
+
+wrinkles:
+  metric: ridge_density
+  direction: lower_is_better
+  anchors: [[0.0, 100], [0.5, 85], [1.5, 60], [3.0, 40], [6.0, 15], [12.0, 0]]
+
+pores:
+  metric: pores_per_cm2
+  direction: lower_is_better
+  anchors: [[0.0, 100], [20.0, 85], [50.0, 60], [100.0, 40], [200.0, 15], [400.0, 0]]
+
+oiliness:
+  metric: shine_ratio_pct
+  direction: lower_is_better
+  anchors: [[0.0, 100], [5.0, 85], [15.0, 60], [30.0, 40], [50.0, 20], [80.0, 0]]
+
+texture:
+  metric: glcm_contrast
+  direction: lower_is_better
+  anchors: [[0.0, 100], [20.0, 85], [60.0, 60], [120.0, 40], [250.0, 15], [500.0, 0]]
+
+# Severity bands from the final 0..100 score (same for every concern).
+severity_bands:
+  - [85, "clear"]
+  - [65, "mild"]
+  - [40, "moderate"]
+  - [0, "significant"]
