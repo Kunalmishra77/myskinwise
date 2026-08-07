@@ -1,0 +1,11 @@
+# Dev/test + training dependencies. NEVER installed in the production image
+# (the Dockerfile installs requirements.txt only). Training pulls torch, which
+# is ~2GB and has no place in the serving container.
+-r requirements.txt
+
+pytest==8.3.4
+httpx==0.28.1            # FastAPI TestClient
+
+# Training only (Phase 5, run locally/CI, exported to ONNX for serving):
+# ultralytics==8.3.*
+# torch                  # match your CUDA/CPU build

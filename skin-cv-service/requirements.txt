@@ -1,0 +1,14 @@
+# Production dependencies — EXACT pins only (blueprint §2.2 R10, §3.2).
+# A version bump here is a PIPELINE_VERSION bump: OpenCV has changed the
+# numerical behaviour of resize/threshold between minor versions, which would
+# silently break determinism. Never loosen these to >=.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+numpy==1.26.4
+opencv-python-headless==4.10.0.84
+mediapipe==0.10.14
+onnxruntime==1.19.2
+colour-science==0.4.4
+Pillow==10.4.0
+PyYAML==6.0.2

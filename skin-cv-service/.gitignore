@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+# Model weights are large; commit via Git LFS or fetch at build time (Phase 5).
+models/*.onnx
+models/*.tflite

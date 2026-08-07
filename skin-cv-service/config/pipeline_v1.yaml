@@ -1,0 +1,11 @@
+# Pipeline-wide constants. Every threshold in the system lives in a versioned
+# YAML like this one — never hardcoded (blueprint §5.2). Bump PIPELINE_VERSION in
+# app/config.py whenever a value here changes, so the result cache invalidates.
+#
+# This file is intentionally sparse at Phase 1; gate_v1.yaml, metrics_v1.yaml and
+# scoring/anchors_v1.yaml fill in as their stages land.
+
+canonical_frame:
+  size: 1024 # px, the square measurement frame (blueprint §4.4)
+
+reference_ipd_mm: 63.0 # population-mean interpupillary distance (blueprint §4.4)
