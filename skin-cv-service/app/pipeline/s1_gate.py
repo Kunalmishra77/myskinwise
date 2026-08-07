@@ -158,7 +158,9 @@ def face_mask(landmarks_px: "np.ndarray", shape: tuple[int, int]) -> "np.ndarray
 def measure_blur(l_channel: "np.ndarray", mask: "np.ndarray") -> float:
     import cv2
 
-    lap = cv2.Laplacian(l_channel, cv2.CV_64F)
+    # Source must be float64 too: OpenCV's Laplacian doesn't support a float32
+    # source with a CV_64F destination.
+    lap = cv2.Laplacian(l_channel.astype(np.float64), cv2.CV_64F)
     return float(lap[mask > 0].var())
 
 
