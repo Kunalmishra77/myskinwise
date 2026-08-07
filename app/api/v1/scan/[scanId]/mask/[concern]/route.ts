@@ -12,7 +12,10 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ scanId: string; concern: string }> },
 ) {
-  const { scanId, concern } = await params;
+  const { scanId, concern: rawConcern } = await params;
+  // The route segment includes the .png extension (…/mask/pigmentation.png) —
+  // strip it before validating and forwarding.
+  const concern = rawConcern.replace(/\.png$/i, "");
   const base = skinEngineBase();
   if (!base) return new Response("not configured", { status: 503 });
 
