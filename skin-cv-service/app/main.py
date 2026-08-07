@@ -19,8 +19,9 @@ import os
 import time
 
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
+from app import store
 from app.config import PIPELINE_VERSION
 from app.pipeline.orchestrator import analyze_bytes, MODEL_HASHES
 
@@ -99,3 +100,27 @@ async def analyze(
             status_code=422,
         )
     return JSONResponse(result, status_code=200)
+
+
+@app.get("/v1/scans/{scan_id}")
+def get_scan(scan_id: str, authorization: str | None = Header(default=None)) -> JSONResponse:
+    """Re-fetch a stored ScanResult (scores are sensitive → keep it auth'd)."""
+    _require_auth(authorization)
+    result = store.get_result(scan_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="scan not found")
+    return JSONResponse(result, status_code=200)
+
+
+@app.get("/v1/scans/{scan_id}/masks/{concern}.png")
+def get_scan_mask(scan_id: str, concern: str) -> Response:
+    """The colour-coded evidence overlay for a concern.
+
+    No auth: the PNG contains only a coloured region + outline, never any face
+    pixels, so it can be dropped straight into an <img> in the browser (which
+    can't send a bearer token) without exposing the photo.
+    """
+    png = store.get_mask(scan_id, concern)
+    if png is None:
+        raise HTTPException(status_code=404, detail="mask not found")
+    return Response(content=png, media_type="image/png", headers={"cache-control": "public, max-age=3600"})

@@ -115,9 +115,10 @@ def _measure(image_bgr, landmarks) -> dict[str, Any]:
     }
 
     results: dict[str, dict[str, Any]] = {}
+    evidence: dict[str, Any] = {}  # concern -> binary mask (or None)
     for key, fn in extractors.items():
         try:
-            raw, value, by_region = fn(norm_bgr, L, a, b, masks, mmpp)
+            raw, value, by_region, mask = fn(norm_bgr, L, a, b, masks, mmpp)
             results[key] = {
                 "score": calibrate.score_for(key, value),
                 "severity": None,
@@ -125,8 +126,10 @@ def _measure(image_bgr, landmarks) -> dict[str, Any]:
                 "by_region": by_region,
             }
             results[key]["severity"] = calibrate.severity_for(results[key]["score"])
+            evidence[key] = mask
         except Exception as exc:  # one metric's bug shouldn't lose the others
             results[key] = {"score": None, "severity": None, "raw": {"error": f"{type(exc).__name__}: {exc}"}, "by_region": {}}
+            evidence[key] = None
 
     concerns = []
     for concern in _CONCERNS:
@@ -150,6 +153,7 @@ def _measure(image_bgr, landmarks) -> dict[str, Any]:
     ita_med = float(np.median(s6_metrics._ita(L, b)[skin])) if skin.sum() > 50 else 0.0
     oil = results.get("oiliness", {}).get("by_region", {})
     return {
+        "_evidence": evidence,
         "skin_tone": {
             "median_ita_deg": round(ita_med, 1),
             "fitzpatrick_estimate": _fitzpatrick_from_ita(ita_med),
@@ -180,6 +184,15 @@ def analyze_bytes(data: bytes) -> dict[str, Any]:
         "image_sha256": digest,
         "cached": False,  # excluded from the determinism comparison
     }
+
+    from app import store
+
+    # R8 — content-addressed cache: same bytes + same pipeline version => the
+    # exact stored result, so even a hypothetical bug can't yield two answers.
+    key = store.cache_key(digest, PIPELINE_VERSION)
+    hit = store.get_cached(key)
+    if hit is not None:
+        return {**hit, "cached": True}
 
     # Heavy deps are imported here (not at module top) so the package stays
     # importable for config/determinism harness setup without cv2/mediapipe.
@@ -213,7 +226,25 @@ def analyze_bytes(data: bytes) -> dict[str, Any]:
     if quality.get("passed"):
         try:
             measured = _measure(img, faces[0])
-            return {**base, "quality": quality, **measured}
+            evidence = measured.pop("_evidence", {})
+            scan_id = base["scan_id"]
+
+            # Render each concern's evidence mask to a colour-coded transparent
+            # PNG, store it, and point the concern at its retrievable URL.
+            from app.rendering.mask_renderer import render_overlay, CONCERN_COLOURS
+
+            png_masks: dict[str, bytes] = {}
+            for concern in measured["concerns"]:
+                m = evidence.get(concern["id"])
+                if m is not None and bool((m > 0).any()):
+                    png = render_overlay(m, CONCERN_COLOURS.get(concern["id"], (200, 60, 100)))
+                    if png:
+                        png_masks[concern["id"]] = png
+                        concern["mask_url"] = f"/v1/scans/{scan_id}/masks/{concern['id']}.png"
+
+            result = {**base, "quality": quality, **measured}
+            store.put(scan_id, key, result, png_masks)
+            return result
         except Exception as exc:  # measurement failed after a passing gate
             quality = {**quality, "measurement_error": f"{type(exc).__name__}: {exc}"}
 
