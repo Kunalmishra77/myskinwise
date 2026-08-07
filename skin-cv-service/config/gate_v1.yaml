@@ -42,6 +42,7 @@ lighting_evenness:
 # Most-severe-first. On failure the gate reports the FIRST failing check in this
 # order, so the user sees one actionable instruction, not a wall of errors.
 priority:
+  - MEASUREMENT_ERROR
   - NO_FACE
   - MULTIPLE_FACES
   - BLUR_TOO_HIGH
@@ -57,6 +58,7 @@ priority:
 
 # One clear, non-technical instruction per reason code.
 messages:
+  MEASUREMENT_ERROR: "We couldn't read that photo properly — please try again."
   NO_FACE: "Move your face into the frame."
   MULTIPLE_FACES: "Make sure only your face is in the photo."
   BLUR_TOO_HIGH: "Photo is blurry — hold your phone steady and try again."

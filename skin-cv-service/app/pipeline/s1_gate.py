@@ -30,6 +30,7 @@ class Check:
     value: float | int | None
     threshold: Any
     code: str | None = None  # reason code to surface if this check fails
+    error: str | None = None  # set when the measurement itself threw
 
 
 # --------------------------------------------------------------------------- #
@@ -195,20 +196,33 @@ def measure_head_pose(landmarks_px: "np.ndarray", shape: tuple[int, int]) -> tup
     if not ok:
         return 0.0, 0.0, 0.0
     rot, _ = cv2.Rodrigues(rvec)
-    proj = np.hstack((rot, np.zeros((3, 1), dtype=np.float64)))
-    euler = cv2.decomposeProjectionMatrix(proj)[6].flatten()  # pitch, yaw, roll (deg)
 
-    def norm(a: float) -> float:
-        # decomposeProjectionMatrix returns angles that can sit near ±180 for a
-        # frontal face; fold them into [-90, 90] so the gate reads them correctly.
-        a = float(a)
-        if a > 90:
-            a -= 180
-        elif a < -90:
-            a += 180
-        return a
+    # Direct rotation-matrix → Euler (radians), which cannot throw — unlike
+    # decomposeProjectionMatrix, which needs a full projection matrix.
+    sy = float(np.sqrt(rot[0, 0] ** 2 + rot[1, 0] ** 2))
+    if sy > 1e-6:
+        x = np.arctan2(rot[2, 1], rot[2, 2])
+        y = np.arctan2(-rot[2, 0], sy)
+        z = np.arctan2(rot[1, 0], rot[0, 0])
+    else:  # gimbal-lock fallback
+        x = np.arctan2(-rot[1, 2], rot[1, 1])
+        y = np.arctan2(-rot[2, 0], sy)
+        z = 0.0
 
-    pitch, yaw, roll = norm(euler[0]), norm(euler[1]), norm(euler[2])
+    def fold(deg: float) -> float:
+        # The model is Y-up but the image is Y-down, so a frontal face fits at a
+        # ~180° flip about X. Fold every angle into [-90, 90] so a frontal face
+        # reads as ≈0 on all three axes.
+        deg = float(deg)
+        while deg > 90:
+            deg -= 180
+        while deg < -90:
+            deg += 180
+        return deg
+
+    pitch = fold(np.degrees(x))
+    yaw = fold(np.degrees(y))
+    roll = fold(np.degrees(z))
     return yaw, pitch, roll
 
 
@@ -252,19 +266,42 @@ def run_gate(image_bgr: "np.ndarray", faces: list["np.ndarray"]) -> dict:
 
     checks: list[Check] = [check_face_count(len(faces), cfg)]
 
-    # Everything else needs a face; if there isn't exactly-usable one, stop here.
+    # Everything else needs a face; if there isn't one, stop here. Each
+    # measurement is guarded so a bug in one can never 500 the whole request —
+    # it degrades to a failed check that carries the error text, which makes the
+    # response self-diagnosing.
     if faces:
         lm = faces[0]
         shape = image_bgr.shape[:2]
-        l = lab_l(image_bgr)
-        mask = face_mask(lm, shape)
-        checks.append(check_blur(measure_blur(l, mask), cfg))
-        checks.append(check_exposure(measure_mean_l(l, mask), cfg))
-        checks.append(check_clipping(measure_clip_percent(image_bgr, mask, cfg["clipping"]["channel_value"]), cfg))
-        yaw, pitch, roll = measure_head_pose(lm, shape)
-        checks.extend(check_pose(yaw, pitch, roll, cfg))
-        checks.append(check_distance(measure_ipd_px(lm), cfg))
-        checks.append(check_evenness(measure_cheek_delta_l(l, lm), cfg))
+
+        def guard(name: str, code: str, produce) -> None:
+            try:
+                checks.append(produce())
+            except Exception as exc:  # measurement bug → visible, not fatal
+                checks.append(Check(name, False, None, "-", code, error=f"{type(exc).__name__}: {exc}"))
+
+        try:
+            l = lab_l(image_bgr)
+            mask = face_mask(lm, shape)
+        except Exception as exc:
+            checks.append(Check("prep", False, None, "-", "MEASUREMENT_ERROR", error=f"{type(exc).__name__}: {exc}"))
+            l = mask = None
+
+        if l is not None and mask is not None:
+            guard("blur", "BLUR_TOO_HIGH", lambda: check_blur(measure_blur(l, mask), cfg))
+            guard("exposure", "TOO_DARK", lambda: check_exposure(measure_mean_l(l, mask), cfg))
+            guard("clipping", "CLIPPING",
+                  lambda: check_clipping(measure_clip_percent(image_bgr, mask, cfg["clipping"]["channel_value"]), cfg))
+            guard("lighting_evenness", "UNEVEN_LIGHTING",
+                  lambda: check_evenness(measure_cheek_delta_l(l, lm), cfg))
+
+        try:
+            yaw, pitch, roll = measure_head_pose(lm, shape)
+            checks.extend(check_pose(yaw, pitch, roll, cfg))
+        except Exception as exc:
+            checks.append(Check("pose", False, None, "-", "POSE_YAW", error=f"{type(exc).__name__}: {exc}"))
+
+        guard("distance", "TOO_FAR", lambda: check_distance(measure_ipd_px(lm), cfg))
 
     reason_code = pick_reason(checks, priority)
 
