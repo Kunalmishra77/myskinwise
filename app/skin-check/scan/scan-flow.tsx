@@ -6,7 +6,7 @@ import { ArrowLeft, Camera, X } from "lucide-react";
 import { assessImageQuality } from "@/lib/analysis/quality-gate";
 import type { ScanResult } from "@/lib/skin/types";
 import { Button } from "@/components/ui/button";
-import { CameraCapture } from "@/components/analyzer/camera-capture";
+import { LiveCapture } from "@/components/scan/live-capture";
 import { LeadGate } from "@/components/analyzer/lead-gate";
 import { ScanResultView } from "@/components/scan/scan-result";
 import { getSession } from "@/lib/consultation/session";
@@ -45,13 +45,17 @@ export function ScanFlow() {
     if (getSession().leadId) setStage("intro");
   }, []);
 
-  async function handleImage(dataUrl: string, type: string, bytes: number) {
+  async function handleImage(dataUrl: string, type: string, bytes: number, opts?: { skipQuality?: boolean }) {
     setMessage(null);
     if (!["image/jpeg", "image/png", "image/webp"].includes(type)) return setMessage("Please choose a JPG, PNG or WebP image.");
     if (bytes > MAX_BYTES) return setMessage("That image is over 8MB. Please choose a smaller one.");
-    const img = await toImage(dataUrl);
-    const verdict = assessImageQuality(img, img.naturalWidth, img.naturalHeight);
-    if (!verdict.ok) return setMessage(verdict.message ?? "Let's try a clearer photo.");
+    // A live auto-captured frame is already vetted by the on-camera gate — only
+    // re-check uploads (and even then, leniently; the server gate is authority).
+    if (!opts?.skipQuality) {
+      const img = await toImage(dataUrl);
+      const verdict = assessImageQuality(img, img.naturalWidth, img.naturalHeight);
+      if (!verdict.ok) return setMessage(verdict.message ?? "Let's try a clearer photo.");
+    }
     setPreview({ dataUrl, type, bytes });
     setStage("preview");
   }
@@ -118,8 +122,14 @@ export function ScanFlow() {
               tone, texture, pores and more — and shows you exactly where.
             </p>
             <div className="mt-5">
-              <CameraCapture onCapture={handleImage} message={message} />
+              <LiveCapture
+                onCapture={(url, type, bytes) => handleImage(url, type, bytes, { skipQuality: true })}
+                onUpload={(url, type, bytes) => handleImage(url, type, bytes)}
+              />
             </div>
+            {message && (
+              <p role="alert" className="mt-4 rounded-2xl bg-champagne/60 p-3 text-sm text-ink">{message}</p>
+            )}
           </div>
         )}
 

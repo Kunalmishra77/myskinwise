@@ -48,7 +48,8 @@ function laplacianVariance(gray: Float32Array, w: number, h: number): number {
   return sumSq / n - mean * mean;
 }
 
-const BLUR_THRESHOLD = 60; // below this reads as clearly out of focus
+const BLUR_THRESHOLD = 18; // below this reads as clearly out of focus (on a 256px
+// downscale, real phone photos sit well above this; 60 was rejecting good shots)
 const DARK_THRESHOLD = 45; // mean luminance 0..255
 const BRIGHT_THRESHOLD = 225;
 
