@@ -64,7 +64,19 @@ async def analyze(
         raise HTTPException(status_code=413, detail="image too large")
 
     started = time.perf_counter()
-    result = analyze_bytes(data)
+    try:
+        result = analyze_bytes(data)
+    except Exception as exc:  # never leak a bare 500; surface a diagnosable error
+        import traceback
+
+        return JSONResponse(
+            {
+                "error": "pipeline_error",
+                "detail": f"{type(exc).__name__}: {exc}",
+                "where": traceback.format_exc().strip().splitlines()[-3:],
+            },
+            status_code=500,
+        )
     # Wall-clock is deliberately OUTSIDE the deterministic result body — it is
     # the one field that legitimately varies and it is excluded from the
     # determinism comparison (see tests/test_determinism.py).
