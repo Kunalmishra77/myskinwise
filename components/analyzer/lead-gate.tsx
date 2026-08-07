@@ -25,7 +25,10 @@ export function LeadGate({ onDone }: { onDone: () => void }) {
   const [error, setError] = React.useState<string | null>(null);
 
   // Light client check; the server normalises + validates authoritatively.
-  const phoneOk = /^[6-9]\d{9}$/.test(phone.replace(/\D/g, "").replace(/^(91|0)/, ""));
+  // The input is already digits-only and shows +91 as a label, so validate the
+  // 10-digit value as-is — do NOT strip a leading "91" (a valid number can start
+  // with 91, e.g. 9125626162).
+  const phoneOk = /^[6-9]\d{9}$/.test(phone.replace(/\D/g, ""));
   const canSubmit = name.trim().length > 0 && phoneOk && location.trim().length > 0 && consent && !busy;
 
   async function submit(e: React.FormEvent) {

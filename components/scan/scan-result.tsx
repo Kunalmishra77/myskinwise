@@ -6,6 +6,7 @@ import { Mic, ShieldCheck, Sparkles } from "lucide-react";
 import type { ScanResult } from "@/lib/skin/types";
 import { CONCERN_META, SEVERITY_LABEL, byConcernSeverity } from "@/lib/skin/concern-content";
 import { Button } from "@/components/ui/button";
+import { RecommendedCombo } from "@/components/products/recommended-combo";
 
 /**
  * Renders the deterministic engine's ScanResult: the user's photo with a
@@ -39,6 +40,27 @@ export function ScanResultView({
 }) {
   const [active, setActive] = React.useState<string | null>(null);
   const [ratio, setRatio] = React.useState(3 / 4);
+
+  // Phase 8 — the narrative report + matched routine, generated from the SCORES
+  // (never the image). Fetched once when the result renders.
+  const [report, setReport] = React.useState<{ narrative: string; recommendConcern: string } | null>(null);
+  React.useEffect(() => {
+    let live = true;
+    const concerns = result.concerns.map((c) => ({ id: c.id, score: c.score, severity: c.severity }));
+    fetch("/api/v1/scan/report", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ concerns, skinType: result.derived.skin_type }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (live && d?.status === "ok") setReport({ narrative: d.narrative, recommendConcern: d.recommendConcern });
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [result]);
 
   const shown = result.concerns
     .filter((c) => c.score !== null)
@@ -184,6 +206,27 @@ export function ScanResultView({
           );
         })}
       </ul>
+
+      {/* Phase 8 — personalised narrative + matched routine. */}
+      <div className="mt-8">
+        <h2 className="font-display text-2xl font-semibold text-ink">Your personalised read</h2>
+        {report ? (
+          <p className="mt-3 rounded-2xl bg-surface p-4 text-sm leading-relaxed text-ink shadow-soft">
+            {report.narrative}
+          </p>
+        ) : (
+          <div className="mt-3 space-y-2 rounded-2xl bg-surface p-4 shadow-soft" aria-hidden="true">
+            <div className="h-3 w-full animate-pulse rounded bg-ink/10" />
+            <div className="h-3 w-11/12 animate-pulse rounded bg-ink/10" />
+            <div className="h-3 w-4/5 animate-pulse rounded bg-ink/10" />
+          </div>
+        )}
+        {report?.recommendConcern && (
+          <div className="mt-5">
+            <RecommendedCombo concern={report.recommendConcern} />
+          </div>
+        )}
+      </div>
 
       {/* Next steps. */}
       <h2 className="mt-10 font-display text-2xl font-semibold text-ink">What next?</h2>
