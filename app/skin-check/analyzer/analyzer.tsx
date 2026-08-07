@@ -8,17 +8,18 @@ import { type Observation } from "@/lib/ai/vision-schema";
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/analyzer/camera-capture";
 import { CheckVsScan } from "@/components/features/check-vs-scan";
+import { LeadGate } from "@/components/analyzer/lead-gate";
 import { ScanResult } from "@/app/skin-check/analyzer/scan-result";
 import { SCANNER } from "@/content/i18n/scanner";
 import { useTContent } from "@/lib/i18n/use-content";
 import { T } from "@/components/i18n/t";
-import { patchSession } from "@/lib/consultation/session";
+import { getSession, patchSession } from "@/lib/consultation/session";
 import { preloadFaceDetector } from "@/lib/analysis/face-detect";
 
 const POLICY_VERSION = "2026-07-23";
 const MAX_BYTES = 8 * 1024 * 1024;
 
-type Stage = "intro" | "preview" | "analyzing" | "result" | "quality" | "error";
+type Stage = "lead" | "intro" | "preview" | "analyzing" | "result" | "quality" | "error";
 
 async function dataUrlToImage(dataUrl: string): Promise<HTMLImageElement> {
   const img = new Image();
@@ -36,12 +37,18 @@ function toBase64(dataUrl: string): string {
 
 export function Analyzer() {
   const tc = useTContent();
-  // Warm the face-detection model while the user frames their shot, so the
-  // markers are ready the moment the analysis returns.
+  // Start on the lead gate; a scanner who already gave their details this
+  // session skips straight to the scan. (Server render has no session, so it
+  // renders the gate — matching the client's initial state, then the effect
+  // advances a returning scanner.)
+  const [stage, setStage] = React.useState<Stage>("lead");
   React.useEffect(() => {
+    // Warm the face-detection model while the user frames their shot, so the
+    // markers are ready the moment the analysis returns.
     preloadFaceDetector();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (getSession().leadId) setStage("intro");
   }, []);
-  const [stage, setStage] = React.useState<Stage>("intro");
   const [preview, setPreview] = React.useState<{ dataUrl: string; type: string; bytes: number } | null>(null);
   const [consent, setConsent] = React.useState(false);
   const [observation, setObservation] = React.useState<Observation | null>(null);
@@ -80,6 +87,7 @@ export function Analyzer() {
           images: [{ base64: toBase64(preview.dataUrl), contentType: preview.type, bytes: preview.bytes, angle: "front" }],
           consentImageAnalysis: true,
           policyVersion: POLICY_VERSION,
+          leadId: getSession().leadId,
         }),
       });
       const data = await res.json();
@@ -127,6 +135,8 @@ export function Analyzer() {
       </header>
 
       <div className="mx-auto w-full max-w-md flex-1 px-5 pb-16">
+        {stage === "lead" && <LeadGate onDone={() => setStage("intro")} />}
+
         {stage === "intro" && (
           <div>
             <h1 className="font-display text-3xl font-semibold text-ink"><T>{SCANNER.introTitle}</T></h1>

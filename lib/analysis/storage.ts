@@ -26,7 +26,7 @@ export type AnalyzeResult =
     };
 
 export interface AnalysisStore {
-  analyze(input: { images: ImageInput[]; policyVersion: string }): Promise<AnalyzeResult>;
+  analyze(input: { images: ImageInput[]; policyVersion: string; leadId?: string }): Promise<AnalyzeResult>;
   /** Customer re-fetch by reference (the reference is the bearer token). */
   getByReference(reference: string): Promise<{ status: string; observation: Observation | null } | null>;
 }
@@ -46,7 +46,15 @@ class SupabaseAnalysisStore implements AnalysisStore {
     this.db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   }
 
-  async analyze({ images, policyVersion }: { images: ImageInput[]; policyVersion: string }): Promise<AnalyzeResult> {
+  async analyze({
+    images,
+    policyVersion,
+    leadId,
+  }: {
+    images: ImageInput[];
+    policyVersion: string;
+    leadId?: string;
+  }): Promise<AnalyzeResult> {
     const reference = generateConsultationReference();
     try {
       // Consent is a hard precondition of this whole path — the caller only
@@ -57,6 +65,9 @@ class SupabaseAnalysisStore implements AnalysisStore {
         .insert({
           reference,
           status: "analyzing",
+          // Ties this scan to the lead captured just before it, so it shows in
+          // the expert console against that person (null if none was captured).
+          lead_id: leadId ?? null,
           consent_image_analysis: true,
           policy_version: policyVersion,
           // Must be the moment consent was actually given. This was

@@ -40,6 +40,13 @@ export type ConsultSession = {
    * first word was mis-detected as English.
    */
   aiLangPinned?: boolean;
+  /**
+   * The lead captured before the face scan (name + mobile). Held so the scan
+   * can be tied to the lead, and so a returning scanner in the same session
+   * isn't asked for their details again.
+   */
+  leadId?: string;
+  leadName?: string;
 };
 
 export function getSession(): ConsultSession {

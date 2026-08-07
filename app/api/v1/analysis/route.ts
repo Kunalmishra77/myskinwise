@@ -31,6 +31,8 @@ const bodySchema = z.object({
     message: "Image analysis needs your explicit consent",
   }),
   policyVersion: z.string().min(1).max(32),
+  // The lead captured before the scan, so the analysis is tied to that person.
+  leadId: z.string().uuid().optional(),
 });
 
 const REASON_MESSAGE: Record<string, string> = {
@@ -87,6 +89,7 @@ export async function POST(request: Request) {
   const result = await getAnalysisStore().analyze({
     images: parsed.data.images as ImageInput[],
     policyVersion: parsed.data.policyVersion,
+    leadId: parsed.data.leadId,
   });
 
   if (result.ok) {

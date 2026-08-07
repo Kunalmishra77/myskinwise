@@ -21,6 +21,7 @@ export type AnalyticsEvent =
   | "analyzer_started"
   | "analyzer_completed"
   | "analyzer_failed"
+  | "lead_captured"
   | "assistant_used"
   | "voice_used"
   | "consultation_requested"

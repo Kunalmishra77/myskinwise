@@ -25,6 +25,22 @@ export const SCANNER = {
   introBody:
     "Line your face up and capture a clear, well-lit photo. Our AI describes what is visible — shine, redness, texture, tone — and marks the areas on your photo. It is a starting point, not a diagnosis.",
 
+  // Lead-capture gate, shown once before the first scan of a session.
+  leadTitle: "Where should we send your results?",
+  leadBody:
+    "Pop in your name and mobile number so a Skinwise skin expert can follow up on your scan and help with a routine. One quick step, then your scan.",
+  leadName: "Your name",
+  leadNamePlaceholder: "e.g. Aisha",
+  leadMobile: "Mobile number",
+  leadMobilePlaceholder: "10-digit mobile",
+  leadConsent:
+    "I agree to Skinwise contacting me about my skin results. My details are stored securely and never shared.",
+  leadCta: "Continue to my scan",
+  leadSaving: "Saving…",
+  leadBadName: "Please enter your name.",
+  leadBadMobile: "Please enter a valid 10-digit mobile number.",
+  leadFailed: "We couldn't save your details just now. Please try again.",
+
   previewTitle: "Look good?",
   previewAlt: "Your photo preview",
   removePhoto: "Remove photo",
