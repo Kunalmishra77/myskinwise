@@ -234,7 +234,7 @@ export function ScanResultView({
         <Button size="lg" asChild>
           <Link href="/voice">
             <Mic aria-hidden="true" className="size-4" />
-            Talk through my results with Riya
+            Talk through my results with Dr. Vivek
           </Link>
         </Button>
         <Button size="lg" variant="outline" asChild>

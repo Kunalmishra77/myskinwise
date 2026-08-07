@@ -18,12 +18,12 @@ export const HOME = {
   aiHeroEyebrow: "Skinwise AI",
   aiHeroTitle: "How can I help you?",
   aiHeroBody:
-    "Tell Riya about your skin — by voice or chat — and get personalised guidance in minutes. Every recommendation is reviewed by a real Skinwise expert.",
+    "Tell Dr. Vivek about your skin — by voice or chat — and get personalised guidance in minutes. Every recommendation is reviewed by a real Skinwise expert.",
   aiHeroTalk: "Talk to AI",
   aiHeroChat: "Chat with AI",
   aiHeroScan: "Or scan your skin instead",
   aiHeroTalkHint: "Speak naturally, hands-free",
-  aiHeroChatHint: "Prefer to type? Chat with Riya",
+  aiHeroChatHint: "Prefer to type? Chat with Dr. Vivek",
 
   // Hero.
   heroEyebrow: "Personalised skincare",

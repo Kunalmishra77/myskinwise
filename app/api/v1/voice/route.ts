@@ -111,7 +111,7 @@ export async function POST(request: Request) {
           {
             role: "user",
             content:
-              "Greet me warmly as Riya from Skinwise and ask, in one or two short sentences, what skin concern I would like help with. Only a greeting — no advice yet.",
+              "Greet me warmly and PROFESSIONALLY as Dr. Vivek, my personal skincare expert. Start with a time-appropriate greeting, then ask in one or two short sentences what's going on with my skin. Warm but polished — no advice yet.",
           },
         ],
         undefined,
