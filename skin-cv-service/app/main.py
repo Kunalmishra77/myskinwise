@@ -69,4 +69,21 @@ async def analyze(
     # the one field that legitimately varies and it is excluded from the
     # determinism comparison (see tests/test_determinism.py).
     result["processing_ms"] = round((time.perf_counter() - started) * 1000, 1)
+
+    # A photo the capture gate rejected is a 422 with an actionable reason, not
+    # a "successful" analysis of an unusable image (blueprint §4.1, §6.1).
+    quality = result.get("quality", {})
+    if not quality.get("passed", False):
+        return JSONResponse(
+            {
+                "error": "capture_quality_failed",
+                "reason_code": quality.get("reason_code"),
+                "user_message": quality.get("user_message"),
+                "scan_id": result.get("scan_id"),
+                "image_sha256": result.get("image_sha256"),
+                "quality": quality,
+                "retryable": True,
+            },
+            status_code=422,
+        )
     return JSONResponse(result, status_code=200)

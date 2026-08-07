@@ -1,0 +1,71 @@
+# Capture-quality gate thresholds (blueprint §4.1). Every number the gate uses
+# lives here, never in code. Changing any value is a PIPELINE_VERSION bump.
+#
+# The gate is the single highest-leverage component: ~80% of "the AI gave me a
+# wrong result" complaints trace to a photo that should never have been
+# accepted. Reject strictly, with ONE clear reason at a time.
+
+face:
+  # MediaPipe FaceMesh detection confidence, and exactly one face in frame.
+  min_detection_confidence: 0.5
+  max_faces: 1
+
+blur:
+  # Variance of the Laplacian on the L* channel. Low variance = few edges = blur.
+  min_variance: 120.0
+
+exposure:
+  # Mean L* (0..100) over the face/skin region.
+  min_mean_l: 40.0
+  max_mean_l: 78.0
+
+clipping:
+  # Percentage of skin pixels with ANY channel >= channel_value (blown highlights).
+  channel_value: 250
+  max_percent: 2.0
+
+pose:
+  # Head orientation in degrees, from a solvePnP fit to facial landmarks.
+  max_yaw_deg: 8.0
+  max_pitch_deg: 8.0
+  max_roll_deg: 6.0
+
+distance:
+  # Interpupillary distance in pixels — a proxy for how close the face is.
+  min_ipd_px: 90.0
+  max_ipd_px: 260.0
+
+lighting_evenness:
+  # Left-cheek vs right-cheek mean-L* difference. A big gap = side-lit face.
+  max_delta_l: 12.0
+
+# Most-severe-first. On failure the gate reports the FIRST failing check in this
+# order, so the user sees one actionable instruction, not a wall of errors.
+priority:
+  - NO_FACE
+  - MULTIPLE_FACES
+  - BLUR_TOO_HIGH
+  - TOO_DARK
+  - TOO_BRIGHT
+  - CLIPPING
+  - POSE_YAW
+  - POSE_PITCH
+  - POSE_ROLL
+  - TOO_FAR
+  - TOO_CLOSE
+  - UNEVEN_LIGHTING
+
+# One clear, non-technical instruction per reason code.
+messages:
+  NO_FACE: "Move your face into the frame."
+  MULTIPLE_FACES: "Make sure only your face is in the photo."
+  BLUR_TOO_HIGH: "Photo is blurry — hold your phone steady and try again."
+  TOO_DARK: "It's too dark — face a window or turn on a light."
+  TOO_BRIGHT: "It's too bright — move out of direct light."
+  CLIPPING: "Move away from direct light — parts of your face are washed out."
+  POSE_YAW: "Look straight at the camera."
+  POSE_PITCH: "Keep your head level — not tilted up or down."
+  POSE_ROLL: "Straighten your head."
+  TOO_FAR: "Come a little closer."
+  TOO_CLOSE: "Move back a little."
+  UNEVEN_LIGHTING: "The light is uneven — face a window so it's even on both sides."

@@ -1,0 +1,40 @@
+name: skin-cv-service
+
+# Runs the deterministic-engine test suite — including the determinism harness
+# (blueprint §2.3) which needs real OpenCV + MediaPipe and so can only run in a
+# Linux env with the deps installed, not on a dev laptop. This is the
+# authoritative, blocking test run for the service.
+
+on:
+  push:
+    paths:
+      - "skin-cv-service/**"
+      - ".github/workflows/skin-cv.yml"
+  pull_request:
+    paths:
+      - "skin-cv-service/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: skin-cv-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # MediaPipe / OpenCV runtime libs (mirror the Dockerfile).
+      - name: System libs
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
+
+      - name: Install (exact pins)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Test (determinism + gate, CI blocker)
+        run: python -m pytest -q
