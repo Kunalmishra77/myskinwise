@@ -43,7 +43,9 @@ oiliness:
 texture:
   metric: glcm_contrast
   direction: lower_is_better
-  anchors: [[0.0, 100], [20.0, 85], [60.0, 60], [120.0, 40], [250.0, 15], [500.0, 0]]
+  # GLCM contrast on the 32-level normed matrix is small (~0.1–6), not the
+  # hundreds an 8-bit unnormalised GLCM gives — rescaled to that range.
+  anchors: [[0.0, 100], [0.3, 88], [0.8, 70], [1.5, 50], [3.0, 25], [6.0, 0]]
 
 # Severity bands from the final 0..100 score (same for every concern).
 severity_bands:

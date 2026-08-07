@@ -154,7 +154,9 @@ def pores(bgr, L, a, b, masks, mm_per_px):
     inv = np.where(sel, 1.0 - (L / 100.0), 0.0)
     min_sigma = max(0.5, (0.1 / mm_per_px) / 2.0)
     max_sigma = max(min_sigma + 0.5, (0.5 / mm_per_px) / 2.0)
-    blobs = blob_log(inv, min_sigma=min_sigma, max_sigma=max_sigma, num_sigma=4, threshold=0.05)
+    # threshold provisional: 0.05 over-detected texture as pores (thousands);
+    # 0.15 keeps genuine dark pores. Calibrated properly in Phase 9.
+    blobs = blob_log(inv, min_sigma=min_sigma, max_sigma=max_sigma, num_sigma=4, threshold=0.15)
     count = int(blobs.shape[0])
     area_cm2 = _area_cm2(region, mm_per_px)
     per_cm2 = count / area_cm2 if area_cm2 > 0 else 0.0

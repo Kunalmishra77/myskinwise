@@ -22,8 +22,10 @@ _REGION_POINTS: dict[str, list[int]] = {
     "right_cheek": [425, 280, 347, 330],
     "perioral": [0, 17, 61, 291, 164],
     "chin": [152, 175, 148, 377],
-    "left_periorbital": [230, 229, 228, 31],
-    "right_periorbital": [450, 449, 448, 261],
+    # periorbital (under-eye) regions are computed geometrically in build() —
+    # from the eye centre pushed DOWN onto the infraorbital skin — because fixed
+    # eyelid-area indices landed on the eye itself and produced spurious dark
+    # circles.
 }
 # Eyes + mouth are excluded from the skin mask (not skin).
 _LEFT_EYE = [33, 133, 159, 145, 153, 154, 155, 173, 157, 158, 160, 161, 246]
@@ -73,6 +75,14 @@ def build(landmarks_px: "np.ndarray", shape: tuple[int, int]) -> dict[str, "np.n
         cv2.fillConvexPoly(skin, poly, 0)
     skin = cv2.erode(skin, np.ones((5, 5), np.uint8), iterations=1)
     masks["skin"] = skin
+
+    # Under-eye (infraorbital) regions: the eye centre pushed DOWN onto the
+    # cheek-top skin, with a small flat ellipse that stays clear of the lashes.
+    fh = float(landmarks_px[:, 1].max() - landmarks_px[:, 1].min())
+    drop = fh * 0.055
+    for name, eye in (("left_periorbital", _LEFT_EYE), ("right_periorbital", _RIGHT_EYE)):
+        ex, ey = _centroid(landmarks_px, eye)
+        masks[name] = _ellipse_mask((h, w), ex, ey + drop, r * 0.8, r * 0.45)
 
     # Reference "clean skin" patch: upper-mid cheek (blueprint §4.5), left side.
     cx, cy = _centroid(landmarks_px, [205, 50])
