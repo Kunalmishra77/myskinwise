@@ -66,6 +66,15 @@ export default async function LeadsPage() {
         <div>
           <h1 className="font-display text-3xl font-semibold text-ink">Leads</h1>
           <p className="mt-1 text-sm text-ink-soft">{leads.length} total, newest first.</p>
+          {/* Hand the whole list to the sales team as a spreadsheet. */}
+          {leads.length > 0 && (
+            <a
+              href="/api/v1/admin/leads/export"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-ink/15 bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition hover:border-rose-ink hover:text-rose-ink"
+            >
+              Download CSV
+            </a>
+          )}
         </div>
 
         {/*
