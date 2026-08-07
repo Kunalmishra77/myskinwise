@@ -26,9 +26,14 @@ clipping:
 
 pose:
   # Head orientation in degrees, from a solvePnP fit to facial landmarks.
-  max_yaw_deg: 8.0
-  max_pitch_deg: 8.0
-  max_roll_deg: 6.0
+  # PROVISIONAL bounds: solvePnP with a generic 3D model carries a known
+  # systematic pitch bias (~10-15°), so the blueprint's tight 8° would reject
+  # ordinary phone selfies. These are loosened for a usable v1 and will be
+  # tightened once head-pose is calibrated against real ground-truth (Phase 9),
+  # ideally by switching to MediaPipe's canonical metric face model.
+  max_yaw_deg: 15.0
+  max_pitch_deg: 20.0
+  max_roll_deg: 12.0
 
 distance:
   # Interpupillary distance in pixels — a proxy for how close the face is.
