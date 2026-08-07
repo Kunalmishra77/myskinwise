@@ -33,6 +33,9 @@ export const SCANNER = {
   leadNamePlaceholder: "e.g. Aisha",
   leadMobile: "Mobile number",
   leadMobilePlaceholder: "10-digit mobile",
+  leadLocation: "Location",
+  leadLocationPlaceholder: "City or area (e.g. Mumbai)",
+  leadBadLocation: "Please enter your city or area.",
   leadConsent:
     "I agree to Skinwise contacting me about my skin results. My details are stored securely and never shared.",
   leadCta: "Continue to my scan",

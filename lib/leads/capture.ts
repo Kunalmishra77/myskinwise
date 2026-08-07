@@ -7,7 +7,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * to them. Written with the service role only; never reached from the browser.
  */
 
-export type LeadInput = { name: string; phone: string; email?: string | null };
+export type LeadInput = { name: string; phone: string; email?: string | null; location?: string | null };
 
 export interface LeadCaptureStore {
   capture(input: LeadInput): Promise<{ ok: true; leadId: string } | { ok: false }>;
@@ -25,10 +25,10 @@ class SupabaseLeadCaptureStore implements LeadCaptureStore {
     this.db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   }
 
-  async capture({ name, phone, email }: LeadInput) {
+  async capture({ name, phone, email, location }: LeadInput) {
     const { data, error } = await this.db
       .from("leads")
-      .insert({ name, phone_e164: phone, email: email ?? null })
+      .insert({ name, phone_e164: phone, email: email ?? null, location: location ?? null })
       .select("id")
       .single();
     if (error || !data) return { ok: false as const };

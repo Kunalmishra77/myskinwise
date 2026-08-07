@@ -145,6 +145,7 @@ export default async function LeadsPage() {
                     <a href={`tel:${lead.phone}`} className="text-ink hover:text-rose-ink">
                       {lead.phone}
                     </a>
+                    {lead.location && <p className="text-xs text-ink-soft">📍 {lead.location}</p>}
                     {lead.email && <p className="text-xs text-ink-soft">{lead.email}</p>}
                   </td>
                   <td className="py-3 pr-4 text-ink-soft">{SOURCE_LABELS[lead.source]}</td>

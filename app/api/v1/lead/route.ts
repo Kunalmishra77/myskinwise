@@ -14,6 +14,7 @@ const bodySchema = z.object({
   name: z.string().trim().min(1).max(80),
   phone: z.string().trim().min(6).max(20),
   email: z.string().trim().email().max(120).optional(),
+  location: z.string().trim().min(1).max(120).optional(),
 });
 
 /**
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
     name: parsed.data.name,
     phone,
     email: parsed.data.email ?? null,
+    location: parsed.data.location ?? null,
   });
   if (!result.ok) {
     return NextResponse.json(

@@ -19,25 +19,27 @@ export function LeadGate({ onDone }: { onDone: () => void }) {
   const tc = useTContent();
   const [name, setName] = React.useState("");
   const [phone, setPhone] = React.useState("");
+  const [location, setLocation] = React.useState("");
   const [consent, setConsent] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   // Light client check; the server normalises + validates authoritatively.
   const phoneOk = /^[6-9]\d{9}$/.test(phone.replace(/\D/g, "").replace(/^(91|0)/, ""));
-  const canSubmit = name.trim().length > 0 && phoneOk && consent && !busy;
+  const canSubmit = name.trim().length > 0 && phoneOk && location.trim().length > 0 && consent && !busy;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!name.trim()) return setError(tc(SCANNER.leadBadName));
     if (!phoneOk) return setError(tc(SCANNER.leadBadMobile));
+    if (!location.trim()) return setError(tc(SCANNER.leadBadLocation));
     setBusy(true);
     try {
       const res = await fetch("/api/v1/lead", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
+        body: JSON.stringify({ name: name.trim(), phone: phone.trim(), location: location.trim() }),
       });
       const data = await res.json().catch(() => null);
       if (res.status === 201 && data?.leadId) {
@@ -88,6 +90,18 @@ export function LeadGate({ onDone }: { onDone: () => void }) {
               className="w-full rounded-r-2xl bg-transparent py-3 pr-4 text-ink focus-visible:outline-none"
             />
           </div>
+        </label>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-ink"><T>{SCANNER.leadLocation}</T></span>
+          <input
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder={tc(SCANNER.leadLocationPlaceholder)}
+            autoComplete="address-level2"
+            className="rounded-2xl border border-ink/15 bg-surface px-4 py-3 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink"
+          />
         </label>
 
         <label className="flex cursor-pointer items-start gap-3">

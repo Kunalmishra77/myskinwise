@@ -60,6 +60,8 @@ export type LeadRow = {
   /** E.164. Shown to the team so they can act on the lead — this is a CRM. */
   phone: string;
   email: string | null;
+  /** City/area the lead gave, if any. */
+  location: string | null;
   createdAt: string;
   source: LeadSource;
   stage: LeadStage;
@@ -90,7 +92,7 @@ class SupabaseLeadStore implements LeadStore {
   async listLeads(limit = 200): Promise<LeadRow[]> {
     const { data: leads, error } = await this.db
       .from("leads")
-      .select("id, name, phone_e164, email, created_at")
+      .select("id, name, phone_e164, email, location, created_at")
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error || !leads) return [];
@@ -182,6 +184,7 @@ class SupabaseLeadStore implements LeadStore {
         name: lead.name,
         phone: lead.phone_e164,
         email: lead.email,
+        location: lead.location ?? null,
         createdAt: lead.created_at,
         source,
         stage,
