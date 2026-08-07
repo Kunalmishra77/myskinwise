@@ -276,7 +276,7 @@ export function LiveCapture({
         ) : (
           <div className="flex h-full flex-col items-center justify-center px-6 text-center">
             <Camera aria-hidden="true" className="size-10 text-white/80" />
-            <p className="mt-3 text-sm text-white/90">We couldn't open your camera. You can upload a photo instead.</p>
+            <p className="mt-3 text-sm text-white/90">{"We couldn't open your camera. You can upload a photo instead."}</p>
             <button type="button" onClick={() => start()} className="mt-4 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-ink">
               Try the camera again
             </button>
