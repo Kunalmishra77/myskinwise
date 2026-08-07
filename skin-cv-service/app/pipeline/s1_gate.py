@@ -155,12 +155,19 @@ def face_mask(landmarks_px: "np.ndarray", shape: tuple[int, int]) -> "np.ndarray
     return mask
 
 
-def measure_blur(l_channel: "np.ndarray", mask: "np.ndarray") -> float:
+def measure_blur(image_bgr: "np.ndarray", mask: "np.ndarray") -> float:
+    """Variance of Laplacian on the L channel at its native 0..255 scale.
+
+    The classic blur threshold (~120) is calibrated for an 8-bit (0..255)
+    channel. Using the rescaled 0..100 L* here would shrink the variance ~6.5×
+    and read every sharp photo as blurry. So blur uses the raw LAB L (0..255);
+    exposure keeps the real-unit L* (0..100) from lab_l().
+    """
     import cv2
 
-    # Source must be float64 too: OpenCV's Laplacian doesn't support a float32
-    # source with a CV_64F destination.
-    lap = cv2.Laplacian(l_channel.astype(np.float64), cv2.CV_64F)
+    lab = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2LAB)
+    l255 = lab[:, :, 0].astype(np.float64)  # 0..255
+    lap = cv2.Laplacian(l255, cv2.CV_64F)
     return float(lap[mask > 0].var())
 
 
@@ -290,7 +297,7 @@ def run_gate(image_bgr: "np.ndarray", faces: list["np.ndarray"]) -> dict:
             l = mask = None
 
         if l is not None and mask is not None:
-            guard("blur", "BLUR_TOO_HIGH", lambda: check_blur(measure_blur(l, mask), cfg))
+            guard("blur", "BLUR_TOO_HIGH", lambda: check_blur(measure_blur(image_bgr, mask), cfg))
             guard("exposure", "TOO_DARK", lambda: check_exposure(measure_mean_l(l, mask), cfg))
             guard("clipping", "CLIPPING",
                   lambda: check_clipping(measure_clip_percent(image_bgr, mask, cfg["clipping"]["channel_value"]), cfg))
