@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { analyzeScan } from "@/lib/skin/client";
+import { acneConfigured, detectAcne } from "@/lib/skin/acne";
 import { persistScan } from "@/lib/skin/persist";
 import { clientKey, MemoryRateLimiter } from "@/lib/rate-limit";
 import { logEvent } from "@/lib/analytics";
@@ -47,6 +48,21 @@ export async function POST(request: Request) {
 
   const outcome = await analyzeScan(parsed.data.imageBase64, parsed.data.contentType);
   if (outcome.ok) {
+    // Merge acne (pre-trained Roboflow model, Beta) into the 8th concern when
+    // configured. Best-effort — a failure just leaves acne unscored.
+    if (acneConfigured()) {
+      const acne = await detectAcne(parsed.data.imageBase64);
+      if (acne) {
+        const c = outcome.result.concerns.find((x) => x.id === "acne");
+        if (c) {
+          c.score = acne.score;
+          c.severity = acne.severity;
+          c.confidence = acne.confidence;
+          c.raw = acne.raw;
+        }
+      }
+    }
+
     // Save against the lead so the scan shows in the admin Leads funnel
     // ("Skin Scan completed"). Best-effort — never fails the scan.
     const reference = await persistScan(outcome.result, parsed.data.leadId, {

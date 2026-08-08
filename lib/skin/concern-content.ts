@@ -49,7 +49,7 @@ export const CONCERN_META: Record<string, ConcernMeta> = {
   },
   acne: {
     label: "Breakouts",
-    blurb: "Active breakouts — coming soon.",
+    blurb: "Active breakouts the photo picks up. Detection is Beta — a Skinwise expert confirms.",
     rgb: [230, 90, 90],
   },
 };
