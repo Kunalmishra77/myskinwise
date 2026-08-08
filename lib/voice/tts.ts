@@ -133,19 +133,22 @@ class ElevenLabsTts implements TextToSpeechProvider {
           body: JSON.stringify({
             text: input,
             model_id: this.model,
-            // language_code nudges pronunciation for the multilingual model,
-            // so Hindi is read as Hindi rather than transliterated English.
-            ...(lang ? { language_code: lang } : {}),
+            // Only enforce a language_code for an EXPLICIT non-English language
+            // (e.g. Devanagari Hindi). For the default Hinglish (Roman Hindi +
+            // English), forcing "en" makes it read Hindi words with English
+            // phonetics; omitting it lets the multilingual model handle the
+            // code-switch far more naturally.
+            ...(lang && lang !== "en" ? { language_code: lang } : {}),
             voice_settings: {
-              // A touch lower stability than before so she varies naturally and
-              // doesn't sound flat/monotone; higher similarity keeps her ON the
-              // chosen voice; speaker boost sharpens clarity for numbers and
-              // Hindi words; speed > 1 fixes the "too slow" delivery.
-              stability: 0.4,
-              similarity_boost: 0.85,
-              style: 0.15,
+              // Tuned to sound like a calm, clear SKINCARE EXPERT — not a
+              // dramatic storyteller. Higher stability = steadier, less
+              // theatrical; style 0 removes the expressive/narration flourish;
+              // high similarity + speaker boost keep it clear and on-voice.
+              stability: 0.55,
+              similarity_boost: 0.9,
+              style: 0.0,
               use_speaker_boost: true,
-              speed: 1.08,
+              speed: 1.05,
             },
           }),
           signal: controller.signal,

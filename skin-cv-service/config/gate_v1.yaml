@@ -12,11 +12,12 @@ face:
 
 blur:
   # Variance of the Laplacian on the L channel (0..255). Low variance = few
-  # edges = blur. PROVISIONAL 100 (blueprint suggests 120): retouched/smoothed
-  # skin sits ~115, while genuinely motion-blurred photos score well under 80, so
-  # 100 accepts sharp-but-smooth photos and still rejects real blur. To be
-  # calibrated against real captures in Phase 9.
-  min_variance: 100.0
+  # edges = blur. Set LOW (35) on purpose: frames grabbed from a live camera
+  # feed are softer/more compressed than a still photo, so a good live capture
+  # (which the on-camera gate already approved) sits well under a still-photo
+  # threshold. 35 still rejects genuinely motion-blurred frames (which score
+  # <20) while accepting real live captures. To be calibrated in Phase 9.
+  min_variance: 35.0
 
 exposure:
   # Mean L* (0..100) over the face/skin region.
