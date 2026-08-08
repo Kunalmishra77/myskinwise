@@ -82,6 +82,27 @@ function ringFromBox(bb: NonNullable<Detection["boundingBox"]>, vw: number, vh: 
   return { cx, cy, rx, ry };
 }
 
+/**
+ * Project a normalised detector point (0..1 in the raw video) into the overlay
+ * viewBox, applying the same mirror + object-cover crop the ring uses — so the
+ * live tracking dots land exactly on the real facial landmarks.
+ */
+function projectPoint(nx: number, ny: number, vw: number, vh: number): { x: number; y: number } {
+  const vAspect = vw / vh;
+  let fx: number, fy: number;
+  if (vAspect > CONTAINER_AR) {
+    const visW = CONTAINER_AR / vAspect;
+    fx = (nx - (1 - visW) / 2) / visW;
+    fy = ny;
+  } else {
+    const visH = vAspect / CONTAINER_AR;
+    fy = (ny - (1 - visH) / 2) / visH;
+    fx = nx;
+  }
+  fx = 1 - fx; // mirror
+  return { x: fx * VB_W, y: fy * VB_H };
+}
+
 type FaceDetectorLike = {
   detectForVideo: (v: HTMLVideoElement, ts: number) => { detections: Detection[] };
 };
@@ -116,6 +137,9 @@ export function LiveCapture({
   const [progress, setProgress] = React.useState(0);
   const [flash, setFlash] = React.useState(false);
   const [ring, setRing] = React.useState<Ring>({ ...DEFAULT_RING });
+  // Live tracking dots on the real detected landmarks (eyes/nose/mouth/ears) —
+  // in overlay-viewBox coords. Empty when no face is detected.
+  const [marks, setMarks] = React.useState<{ x: number; y: number }[]>([]);
 
   const stop = React.useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -334,6 +358,12 @@ export function LiveCapture({
             targetRef.current = det?.boundingBox
               ? ringFromBox(det.boundingBox, v.videoWidth, v.videoHeight)
               : { ...DEFAULT_RING };
+            // Live tracking dots on the real landmarks the detector returns.
+            setMarks(
+              det?.keypoints?.length
+                ? det.keypoints.map((k) => projectPoint(k.x, k.y, v.videoWidth, v.videoHeight))
+                : [],
+            );
             greenFrames.current = verdict.ok ? greenFrames.current + 1 : 0;
             setProgress(Math.min(1, greenFrames.current / GREEN_FRAMES_TO_CAPTURE));
             if (greenFrames.current >= GREEN_FRAMES_TO_CAPTURE) {
@@ -402,8 +432,30 @@ export function LiveCapture({
                   <rect width="100" height="133" fill="white" />
                   <ellipse cx={ring.cx} cy={ring.cy} rx={ring.rx} ry={ring.ry} fill="black" />
                 </mask>
+                <clipPath id="lc-ring-clip">
+                  <ellipse cx={ring.cx} cy={ring.cy} rx={ring.rx} ry={ring.ry} />
+                </clipPath>
+                <linearGradient id="lc-scan-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#5bbf7b" stopOpacity="0" />
+                  <stop offset="0.5" stopColor="#8fe0a6" stopOpacity="0.9" />
+                  <stop offset="1" stopColor="#5bbf7b" stopOpacity="0" />
+                </linearGradient>
               </defs>
               <rect width="100" height="133" fill="rgba(35,22,25,0.45)" mask="url(#lc-hole)" />
+
+              {/* Scan line sweeping the face while it's locked on — clipped to the
+                  guide so it reads as "scanning your skin now". */}
+              {good && (
+                <g clipPath="url(#lc-ring-clip)">
+                  <rect className="lc-scanline" x="0" width="100" height="7" y="-7" fill="url(#lc-scan-grad)" />
+                </g>
+              )}
+
+              {/* Live tracking dots on the real detected landmarks. */}
+              {marks.map((m, i) => (
+                <circle key={i} cx={m.x} cy={m.y} r={good ? 0.9 : 0.75} fill={good ? "#8fe0a6" : "#ffffff"} opacity="0.9" />
+              ))}
+
               <ellipse cx={ring.cx} cy={ring.cy} rx={ring.rx} ry={ring.ry} fill="none" stroke={ringColor} strokeOpacity="0.5" strokeWidth="1.2" />
               <ellipse
                 cx={ring.cx}
@@ -421,6 +473,11 @@ export function LiveCapture({
                 style={{ transition: "stroke-dashoffset 120ms linear" }}
               />
             </svg>
+            <style>{`
+              @keyframes lc-sweep { 0% { transform: translateY(0); } 100% { transform: translateY(140px); } }
+              .lc-scanline { animation: lc-sweep 1.5s ease-in-out infinite; }
+              @media (prefers-reduced-motion: reduce) { .lc-scanline { animation: none; opacity: 0; } }
+            `}</style>
 
             <div className="absolute inset-x-0 bottom-4 flex justify-center">
               <p className={`rounded-full px-4 py-1.5 text-sm font-semibold backdrop-blur ${good ? "bg-[#5bbf7b] text-white" : "bg-plum/70 text-white"}`}>
