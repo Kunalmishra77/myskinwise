@@ -301,6 +301,7 @@ export async function POST(request: Request) {
     kind: outcome.kind,
     recommendConcern: "recommendConcern" in outcome ? outcome.recommendConcern : undefined,
     showScanCta: "showScanCta" in outcome ? outcome.showScanCta : undefined,
+    showProducts: "showProducts" in outcome ? outcome.showProducts : undefined,
     // Tell the client to stop audio + listening after a scan/order hand-off.
     endTurn: isHandoffTurn(outcome.text, "showScanCta" in outcome ? outcome.showScanCta : undefined),
     audioBase64,
@@ -351,6 +352,7 @@ function streamVoice(
           cta: meta.cta,
           recommendConcern: meta.recommendConcern,
           showScanCta: meta.showScanCta,
+          showProducts: meta.showProducts,
           endTurn: isHandoffTurn(meta.fullText, meta.showScanCta),
           kind: meta.kind,
           lang,

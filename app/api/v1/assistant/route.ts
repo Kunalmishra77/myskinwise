@@ -137,7 +137,7 @@ function streamAssistant(
           res = await gen.next();
         }
         const meta = res.value;
-        send({ type: "done", cta: meta.cta, recommendConcern: meta.recommendConcern, showScanCta: meta.showScanCta, kind: meta.kind });
+        send({ type: "done", cta: meta.cta, recommendConcern: meta.recommendConcern, showScanCta: meta.showScanCta, showProducts: meta.showProducts, kind: meta.kind });
       } catch {
         send({ type: "error" });
       } finally {

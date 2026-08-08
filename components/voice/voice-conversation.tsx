@@ -189,7 +189,7 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
             </Link>
           </div>
         )}
-        {lastRecommend && hasScanned && (
+        {lastRecommend && hasScanned && getSession().productsUnlocked && (
           <div className="mt-3">
             <RecommendedCombo concern={lastRecommend} />
           </div>

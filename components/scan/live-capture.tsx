@@ -38,49 +38,35 @@ type Verdict = {
 const VB_W = 100;
 const VB_H = 133;
 const CONTAINER_AR = 3 / 4; // the preview box is aspect-[3/4] (width / height)
-const DEFAULT_RING = { cx: 50, cy: 60, rx: 31, ry: 40 } as const;
+// A perfect CIRCLE guide. The overlay viewBox (100×133) matches the 3:4 preview
+// aspect, so equal rx/ry render as a true circle on screen. Fixed and centred —
+// the user fits their face inside it ("keep your face in the circle").
+const DEFAULT_RING = { cx: 50, cy: 62, rx: 39, ry: 39 } as const;
 type Ring = { cx: number; cy: number; rx: number; ry: number };
 
-const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
-
-/**
- * Map a detector bounding box (normalised to the RAW video) to a guide ellipse in
- * the overlay's viewBox — so the ring tracks the actual face. Accounts for two
- * transforms the eye can't see: the video is CSS-mirrored (scaleX(-1)), and it is
- * `object-cover` cropped to the 3:4 preview, so the visible region is a centre
- * slice of the sensor frame. The ellipse is padded to a face-oval and clamped to
- * stay fully inside the frame.
- */
-function ringFromBox(bb: NonNullable<Detection["boundingBox"]>, vw: number, vh: number): Ring {
-  const nx = (bb.originX + bb.width / 2) / vw;
-  const ny = (bb.originY + bb.height / 2) / vh;
-  const nw = bb.width / vw;
-  const nh = bb.height / vh;
-  const vAspect = vw / vh;
-
-  let fx: number, fy: number, fw: number, fh: number;
-  if (vAspect > CONTAINER_AR) {
-    // Video is wider than the box → cropped left/right.
-    const visW = CONTAINER_AR / vAspect;
-    fx = (nx - (1 - visW) / 2) / visW;
-    fw = nw / visW;
-    fy = ny;
-    fh = nh;
-  } else {
-    // Video is taller than the box → cropped top/bottom.
-    const visH = vAspect / CONTAINER_AR;
-    fy = (ny - (1 - visH) / 2) / visH;
-    fh = nh / visH;
-    fx = nx;
-    fw = nw;
+/** Laplacian-variance focus measure on the central region of the captured canvas
+ * (inside the circle, all face — away from the masked edge). */
+function circleSharpness(ctx: CanvasRenderingContext2D, size: number): number {
+  const s = Math.round(size * 0.5);
+  const off = Math.round((size - s) / 2);
+  const { data } = ctx.getImageData(off, off, s, s);
+  const g = new Float32Array(s * s);
+  for (let p = 0, k = 0; p < data.length; p += 4, k++) {
+    g[k] = 0.299 * data[p]! + 0.587 * data[p + 1]! + 0.114 * data[p + 2]!;
   }
-  fx = 1 - fx; // undo the mirror for display
-
-  const rx = clamp((fw / 2) * VB_W * 1.18, 16, 44);
-  const ry = clamp((fh / 2) * VB_H * 1.5, 22, 56);
-  const cx = clamp(fx * VB_W, rx, VB_W - rx);
-  const cy = clamp(fy * VB_H, ry, VB_H - ry);
-  return { cx, cy, rx, ry };
+  let sum = 0;
+  let sq = 0;
+  let n = 0;
+  for (let y = 1; y < s - 1; y++) {
+    for (let x = 1; x < s - 1; x++) {
+      const i = y * s + x;
+      const lap = 4 * g[i]! - g[i - 1]! - g[i + 1]! - g[i - s]! - g[i + s]!;
+      sum += lap;
+      sq += lap * lap;
+      n++;
+    }
+  }
+  return n > 0 ? sq / n - (sum / n) ** 2 : 999;
 }
 
 /**
@@ -178,68 +164,51 @@ export function LiveCapture({
     capturedRef.current = true;
     setFlash(true);
 
-    // Face-relative 3:4 portrait crop with generous padding (forehead → chin +
-    // margin). cropW = 2.2× the face box, so the face fills ~45% of the output
-    // at ANY distance → interpupillary distance lands ~165px in the sent image,
-    // safely inside the engine gate's 90–260px band. Clamped to the frame.
+    // SQUARE crop centred on the face (a touch above centre for forehead), sized
+    // ~2.4× the face box so the whole face sits inside the CIRCLE with margin and
+    // its interpupillary distance lands ~150px — inside the engine gate's band.
     const fcx = det.x + det.w / 2;
     const fcy = det.y + det.h / 2;
-    let cropW = Math.min(det.w * 2.2, vw);
-    let cropH = Math.min(cropW * (4 / 3), vh);
-    // Keep the intended aspect if height got clamped by re-deriving width.
-    cropW = Math.min(cropW, cropH * (3 / 4));
-    cropH = cropW * (4 / 3);
-    let cropX = fcx - cropW / 2;
-    let cropY = fcy - cropH * 0.46; // face a touch above centre (more forehead)
-    cropX = Math.max(0, Math.min(cropX, vw - cropW));
-    cropY = Math.max(0, Math.min(cropY, vh - cropH));
+    let side = Math.min(det.w * 2.4, vw, vh);
+    let cropX = fcx - side / 2;
+    let cropY = fcy - det.h * 0.15 - side / 2; // nudge up so forehead is included
+    cropX = Math.max(0, Math.min(cropX, vw - side));
+    cropY = Math.max(0, Math.min(cropY, vh - side));
+    side = Math.min(side, vw - cropX, vh - cropY);
 
-    const OUT_W = 768;
-    const OUT_H = Math.round(OUT_W * (cropH / cropW));
+    const OUT = 768;
     const out = document.createElement("canvas");
-    out.width = OUT_W;
-    out.height = OUT_H;
+    out.width = OUT;
+    out.height = OUT;
     const octx = out.getContext("2d");
-    const small = document.createElement("canvas");
-    small.width = 200;
-    small.height = 200;
-    const sctx = small.getContext("2d", { willReadFrequently: true });
-
-    // Burst: over ~250ms grab several cropped frames and KEEP THE SHARPEST.
-    let bestUrl: string | null = null;
-    let bestSharp = -1;
-    for (let i = 0; i < 5 && octx && sctx; i++) {
-      // Crop + scale the real (un-mirrored) video straight into the output.
-      octx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, OUT_W, OUT_H);
-      sctx.drawImage(out, 0, 0, 200, 200);
-      const { data } = sctx.getImageData(0, 0, 200, 200);
-      const g = new Float32Array(200 * 200);
-      for (let p = 0, k = 0; p < data.length; p += 4, k++) {
-        g[k] = 0.299 * data[p]! + 0.587 * data[p + 1]! + 0.114 * data[p + 2]!;
-      }
-      let sum = 0;
-      let sq = 0;
-      let n = 0;
-      for (let y = 1; y < 199; y++) {
-        for (let x = 1; x < 199; x++) {
-          const idx = y * 200 + x;
-          const lap = 4 * g[idx]! - g[idx - 1]! - g[idx + 1]! - g[idx - 200]! - g[idx + 200]!;
-          sum += lap;
-          sq += lap * lap;
-          n++;
-        }
-      }
-      const sharp = sq / n - (sum / n) ** 2;
-      if (sharp > bestSharp) {
-        bestSharp = sharp;
-        bestUrl = out.toDataURL("image/jpeg", 0.92);
-      }
-      await new Promise((r) => setTimeout(r, 55));
+    if (!octx) {
+      capturedRef.current = false;
+      setFlash(false);
+      return;
     }
 
-    // If even the sharpest frame is genuinely soft, don't ship it — resume the
-    // guided scan so the user gets a sharp shot instead of a server blur reject.
-    if (bestSharp >= 0 && bestSharp < MIN_CAPTURE_SHARPNESS) {
+    // Capture the VERIFIED, stable frame IMMEDIATELY — no long burst that could
+    // grab a later, moved/blurred frame and cause a "green then retake" mismatch.
+    // The stability gate already confirmed the face is held still.
+    octx.drawImage(video, cropX, cropY, side, side, 0, 0, OUT, OUT); // real orientation
+
+    // CIRCLE mask: keep only the circular scan area, black out everything
+    // outside it — so the analysis image contains the face circle, never the
+    // background/room/clothes. (destination-in keeps existing pixels only inside
+    // the circle; we then flatten onto black for JPEG.)
+    octx.globalCompositeOperation = "destination-in";
+    octx.beginPath();
+    octx.arc(OUT / 2, OUT / 2, OUT / 2, 0, Math.PI * 2);
+    octx.fill();
+    octx.globalCompositeOperation = "destination-over";
+    octx.fillStyle = "#000";
+    octx.fillRect(0, 0, OUT, OUT);
+    octx.globalCompositeOperation = "source-over";
+
+    // Sharpness floor on the captured frame — a genuinely soft shot resumes the
+    // guided scan instead of shipping a frame the server would reject for blur.
+    const sharp = circleSharpness(octx, OUT);
+    if (sharp >= 0 && sharp < MIN_CAPTURE_SHARPNESS) {
       capturedRef.current = false;
       setFlash(false);
       greenFrames.current = 0;
@@ -250,7 +219,7 @@ export function LiveCapture({
       return;
     }
 
-    const dataUrl = bestUrl ?? out.toDataURL("image/jpeg", 0.92);
+    const dataUrl = out.toDataURL("image/jpeg", 0.92);
     const bytes = Math.round((dataUrl.length - "data:image/jpeg;base64,".length) * 0.75);
     stop();
     onCapture(dataUrl, "image/jpeg", bytes);
@@ -389,10 +358,9 @@ export function LiveCapture({
             lastDetRef.current = det?.boundingBox
               ? { x: det.boundingBox.originX, y: det.boundingBox.originY, w: det.boundingBox.width, h: det.boundingBox.height }
               : null;
-            // Aim the guide ring at the face (or ease back to centre when lost).
-            targetRef.current = det?.boundingBox
-              ? ringFromBox(det.boundingBox, v.videoWidth, v.videoHeight)
-              : { ...DEFAULT_RING };
+            // The circle guide stays FIXED and centred — the user brings their
+            // face into it (validation checks they're centred, sized and still).
+            targetRef.current = { ...DEFAULT_RING };
             // Live tracking dots on the real landmarks the detector returns.
             setMarks(
               det?.keypoints?.length

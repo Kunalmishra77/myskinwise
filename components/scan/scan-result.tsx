@@ -6,7 +6,6 @@ import { Mic, ShieldCheck, Sparkles } from "lucide-react";
 import type { ScanResult, ScanConcern } from "@/lib/skin/types";
 import { CONCERN_META, SEVERITY_LABEL, byConcernSeverity } from "@/lib/skin/concern-content";
 import { Button } from "@/components/ui/button";
-import { RecommendedCombo } from "@/components/products/recommended-combo";
 
 /**
  * Renders the deterministic engine's ScanResult: the user's photo with a
@@ -329,11 +328,16 @@ export function ScanResultView({
             <div className="h-3 w-4/5 animate-pulse rounded bg-ink/10" />
           </div>
         )}
-        {report?.recommendConcern && (
-          <div className="mt-5">
-            <RecommendedCombo concern={report.recommendConcern} />
-          </div>
-        )}
+        {/* NO products here. The results page is about the skin; ingredients and
+            products come later in the guided conversation, only after the user
+            asks for them. */}
+        <div className="mt-5 flex items-start gap-2.5 rounded-2xl bg-blush/50 p-4">
+          <Sparkles aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-rose-ink" />
+          <p className="text-sm text-ink">
+            Want to know which ingredients help these concerns? Talk it through with our expert below —
+            they&apos;ll walk you through the ingredients, and only then any products, step by step.
+          </p>
+        </div>
       </div>
 
       {/* Next steps. */}

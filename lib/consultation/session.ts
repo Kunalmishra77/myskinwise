@@ -59,6 +59,14 @@ export type ConsultSession = {
     features: { label: string; certainty: string }[];
     limitations: string;
   };
+  /**
+   * Products are strictly gated: this flips true only once the user has
+   * explicitly agreed to see products in the guided post-scan conversation.
+   * Until then, no combo/product card is shown anywhere (voice or chat), and it
+   * persists so the combo stays visible through the order step. Shared state, so
+   * Voice and Chat never disagree about whether products were approved.
+   */
+  productsUnlocked?: boolean;
 };
 
 export function getSession(): ConsultSession {

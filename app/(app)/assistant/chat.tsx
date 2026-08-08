@@ -189,6 +189,7 @@ export function AssistantChat() {
             cta?: CtaKind | null;
             recommendConcern?: string;
             showScanCta?: boolean;
+            showProducts?: boolean;
           };
           if (evt.type === "chunk") {
             acc += (acc ? " " : "") + (evt.text ?? "");
@@ -200,6 +201,7 @@ export function AssistantChat() {
             }
           } else if (evt.type === "done") {
             if (added) updateLast({ cta: evt.cta, recommendConcern: evt.recommendConcern, showScanCta: evt.showScanCta });
+            if (evt.showProducts) patchSession({ productsUnlocked: true });
           } else if (evt.type === "error") {
             setError(ASSISTANT.errorGeneric);
           }
@@ -357,7 +359,7 @@ export function AssistantChat() {
             </Link>
           </div>
         )}
-        {lastRecommend && hasScanned && (
+        {lastRecommend && hasScanned && getSession().productsUnlocked && (
           <div className="mt-5">
             <RecommendedCombo concern={lastRecommend} />
           </div>

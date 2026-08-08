@@ -30,7 +30,7 @@ export type CustomerContext = {
 };
 
 export type AssistantOutcome =
-  | { kind: "answer"; text: string; cta: CtaKind | null; recommendConcern?: string; showScanCta?: boolean }
+  | { kind: "answer"; text: string; cta: CtaKind | null; recommendConcern?: string; showScanCta?: boolean; showProducts?: boolean }
   | { kind: "escalation"; text: string; cta: "whatsapp" }
   | { kind: "unavailable"; text: string; cta: "whatsapp" };
 
@@ -195,6 +195,7 @@ export async function respond(
     cta: chooseCta(latest, context),
     recommendConcern: recommendationConcern(messages, context),
     showScanCta: shouldShowScanCta(messages, context),
+    showProducts: shouldShowProducts(messages, context),
   };
 }
 
@@ -282,10 +283,29 @@ export function shouldShowScanCta(messages: ChatTurn[], context?: CustomerContex
   return Boolean(concern);
 }
 
+const AFFIRM_RE = /\b(haan|haa|हाँ|हां|yes|yeah|yep|ok|okay|okey|sure|theek|thik|bilkul|zaroor|zarur|dikhao|dikhaiye|dikha|show|batao|bataiye|please|karo|kardo)\b/i;
+
+/**
+ * Whether to UNLOCK product cards. Products are strictly gated: they appear only
+ * once, post-scan, the user has EXPLICITLY agreed to see them — i.e. the prior
+ * assistant turn asked about products AND the user's latest message is a "yes".
+ * A bare "haan" after the results (which really means "yes, tell me ingredients")
+ * must NOT unlock products — hence the check against the prior question.
+ */
+export function shouldShowProducts(messages: ChatTurn[], context?: CustomerContext): boolean {
+  if (!context?.analysis) return false; // never before a scan
+  const latestUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+  if (!AFFIRM_RE.test(latestUser)) return false;
+  const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant")?.content ?? "";
+  const askedAboutProducts = /\bproducts?\b/i.test(lastAssistant) && /[?？]/.test(lastAssistant);
+  return askedAboutProducts;
+}
+
 export type StreamMeta = {
   cta: CtaKind | null;
   recommendConcern?: string;
   showScanCta?: boolean;
+  showProducts?: boolean;
   fullText: string;
   kind: "answer" | "escalation" | "unavailable";
 };
@@ -339,6 +359,7 @@ export async function* respondStream(
       cta: chooseCta(latest, context),
       recommendConcern: recommendationConcern(messages, context),
       showScanCta: shouldShowScanCta(messages, context),
+      showProducts: shouldShowProducts(messages, context),
       fullText: safe,
       kind: "answer",
     };
@@ -380,6 +401,7 @@ export async function* respondStream(
     cta: chooseCta(latest, context),
     recommendConcern: recommendationConcern(messages, context),
     showScanCta: shouldShowScanCta(messages, context),
+    showProducts: shouldShowProducts(messages, context),
     fullText: full,
     kind: "answer",
   };

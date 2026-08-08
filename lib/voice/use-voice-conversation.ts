@@ -360,6 +360,9 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
                 return copy;
               });
               endTurn = Boolean(evt.endTurn);
+              // Unlock products only when the user has explicitly agreed to see
+              // them (server-gated). Sticky, so the combo stays through ordering.
+              if (evt.showProducts) patchSession({ productsUnlocked: true });
             } else if (evt.type === "error") {
               setNote("Something went wrong. Please try again.");
             }
