@@ -244,6 +244,7 @@ export async function POST(request: Request) {
     cta: "cta" in outcome ? outcome.cta : null,
     kind: outcome.kind,
     recommendConcern: "recommendConcern" in outcome ? outcome.recommendConcern : undefined,
+    showScanCta: "showScanCta" in outcome ? outcome.showScanCta : undefined,
     audioBase64,
     audioMimeType,
   });
@@ -286,7 +287,7 @@ function streamVoice(
           res = await gen.next();
         }
         const meta = res.value;
-        send({ type: "done", cta: meta.cta, recommendConcern: meta.recommendConcern, kind: meta.kind, lang });
+        send({ type: "done", cta: meta.cta, recommendConcern: meta.recommendConcern, showScanCta: meta.showScanCta, kind: meta.kind, lang });
       } catch {
         send({ type: "error", message: "Something went wrong. Please try again." });
       } finally {

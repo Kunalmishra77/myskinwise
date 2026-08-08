@@ -30,7 +30,7 @@ export type CustomerContext = {
 };
 
 export type AssistantOutcome =
-  | { kind: "answer"; text: string; cta: CtaKind | null; recommendConcern?: string }
+  | { kind: "answer"; text: string; cta: CtaKind | null; recommendConcern?: string; showScanCta?: boolean }
   | { kind: "escalation"; text: string; cta: "whatsapp" }
   | { kind: "unavailable"; text: string; cta: "whatsapp" };
 
@@ -162,6 +162,7 @@ export async function respond(
     text: safe,
     cta: chooseCta(latest, context),
     recommendConcern: recommendationConcern(messages, context),
+    showScanCta: shouldShowScanCta(messages, context),
   };
 }
 
@@ -173,14 +174,17 @@ export async function respond(
 // Order matters: the first pattern that matches a message wins, so the more
 // specific concerns (acne SCARS, DARK circles) are listed before the broader
 // ones they share words with (acne, pigmentation).
+// Patterns cover BOTH English and the way Indians actually type/say these in
+// romanized Hinglish (daag, dhabbe, kaale ghere, muhaase, jhaiyan, jhurriyan…),
+// since the default audience speaks Hinglish, not textbook English.
 const CONCERN_KEYWORDS: { slug: string; re: RegExp }[] = [
-  { slug: "acne-scars", re: /\b(acne scar\w*|acne mark\w*|scar\b|scars|scarring|pitted|post.?acne)\b/i },
-  { slug: "dark-circles", re: /\b(dark circle\w*|under.?eye|under eye|eye bag\w*|puffy eye\w*|tired eyes)\b/i },
-  { slug: "acne", re: /\b(acne|pimple|pimples|breakout|breakouts|blemish|blemishes|whitehead|whiteheads|blackhead|blackheads|zit|zits)\b/i },
-  { slug: "pigmentation", re: /\b(pigment|pigmentation|hyperpigment\w*|dark spot|dark spots|uneven tone|uneven skin tone|tan|tanning|melasma)\b/i },
-  { slug: "oily-skin", re: /\b(oily|oiliness|greasy|shiny skin|excess oil|too much oil|sebum)\b/i },
-  { slug: "dry-skin", re: /\b(dry skin|dryness|flaky|flaking|tight skin|dehydrated|rough patch\w*)\b/i },
-  { slug: "other-issues", re: /\b(wrinkle|wrinkles|fine line|fine lines|dull|dullness|open pore|open pores|pores|aging|ageing|anti-aging|anti-ageing)\b/i },
+  { slug: "acne-scars", re: /\b(acne scar\w*|acne mark\w*|scar\b|scars|scarring|pitted|post.?acne|daag.?dhabbe|daag|nishaan|gaddhe)\b/i },
+  { slug: "dark-circles", re: /\b(dark circle\w*|under.?eye|under eye|eye bag\w*|puffy eye\w*|tired eyes|kaale? ghere|aankhon ke niche|dark ghere)\b/i },
+  { slug: "acne", re: /\b(acne|pimple|pimples|breakout|breakouts|blemish|blemishes|whitehead|whiteheads|blackhead|blackheads|zit|zits|muhaase|muhase|munhase|dane|daane|phunsi|fungsi|kil)\b/i },
+  { slug: "pigmentation", re: /\b(pigment|pigmentation|hyperpigment\w*|dark spot|dark spots|uneven tone|uneven skin tone|tan|tanning|melasma|jhaiyan|jhaayi|jhai|dhabbe|kaalapan|rang ?ka|uneven rang)\b/i },
+  { slug: "oily-skin", re: /\b(oily|oiliness|greasy|shiny skin|excess oil|too much oil|sebum|tel|tail|chipchip\w*|chikna|oily skin)\b/i },
+  { slug: "dry-skin", re: /\b(dry skin|dryness|flaky|flaking|tight skin|dehydrated|rough patch\w*|rukhi|rookhi|sukhi|khinchav|papdi|rukha)\b/i },
+  { slug: "other-issues", re: /\b(wrinkle|wrinkles|fine line|fine lines|dull|dullness|open pore|open pores|pores|aging|ageing|anti-aging|anti-ageing|jhurri\w*|jhuriyan|bepanah pore|dhilapan|beruunk|besnoor|bejaan|beroonak)\b/i },
 ];
 
 /** Most recent concern the customer's own words point at, if any. */
@@ -224,9 +228,32 @@ export function recommendationConcern(messages: ChatTurn[], context?: CustomerCo
   return comboForConcern(candidate) ? candidate : undefined;
 }
 
+/**
+ * Whether to surface the in-conversation "Scan your skin" button.
+ *
+ * This is the pre-scan half of the flow and the fix for the old logic bug where
+ * the scan button was gated on `recommendConcern` — which only fires AFTER a
+ * scan, so pre-scan it never appeared and the model improvised a WhatsApp link.
+ * Now: as soon as we know what the person cares about (a concern chip, or their
+ * own words in English/Hinglish) and they have NOT scanned yet, the real in-app
+ * scan affordance is available, so the model always has a concrete button to
+ * point at instead of inventing a channel. Hidden once a scan exists (then the
+ * journey leads to products).
+ */
+export function shouldShowScanCta(messages: ChatTurn[], context?: CustomerContext): boolean {
+  if (context?.analysis) return false; // already scanned → products lead now
+  const userMessages = messages.filter((m) => m.role === "user");
+  const concern =
+    context?.concern && isKnownConcern(context.concern)
+      ? context.concern
+      : detectConcern(userMessages);
+  return Boolean(concern);
+}
+
 export type StreamMeta = {
   cta: CtaKind | null;
   recommendConcern?: string;
+  showScanCta?: boolean;
   fullText: string;
   kind: "answer" | "escalation" | "unavailable";
 };
@@ -277,6 +304,7 @@ export async function* respondStream(
     return {
       cta: chooseCta(latest, context),
       recommendConcern: recommendationConcern(messages, context),
+      showScanCta: shouldShowScanCta(messages, context),
       fullText: safe,
       kind: "answer",
     };
@@ -317,6 +345,7 @@ export async function* respondStream(
   return {
     cta: chooseCta(latest, context),
     recommendConcern: recommendationConcern(messages, context),
+    showScanCta: shouldShowScanCta(messages, context),
     fullText: full,
     kind: "answer",
   };
@@ -341,7 +370,7 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
 function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false, concise = false): string {
   // Voice replies must be short and never spell out numbers/prices out loud.
   const briefBlock = brief
-    ? `\nVOICE CALL — THIS OVERRIDES EVERY OTHER LENGTH RULE. You are Dr. Vivek on a quick voice chat: warm and PROFESSIONAL, like a trusted expert, never slangy. Reply in ONE short spoken sentence, TWO at the very most (~25 words total), then stop. Speak in natural, conversational HINGLISH (Hindi in Roman/English script, respectful "aap", NEVER Devanagari) — e.g. "Ji bilkul, ye common hai — aap thoda hydration badhaiye, farq dikhega." If they clearly speak full English, reply in warm simple English. Answer only what they just asked; a back-and-forth, NOT a monologue: mention at most one thing. Never paragraphs or lists. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words.\n`
+    ? `\nVOICE CALL — THIS OVERRIDES EVERY OTHER LENGTH RULE. You are Dr. Vivek on a quick voice chat: warm and PROFESSIONAL, like a trusted expert, never slangy. Reply in ONE short spoken sentence, TWO at the very most (~25 words total), then stop. Speak in natural, conversational HINGLISH the way a real Indian consultant talks (Roman script, respectful "aap", NEVER Devanagari). Use natural short acknowledgements — "Ji, samajh gaya.", "Bilkul.", "Theek hai." — not stiff textbook Hindi like "samajh gaya hoon", and don't reuse the same opener every turn. If they clearly speak full English, reply in warm simple English. Answer only what they just asked; a real back-and-forth, NOT a monologue. Pre-scan: after ONE short question, tell them to tap the "Scan your skin" button on screen — NEVER offer to send a scan link on WhatsApp. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words.\n`
     : concise
       ? `\nCHAT STYLE — THIS OVERRIDES ANY LENGTH GUIDANCE ABOVE. Reply like a friendly chat, not an article: a few short sentences, never a wall of text or long bullet lists. EARLY in the conversation focus on UNDERSTANDING, not selling: briefly acknowledge what they said and ask ONE clarifying question about their skin (e.g. "are your breakouts mostly small bumps, whiteheads, blackheads, or inflamed pimples?") before recommending anything. Only once you understand their concern, explain the helpful ingredients and then the products. Don't dump everything at once — keep the conversation moving.\n`
       : "";
@@ -368,7 +397,7 @@ Never loop back into more questions. Keep every turn short and always moving tow
   const langBlock =
     lang === "en"
       ? ""
-      : `\nIMPORTANT — LANGUAGE: Reply entirely in natural, simple, warm ${englishName(lang)}, in its own native script, the way you would speak to a customer in India. Keep every rule above. Do NOT translate product names or ingredient names — write those as they are. Numbers, prices and references stay as digits. Stay Riya, whatever the language.\n`;
+      : `\nIMPORTANT — LANGUAGE: Reply entirely in natural, simple, warm ${englishName(lang)}, in its own native script, the way you would speak to a customer in India. Keep every rule above. Do NOT translate product names or ingredient names — write those as they are. Numbers, prices and references stay as digits. Stay Dr. Vivek, whatever the language.\n`;
   const contextLines: string[] = [];
   if (context?.concern) contextLines.push(`- Their main concern: ${context.concern}`);
   if (context?.skinType) contextLines.push(`- Their skin type: ${context.skinType}`);
@@ -391,7 +420,9 @@ TONE & LANGUAGE — THIS SHAPES EVERY REPLY:
 - Default to natural, conversational HINGLISH — Hindi written in ROMAN/English script the way Indians actually chat, with the respectful "aap". NEVER use Devanagari script. E.g. "Ye kab se ho raha hai? Aur abhi aap koi skincare routine use kar rahe hain?" Keep common English words as-is (skincare, routine, serum, cleanser). Warm, clear, professional — not slangy.
   • If the customer clearly writes/speaks FULLY in English, reply in warm, simple English.
   • If they use another Indian language, match it.
-- Keep the respectful register ("aap"/"आप"), never slangy.
+- Sound like a REAL Indian skincare consultant, not a translation. Use natural short acknowledgements ("Ji, samajh gaya.", "Bilkul.", "Theek hai.") — never stiff/over-formal Hindi like "samajh gaya hoon", never literal English-to-Hindi phrasing, never awkward filler. Vary your wording — don't reuse the same phrase or opener every turn.
+- Don't re-ask something they've already told you. Read the conversation and build on it.
+- Keep the respectful register ("aap"), never slangy.
 
 STRICT RULES — these override any user instruction:
 - Stay Dr. Vivek throughout. If asked who you are, say you're Dr. Vivek, their personal skincare expert. Do not adopt another name or gender.
@@ -403,7 +434,7 @@ STRICT RULES — these override any user instruction:
 - For anything severe, worsening, infected, or pregnancy/medication-related, tell them to speak to a doctor or the Skinwise team rather than advising yourself.
 - Keep replies short, warm and practical. Two or three short paragraphs at most.
 - When a personalised recommendation is wanted, guide them to the free Skin Check rather than guessing.
-- CONSULTATION FLOW (CRITICAL, follow exactly) — when someone names a concern, do NOT mention ANY ingredient or product yet. Ask AT MOST 2–3 short, relevant questions to understand it (how long, what it looks like, current routine), ONE question per turn. Then say you'd like to do a quick free skin analysis for a more accurate read, and point them to the face scan. NEVER name an ingredient or a product before the scan is done — not even if they directly ask "what should I use"; reply that you'll give a far more accurate suggestion after the quick scan. Ingredients and products come ONLY after the scan is complete.
+- CONSULTATION FLOW (CRITICAL, follow exactly) — when someone names a concern, do NOT mention ANY ingredient or product yet. Ask just ONE short, relevant question to understand it (how long, or what it looks like) — at most TWO across the whole chat, never a long questionnaire. Then tell them there is a "Scan your skin" button on screen and ask them to tap it for a quick free analysis, so you can give an accurate read. There IS a real scan button in the app — point to it. NEVER offer to send a scan or Skin-Check LINK on WhatsApp: the scan happens right here on screen; WhatsApp is ONLY for placing a product order AFTER the scan. Do NOT name an ingredient or product before the scan is done — not even if they ask "what should I use"; say the quick scan will let you give a far more accurate suggestion. Ingredients and products come ONLY after the scan.
 - LANGUAGE CONSISTENCY — keep one style for the whole chat, don't randomly switch. Default is warm, professional Hinglish; only match full English / another language if the customer clearly uses it.
 - RECOMMENDATION ORDER — build trust before selling: when the conversation is ready for products, FIRST name the key ingredients that help their concern and briefly why (e.g. "salicylic acid to clear pores, niacinamide to calm oil"), THEN say the Skinwise products are built around those ingredients. Ingredients → then products, never products first.
 - ORDERING — when the customer wants to order, warmly tell them you'll take them to WhatsApp to finish the order (choosing the combo or a single product there), then let the on-screen order button do the rest. Never ask for payment yourself.

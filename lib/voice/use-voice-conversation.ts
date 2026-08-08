@@ -22,6 +22,8 @@ export type VoiceTurn = {
   cta?: CtaKind | null;
   /** When set, the UI shows a catalogue-derived combo for this concern. */
   recommendConcern?: string;
+  /** Pre-scan: show the in-app "Scan your skin" button for this turn. */
+  showScanCta?: boolean;
 };
 
 /**
@@ -346,6 +348,7 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
                     ...last,
                     cta: (evt.cta as VoiceTurn["cta"]) ?? null,
                     recommendConcern: evt.recommendConcern as string | undefined,
+                    showScanCta: Boolean(evt.showScanCta),
                   };
                 }
                 return copy;

@@ -20,6 +20,8 @@ type Msg = {
   cta?: CtaKind | null;
   /** When set, the client shows a catalogue-derived combo for this concern. */
   recommendConcern?: string;
+  /** Pre-scan: show the in-app "Scan your skin" button for this turn. */
+  showScanCta?: boolean;
 };
 
 type ConcernSlug =
@@ -150,7 +152,7 @@ export function AssistantChat() {
         const data = await res.json();
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.text, cta: data.cta, recommendConcern: data.recommendConcern },
+          { role: "assistant", content: data.text, cta: data.cta, recommendConcern: data.recommendConcern, showScanCta: data.showScanCta },
         ]);
         return;
       }
@@ -183,6 +185,7 @@ export function AssistantChat() {
             text?: string;
             cta?: CtaKind | null;
             recommendConcern?: string;
+            showScanCta?: boolean;
           };
           if (evt.type === "chunk") {
             acc += (acc ? " " : "") + (evt.text ?? "");
@@ -193,7 +196,7 @@ export function AssistantChat() {
               updateLast({ content: acc });
             }
           } else if (evt.type === "done") {
-            if (added) updateLast({ cta: evt.cta, recommendConcern: evt.recommendConcern });
+            if (added) updateLast({ cta: evt.cta, recommendConcern: evt.recommendConcern, showScanCta: evt.showScanCta });
           } else if (evt.type === "error") {
             setError(ASSISTANT.errorGeneric);
           }
@@ -214,6 +217,8 @@ export function AssistantChat() {
   // than stacking a new one under every turn.
   const last = messages[messages.length - 1];
   const lastRecommend = !busy && last?.role === "assistant" ? last.recommendConcern : undefined;
+  const lastShowScan = !busy && last?.role === "assistant" ? last.showScanCta : undefined;
+  const hasScanned = Boolean(getSession().analysisReference);
 
   return (
     <div className="mx-auto flex h-[calc(100dvh-3.5rem-var(--spacing-bottom-nav))] w-full max-w-2xl flex-col px-4 lg:h-[calc(100dvh-4rem)]">
@@ -332,18 +337,25 @@ export function AssistantChat() {
             )}
           </ul>
         )}
-        {lastRecommend && (
-          <div className="mt-5 flex flex-col gap-4">
+        {/* Pre-scan: the in-app face-scan button (the real next step). Post-scan:
+            the matched product combo. Never both — the journey has one clear
+            forward action at a time. */}
+        {(lastShowScan || lastRecommend) && !hasScanned && (
+          <div className="mt-5">
             {/* Chat → Scan handoff: same consultation continues with a face
                 scan; the concern carries across. */}
             <Link
               href="/skin-check/analyzer"
-              onClick={() => patchSession({ concern: lastRecommend })}
+              onClick={() => lastRecommend && patchSession({ concern: lastRecommend })}
               className="flex items-center justify-center gap-2 rounded-full border border-rose-ink/30 bg-blush px-5 py-3 text-sm font-semibold text-rose-ink transition hover:bg-blush/70"
             >
               <ScanFace aria-hidden="true" className="size-4" />
               {t("voice.scanCta")}
             </Link>
+          </div>
+        )}
+        {lastRecommend && hasScanned && (
+          <div className="mt-5">
             <RecommendedCombo concern={lastRecommend} />
           </div>
         )}

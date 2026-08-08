@@ -71,6 +71,9 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
 
   const lastTurn = turns[turns.length - 1];
   const lastRecommend = !busy && lastTurn?.role === "assistant" ? lastTurn.recommendConcern : undefined;
+  // Pre-scan, the model surfaces the in-app scan button via showScanCta — a real
+  // affordance so it never has to improvise a WhatsApp link for the scan.
+  const lastShowScan = !busy && lastTurn?.role === "assistant" ? lastTurn.showScanCta : undefined;
 
   // Whether the user arrived from a fresh scan Riya hasn't narrated yet — used
   // to invite them to hear their results. `hasScanned` tells the two halves of
@@ -159,11 +162,11 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
             here is premature and pushed the scan button out of view). AFTER a
             scan the journey ends in products, so we show the combo with its
             WhatsApp order button. */}
-        {lastRecommend && !hasScanned && (
+        {(lastShowScan || (lastRecommend && !hasScanned)) && !hasScanned && (
           <div className="mt-3">
             <Link
               href="/skin-check/analyzer"
-              onClick={() => patchSession({ concern: lastRecommend })}
+              onClick={() => lastRecommend && patchSession({ concern: lastRecommend })}
               className="flex items-center justify-center gap-2 rounded-full border border-rose-ink/30 bg-blush px-5 py-3 text-sm font-semibold text-rose-ink transition hover:bg-blush/70"
             >
               <ScanFace aria-hidden="true" className="size-4" />
