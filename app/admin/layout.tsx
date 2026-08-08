@@ -31,6 +31,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <Link href="/admin/orders" className="text-ink-soft hover:text-rose-ink">
               Orders
             </Link>
+            <Link href="/admin/review" className="text-ink-soft hover:text-rose-ink">
+              Review
+            </Link>
           </nav>
           {session && <SignOut name={session.name} />}
         </div>

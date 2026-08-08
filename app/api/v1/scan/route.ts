@@ -49,7 +49,10 @@ export async function POST(request: Request) {
   if (outcome.ok) {
     // Save against the lead so the scan shows in the admin Leads funnel
     // ("Skin Scan completed"). Best-effort — never fails the scan.
-    const reference = await persistScan(outcome.result, parsed.data.leadId);
+    const reference = await persistScan(outcome.result, parsed.data.leadId, {
+      base64: parsed.data.imageBase64,
+      contentType: parsed.data.contentType,
+    });
     void logEvent("analyzer_completed", { engine: "deterministic" });
     return NextResponse.json({ status: "completed", result: outcome.result, reference }, { status: 201 });
   }
