@@ -88,6 +88,21 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
     setHasScanned(Boolean(s.analysisReference));
   }, [turns]);
 
+  // Part 5 — arriving from a fresh scan ("Hear your results"), the expert starts
+  // narrating automatically; the user shouldn't need a second tap. Best-effort:
+  // if the browser blocks audio autoplay after navigation, the reply still shows
+  // and one tap plays it.
+  const autoStartedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (autoStartedRef.current) return;
+    const s = getSession();
+    if (s.analysisReference && s.analysisReference !== s.explainedRef) {
+      autoStartedRef.current = true;
+      toggle();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="flex h-full flex-col bg-warm">
       {/* Persona header */}

@@ -302,6 +302,9 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
         let firstChunk = true;
         let sawAudio = false;
         let sawChunk = false;
+        // Set when the reply is a scan/order hand-off — the agent then goes
+        // silent and does NOT resume listening (the UI owns the interaction).
+        let endTurn = false;
         for (;;) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -356,17 +359,25 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
                 }
                 return copy;
               });
+              endTurn = Boolean(evt.endTurn);
             } else if (evt.type === "error") {
               setNote("Something went wrong. Please try again.");
             }
           }
         }
 
-        // Stream finished. When the queued audio drains, hand back to the mic.
+        // Stream finished. When the queued audio drains, hand back to the mic —
+        // UNLESS this was a hand-off turn (scan/order CTA), in which case the
+        // agent goes SILENT and stops listening so the user can tap the button.
         const onDrained = () => {
           teardownBarge();
           if (bargingRef.current) {
             bargingRef.current = false;
+            return;
+          }
+          if (endTurn) {
+            activeRef.current = false; // WAITING_FOR_SCAN / ORDER_CTA — voice off, mic off
+            setState("idle");
             return;
           }
           if (activeRef.current && autoListen) void startListening();
@@ -378,7 +389,8 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
           onDrained();
         } else {
           setState("idle");
-          if (activeRef.current && autoListen) void startListening();
+          if (!endTurn && activeRef.current && autoListen) void startListening();
+          else if (endTurn) activeRef.current = false;
         }
       } catch {
         if (ac.signal.aborted) return; // barged / cancelled — handled elsewhere

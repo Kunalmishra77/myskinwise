@@ -17,7 +17,8 @@ import { ImageUp, Camera } from "lucide-react";
  * back to a manual capture button and a plain upload.
  */
 
-const GREEN_FRAMES_TO_CAPTURE = 12; // ~1.1s of sustained, STILL "good" before the shutter
+const VALIDATE_FRAMES = 5; // ~0.45s of steady validation before the ring goes GREEN
+const GREEN_FRAMES_TO_CAPTURE = 13; // ~1.2s of sustained, STILL "good" before the shutter
 const DETECT_EVERY_MS = 90; // throttle detection to ~11fps
 
 // Absolute floor for the burst's sharpness (Laplacian variance on the 200px
@@ -383,8 +384,6 @@ export function LiveCapture({
             const res = detectorRef.current.detectForVideo(v, now);
             const det = res.detections?.[0];
             const verdict = evaluate(det, v.videoWidth, v.videoHeight);
-            setHint(verdict.hint);
-            setGood(verdict.ok);
             if (debugOn) setDbg({ ...verdict.dbg, hint: verdict.hint, ok: verdict.ok });
             // Remember the face box (raw video px) so grab() can crop to it.
             lastDetRef.current = det?.boundingBox
@@ -415,8 +414,21 @@ export function LiveCapture({
               greenFrames.current += 1;
             } else {
               greenFrames.current = 0;
-              if (verdict.ok && !stable) setHint("Almost there — hold still");
             }
+            // GREEN only after a real validation period of steady, valid framing
+            // (RED = still validating), so it can't snap green the instant a face
+            // appears. Then a further hold confirms a stable frame before capture.
+            const verified = greenFrames.current >= VALIDATE_FRAMES;
+            setGood(verified);
+            setHint(
+              verified
+                ? "Perfect — hold still"
+                : verdict.ok && !stable
+                  ? "Almost there — hold still"
+                  : verdict.ok
+                    ? "Checking…"
+                    : verdict.hint,
+            );
             setProgress(Math.min(1, greenFrames.current / GREEN_FRAMES_TO_CAPTURE));
             if (greenFrames.current >= GREEN_FRAMES_TO_CAPTURE) {
               grab();

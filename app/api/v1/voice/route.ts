@@ -11,6 +11,17 @@ import { logEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 
+/**
+ * A "hand-off" turn: the assistant has told the user to tap a button (scan or
+ * order) and there is nothing more to say. The client uses this to STOP audio
+ * and STOP listening — the UI now owns the interaction, so the agent doesn't
+ * keep talking or listening in the background.
+ */
+function isHandoffTurn(text: string, showScanCta?: boolean): boolean {
+  if (showScanCta) return true; // guiding to the scan → wait for the tap
+  return /order/i.test(text) && /(button|tap|टैप|दबा|दबाइए|dabaiye)/i.test(text);
+}
+
 // Voice turns cost STT + LLM + TTS, so the ceiling is tighter than text
 // chat: 15 turns per IP per 5 minutes.
 const voiceLimiter = new MemoryRateLimiter(15, 5 * 60 * 1000);
@@ -285,6 +296,8 @@ export async function POST(request: Request) {
     kind: outcome.kind,
     recommendConcern: "recommendConcern" in outcome ? outcome.recommendConcern : undefined,
     showScanCta: "showScanCta" in outcome ? outcome.showScanCta : undefined,
+    // Tell the client to stop audio + listening after a scan/order hand-off.
+    endTurn: isHandoffTurn(outcome.text, "showScanCta" in outcome ? outcome.showScanCta : undefined),
     audioBase64,
     audioMimeType,
   });
@@ -328,7 +341,15 @@ function streamVoice(
           res = await gen.next();
         }
         const meta = res.value;
-        send({ type: "done", cta: meta.cta, recommendConcern: meta.recommendConcern, showScanCta: meta.showScanCta, kind: meta.kind, lang });
+        send({
+          type: "done",
+          cta: meta.cta,
+          recommendConcern: meta.recommendConcern,
+          showScanCta: meta.showScanCta,
+          endTurn: isHandoffTurn(meta.fullText, meta.showScanCta),
+          kind: meta.kind,
+          lang,
+        });
       } catch {
         send({ type: "error", message: "Something went wrong. Please try again." });
       } finally {

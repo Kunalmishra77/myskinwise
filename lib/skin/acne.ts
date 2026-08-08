@@ -77,19 +77,29 @@ export async function detectAcne(imageBase64: string): Promise<AcneResult | null
     if (!res.ok) return null;
     const data = await res.json();
     const preds: RoboflowPred[] = (data?.predictions ?? []).filter((p: RoboflowPred) => (p.confidence ?? 0) >= CONF_MIN);
-    const count = preds.length;
     // Normalise each box to the image so the front-end can overlay it exactly.
     const iw = Number(data?.image?.width) || 0;
     const ih = Number(data?.image?.height) || 0;
-    const boxes: AcneBox[] =
+    const raw: AcneBox[] =
       iw > 0 && ih > 0
         ? preds.map((p) => ({ cx: (p.x ?? 0) / iw, cy: (p.y ?? 0) / ih, w: (p.width ?? 0) / iw, h: (p.height ?? 0) / ih }))
         : [];
+    // FACE-ONLY: the capture is cropped face-centred (face at ~0.5, 0.46), so any
+    // detection outside the central face ellipse is hair / clothes / background,
+    // NOT skin — drop it. This is what stops the scanner "finding acne" on the
+    // wall or a collar (the engine's own concerns are already skin-masked).
+    const inFace = (b: AcneBox) => {
+      const dx = (b.cx - 0.5) / 0.4;
+      const dy = (b.cy - 0.46) / 0.46;
+      return dx * dx + dy * dy <= 1;
+    };
+    const boxes = raw.filter(inFace);
+    const count = boxes.length;
     return {
       score: interp(count),
       severity: severity(count),
       confidence: 0.6, // Beta model — modest confidence
-      raw: { lesion_count: count, source: "roboflow", model },
+      raw: { lesion_count: count, detected_total: raw.length, source: "roboflow", model },
       boxes,
     };
   } catch {
