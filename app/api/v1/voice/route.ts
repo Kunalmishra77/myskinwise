@@ -18,8 +18,13 @@ export const runtime = "nodejs";
  * keep talking or listening in the background.
  */
 function isHandoffTurn(text: string, showScanCta?: boolean): boolean {
-  if (showScanCta) return true; // guiding to the scan → wait for the tap
-  return /order/i.test(text) && /(button|tap|टैप|दबा|दबाइए|dabaiye)/i.test(text);
+  // If the reply asks the user something, it is NOT a hand-off — the agent needs
+  // to keep listening for the answer. Only a pure "tap the button" instruction
+  // (scan or order) with no pending question ends the turn.
+  if (/[?？]/.test(text)) return false;
+  const pointsToButton = /(button|बटन|tap|टैप|दबा|दबाइए|dabaiye)/i.test(text);
+  if (!pointsToButton) return false;
+  return Boolean(showScanCta) || /(scan|order)/i.test(text);
 }
 
 // Voice turns cost STT + LLM + TTS, so the ceiling is tighter than text
