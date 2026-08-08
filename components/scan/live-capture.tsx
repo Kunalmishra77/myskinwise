@@ -20,6 +20,18 @@ import { ImageUp, Camera } from "lucide-react";
 const GREEN_FRAMES_TO_CAPTURE = 14; // ~0.9s of sustained "good" before the shutter
 const DETECT_EVERY_MS = 90; // throttle detection to ~11fps
 
+// The engine's capture gate measures distance by ABSOLUTE interpupillary
+// distance in pixels (max 260px). A high-res phone camera (2000px+ wide) makes
+// even a well-framed face exceed that, which is why users saw a surprise "Move
+// back a little" 422. We cap the captured image's longest side so the pixel
+// geometry the engine sees is predictable and lands inside its comfort band.
+const MAX_CAPTURE_LONG_EDGE = 1280;
+// Absolute floor for the burst's sharpness (Laplacian variance on the 200px
+// downscale). If even the sharpest of the burst is below this, the frame is
+// genuinely soft — don't ship it, keep guiding instead of surprising the user
+// with a server blur reject.
+const MIN_CAPTURE_SHARPNESS = 6;
+
 // Guide-ring geometry lives in the SVG's 100×133 viewBox. This is where the ring
 // rests before a face is found (and where it eases back to when one is lost).
 const VB_W = 100;
@@ -89,6 +101,7 @@ export function LiveCapture({
   const streamRef = React.useRef<MediaStream | null>(null);
   const detectorRef = React.useRef<FaceDetectorLike | null>(null);
   const rafRef = React.useRef<number | null>(null);
+  const loopRef = React.useRef<(() => void) | null>(null);
   const metricCanvas = React.useRef<HTMLCanvasElement | null>(null);
   const greenFrames = React.useRef(0);
   const lastDetect = React.useRef(0);
@@ -117,8 +130,14 @@ export function LiveCapture({
     capturedRef.current = true;
     setFlash(true);
 
-    const w = video.videoWidth;
-    const h = video.videoHeight;
+    // Cap the captured resolution so the face's pixel geometry (interpupillary
+    // distance) stays inside the engine gate's absolute-pixel bounds regardless
+    // of the phone's native camera resolution.
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const scale = Math.min(1, MAX_CAPTURE_LONG_EDGE / Math.max(vw, vh));
+    const w = Math.round(vw * scale);
+    const h = Math.round(vh * scale);
     const full = document.createElement("canvas");
     full.width = w;
     full.height = h;
@@ -158,6 +177,19 @@ export function LiveCapture({
         bestUrl = full.toDataURL("image/jpeg", 0.92);
       }
       await new Promise((r) => setTimeout(r, 55));
+    }
+
+    // If even the sharpest frame is genuinely soft, don't ship it — resume the
+    // guided scan so the user gets a sharp shot instead of a server blur reject.
+    if (bestSharp >= 0 && bestSharp < MIN_CAPTURE_SHARPNESS) {
+      capturedRef.current = false;
+      setFlash(false);
+      greenFrames.current = 0;
+      setProgress(0);
+      setGood(false);
+      setHint("Hold steady — let's get a sharper shot");
+      if (loopRef.current) rafRef.current = requestAnimationFrame(loopRef.current);
+      return;
     }
 
     const dataUrl = bestUrl ?? full.toDataURL("image/jpeg", 0.92);
@@ -210,14 +242,30 @@ export function LiveCapture({
       const cx = (bb.originX + bb.width / 2) / vw;
       const cy = (bb.originY + bb.height / 2) / vh;
       const size = bb.width / vw;
+      const kp = det.keypoints ?? [];
 
-      if (size < 0.26) return { ok: false, hint: "Come a little closer" };
-      if (size > 0.66) return { ok: false, hint: "Move back a little" };
+      // Distance via the ACTUAL interpupillary distance, measured in the pixels
+      // of the image we will actually send (after the capture-resolution cap).
+      // This mirrors the engine gate's own IPD check (90–260px) so the on-camera
+      // guidance and the server agree — no more surprise "Move back" 422s.
+      if (kp[0] && kp[1]) {
+        const capScale = Math.min(1, MAX_CAPTURE_LONG_EDGE / Math.max(vw, vh));
+        const ipdPx = Math.hypot(
+          (kp[0].x - kp[1].x) * vw * capScale,
+          (kp[0].y - kp[1].y) * vh * capScale,
+        );
+        if (ipdPx < 105) return { ok: false, hint: "Come a little closer" };
+        if (ipdPx > 235) return { ok: false, hint: "Move back a little" };
+      } else {
+        // No eye keypoints — fall back to a conservative box-size band.
+        if (size < 0.28) return { ok: false, hint: "Come a little closer" };
+        if (size > 0.52) return { ok: false, hint: "Move back a little" };
+      }
+
       if (Math.abs(cx - 0.5) > 0.14) return { ok: false, hint: cx < 0.5 ? "Move a bit right" : "Move a bit left" };
       if (Math.abs(cy - 0.5) > 0.16) return { ok: false, hint: cy < 0.5 ? "Move down a little" : "Move up a little" };
 
       // Straightness from the two eye keypoints (0=right eye, 1=left eye).
-      const kp = det.keypoints ?? [];
       if (kp[0] && kp[1] && kp[2]) {
         const dy = Math.abs(kp[0].y - kp[1].y);
         const dx = Math.abs(kp[0].x - kp[1].x) || 1e-3;
@@ -310,6 +358,7 @@ export function LiveCapture({
         setRing(next);
         rafRef.current = requestAnimationFrame(loop);
       };
+      loopRef.current = loop; // so grab() can resume the scan after a soft frame
       rafRef.current = requestAnimationFrame(loop);
     } catch {
       setStatus("blocked");

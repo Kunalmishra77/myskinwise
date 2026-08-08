@@ -4,11 +4,15 @@ import * as React from "react";
 import { Check } from "lucide-react";
 
 /**
- * Premium "analyzing" screen. The engine runs a fixed pipeline — gate →
- * normalise → region segmentation → per-metric measurement → scoring — so these
- * stages are HONEST: each label names a real step the engine performs. A scan
- * line sweeps the user's own photo while it runs, so it reads as active analysis
- * rather than a generic spinner.
+ * The "analysing" screen. It is REQUEST-DRIVEN, not a fake timer: it walks the
+ * honest pipeline stages while the scan is genuinely in flight, but it NEVER
+ * shows everything complete on its own — the final stage stays live (pulsing)
+ * until the real result arrives and the parent swaps this screen out. So the
+ * user never sees a full green checklist and then a failure. A scan line sweeps
+ * their own photo so it reads as active analysis.
+ *
+ * The engine's fixed pipeline is gate -> normalise -> region segmentation ->
+ * per-metric measurement -> scoring, so each label names a real step.
  */
 
 const STAGES = [
@@ -20,16 +24,22 @@ const STAGES = [
 ];
 
 export function Analyzing({ photo }: { photo: string }) {
+  // Advance through the stages, but STOP at the last one and hold there
+  // (pulsing) until the parent unmounts us with the real result. The last
+  // stage is never auto-checked — completion only happens for real.
   const [stage, setStage] = React.useState(0);
   React.useEffect(() => {
-    // Advance through the stages over ~4.5s (about the real end-to-end time).
-    const timers = STAGES.map((_, i) => setTimeout(() => setStage(i + 1), 700 + i * 850));
+    const last = STAGES.length - 1;
+    const timers = STAGES.slice(0, last).map((_, i) =>
+      setTimeout(() => setStage((s) => Math.max(s, i + 1)), 650 + i * 750),
+    );
     return () => timers.forEach(clearTimeout);
   }, []);
 
   return (
     <div className="pt-2">
       <h1 className="font-display text-3xl font-semibold text-ink">Analysing your skin…</h1>
+      <p className="mt-1.5 text-sm text-ink-soft">This takes a few seconds — please hold still.</p>
 
       <div className="relative mx-auto mt-6 aspect-[3/4] w-full overflow-hidden rounded-3xl bg-plum shadow-soft">
         {/* eslint-disable-next-line @next/next/no-img-element -- local data URL */}
@@ -43,8 +53,11 @@ export function Analyzing({ photo }: { photo: string }) {
 
       <ul className="mx-auto mt-6 flex max-w-sm flex-col gap-2.5">
         {STAGES.map((label, i) => {
-          const done = stage > i;
-          const active = stage === i;
+          const isLast = i === STAGES.length - 1;
+          // The last stage never auto-completes; it stays "active" until the
+          // real result replaces this screen.
+          const done = stage > i && !isLast;
+          const active = stage === i || (isLast && stage >= i);
           return (
             <li key={label} className="flex items-center gap-3">
               <span

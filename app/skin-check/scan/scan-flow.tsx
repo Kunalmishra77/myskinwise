@@ -40,6 +40,9 @@ export function ScanFlow() {
   const [consent, setConsent] = React.useState(false);
   const [result, setResult] = React.useState<ScanResult | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
+  // A one-line guidance shown at the top of the camera after a capture-quality
+  // reject, so a retake is a guided correction, not a mystery.
+  const [retryHint, setRetryHint] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -48,6 +51,7 @@ export function ScanFlow() {
 
   async function handleImage(dataUrl: string, type: string, bytes: number, opts?: { skipQuality?: boolean }) {
     setMessage(null);
+    setRetryHint(null);
     if (!["image/jpeg", "image/png", "image/webp"].includes(type)) return setMessage("Please choose a JPG, PNG or WebP image.");
     if (bytes > MAX_BYTES) return setMessage("That image is over 8MB. Please choose a smaller one.");
     // A live auto-captured frame is already vetted by the on-camera gate — only
@@ -80,8 +84,14 @@ export function ScanFlow() {
         setResult(data.result);
         setStage("result");
       } else if (res.status === 422) {
-        setMessage(data.failure?.user_message ?? "That photo needs a retake.");
-        setStage("quality");
+        // Capture-quality reject: DON'T dead-end. Send them straight back to the
+        // live camera with the engine's one specific instruction ("Move back a
+        // little", "Look straight at the camera"…) so they just adjust and the
+        // camera re-captures. No jarring "analysing → fail" screen.
+        setPreview(null);
+        setConsent(false);
+        setRetryHint(data.failure?.user_message ?? "Let's retake that — hold steady and keep your whole face in the frame.");
+        setStage("intro");
       } else if (res.status === 429) {
         setMessage("You've scanned a lot just now — please wait a little while.");
         setStage("error");
@@ -100,6 +110,7 @@ export function ScanFlow() {
     setResult(null);
     setConsent(false);
     setMessage(null);
+    setRetryHint(null);
     setStage("intro");
   }
 
@@ -117,6 +128,12 @@ export function ScanFlow() {
 
         {stage === "intro" && (
           <div>
+            {retryHint ? (
+              <div role="status" className="mb-4 rounded-2xl border-l-4 border-rose-ink bg-blush/70 p-3.5">
+                <p className="text-sm font-semibold text-rose-ink">Almost there — let&apos;s retake</p>
+                <p className="mt-0.5 text-sm text-ink">{retryHint}</p>
+              </div>
+            ) : null}
             <h1 className="font-display text-3xl font-semibold text-ink">Scan your skin.</h1>
             <p className="mt-2 text-sm text-ink-soft">
               Capture a clear, evenly lit, straight-on photo. Our engine measures shine, redness,

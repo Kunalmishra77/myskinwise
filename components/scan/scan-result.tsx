@@ -25,6 +25,19 @@ const SEV_TONE: Record<string, string> = {
   significant: "bg-rose-ink text-white",
 };
 
+// Qualitative severity band (NO fake /100 numbers — the anchors aren't
+// population-calibrated yet, so we surface the honest severity level instead).
+const SEV_STEPS = ["clear", "mild", "moderate", "significant"] as const;
+const SEV_STEP_LABEL = ["Clear", "Mild", "Moderate", "Noticeable"];
+function severityIndex(sev: string | null): number {
+  const i = SEV_STEPS.indexOf((sev ?? "") as (typeof SEV_STEPS)[number]);
+  return i < 0 ? 0 : i;
+}
+
+// Acne is intentionally hidden until the self-trained engine model ships — we
+// don't show a concern we can't yet measure trustworthily.
+const HIDDEN_CONCERNS = new Set(["acne"]);
+
 function rgba([r, g, b]: [number, number, number], a: number) {
   return `rgba(${r},${g},${b},${a})`;
 }
@@ -63,7 +76,7 @@ export function ScanResultView({
   }, [result]);
 
   const shown = result.concerns
-    .filter((c) => c.score !== null)
+    .filter((c) => c.score !== null && !HIDDEN_CONCERNS.has(c.id))
     .slice()
     .sort(byConcernSeverity);
   const tone = result.skin_tone;
@@ -116,8 +129,9 @@ export function ScanResultView({
       <div className="mt-5 flex items-start gap-2.5 rounded-2xl bg-blush/60 p-3.5">
         <Sparkles aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-rose-ink" />
         <p className="text-sm text-ink">
-          A cosmetic measurement of what the photo shows — not a medical diagnosis. Scores are 0–100,
-          higher is clearer. Still calibrating (Beta).
+          A cosmetic measurement of what the photo shows — not a medical diagnosis. Each concern is
+          rated by how noticeable it looks, and you can see exactly where on your photo. Still
+          calibrating (Beta).
         </p>
       </div>
 
@@ -151,8 +165,8 @@ export function ScanResultView({
         {shown.map((c) => {
           const meta = CONCERN_META[c.id];
           const isActive = active === c.id;
-          const score = c.score ?? 0;
           const sev = c.severity ?? "";
+          const sevIdx = severityIndex(c.severity);
           return (
             <li
               key={c.id}
@@ -180,16 +194,23 @@ export function ScanResultView({
                 )}
               </button>
 
+              {/* Honest severity meter — 4 qualitative steps, not a fake number. */}
               <div className="mt-3 px-4">
-                <div className="flex items-baseline justify-between text-xs">
-                  <span className="font-medium text-ink-soft">Clarity score</span>
-                  <span className="font-semibold text-ink">{score}/100</span>
+                <div className="flex items-center gap-1.5">
+                  {SEV_STEP_LABEL.map((_, i) => (
+                    <span
+                      key={i}
+                      className="h-1.5 flex-1 rounded-full transition-colors duration-500"
+                      style={{
+                        backgroundColor:
+                          i <= sevIdx ? rgba(meta?.rgb ?? [180, 60, 100], 0.9) : "rgba(20,10,15,0.08)",
+                      }}
+                    />
+                  ))}
                 </div>
-                <div className="mt-1 h-2 overflow-hidden rounded-full bg-ink/10">
-                  <div
-                    className="h-full rounded-full transition-[width] duration-500"
-                    style={{ width: `${score}%`, backgroundColor: rgba(meta?.rgb ?? [180, 60, 100], 0.9) }}
-                  />
+                <div className="mt-1.5 flex justify-between text-[11px] text-ink-soft">
+                  <span className={sevIdx === 0 ? "font-semibold text-ink" : ""}>Clear</span>
+                  <span className={sevIdx >= 3 ? "font-semibold text-ink" : ""}>Noticeable</span>
                 </div>
               </div>
 
