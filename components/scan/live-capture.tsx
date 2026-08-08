@@ -20,17 +20,17 @@ import { ImageUp, Camera } from "lucide-react";
 const GREEN_FRAMES_TO_CAPTURE = 14; // ~0.9s of sustained "good" before the shutter
 const DETECT_EVERY_MS = 90; // throttle detection to ~11fps
 
-// The engine's capture gate measures distance by ABSOLUTE interpupillary
-// distance in pixels (max 260px). A high-res phone camera (2000px+ wide) makes
-// even a well-framed face exceed that, which is why users saw a surprise "Move
-// back a little" 422. We cap the captured image's longest side so the pixel
-// geometry the engine sees is predictable and lands inside its comfort band.
-const MAX_CAPTURE_LONG_EDGE = 1280;
 // Absolute floor for the burst's sharpness (Laplacian variance on the 200px
 // downscale). If even the sharpest of the burst is below this, the frame is
 // genuinely soft — don't ship it, keep guiding instead of surprising the user
 // with a server blur reject.
 const MIN_CAPTURE_SHARPNESS = 6;
+
+type Verdict = {
+  ok: boolean;
+  hint: string;
+  dbg: { size?: number; luma?: number; sharp?: number; yaw?: number; roll?: number };
+};
 
 // Guide-ring geometry lives in the SVG's 100×133 viewBox. This is where the ring
 // rests before a face is found (and where it eases back to when one is lost).
@@ -130,6 +130,9 @@ export function LiveCapture({
   const fileRef = React.useRef<HTMLInputElement>(null);
   const ringRef = React.useRef<Ring>({ ...DEFAULT_RING });
   const targetRef = React.useRef<Ring>({ ...DEFAULT_RING });
+  // Latest detected face box in RAW video pixels — the crop in grab() frames to
+  // this, so the analysis image is always a face close-up, never the viewport.
+  const lastDetRef = React.useRef<{ x: number; y: number; w: number; h: number } | null>(null);
 
   const [status, setStatus] = React.useState<"starting" | "live" | "blocked">("starting");
   const [hint, setHint] = React.useState("Getting the camera ready…");
@@ -140,6 +143,12 @@ export function LiveCapture({
   // Live tracking dots on the real detected landmarks (eyes/nose/mouth/ears) —
   // in overlay-viewBox coords. Empty when no face is detected.
   const [marks, setMarks] = React.useState<{ x: number; y: number }[]>([]);
+  // Dev diagnostics (?debug=1): live metrics + the verdict, so a failing capture
+  // is never a mystery.
+  const [debugOn] = React.useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("debug"),
+  );
+  const [dbg, setDbg] = React.useState<Verdict["dbg"] & { hint?: string; ok?: boolean }>({});
 
   const stop = React.useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -148,36 +157,59 @@ export function LiveCapture({
     streamRef.current = null;
   }, []);
 
-  const grab = React.useCallback(async () => {
+  const grab = React.useCallback(async (manual = false) => {
     const video = videoRef.current;
     if (!video || !video.videoWidth || capturedRef.current) return;
+    const det = lastDetRef.current;
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+
+    // We CROP to the detected face — never the whole viewport. That gives the
+    // engine a proper close-up (no random background) AND makes the face's pixel
+    // geometry consistent, so the capture gate passes reliably instead of
+    // rejecting a too-close/too-far full-frame shot. Without a face we can't
+    // frame a crop, so we guide instead of shipping a background photo.
+    if (!det) {
+      if (manual) setHint("Let's get your face in the frame first");
+      return;
+    }
     capturedRef.current = true;
     setFlash(true);
 
-    // Cap the captured resolution so the face's pixel geometry (interpupillary
-    // distance) stays inside the engine gate's absolute-pixel bounds regardless
-    // of the phone's native camera resolution.
-    const vw = video.videoWidth;
-    const vh = video.videoHeight;
-    const scale = Math.min(1, MAX_CAPTURE_LONG_EDGE / Math.max(vw, vh));
-    const w = Math.round(vw * scale);
-    const h = Math.round(vh * scale);
-    const full = document.createElement("canvas");
-    full.width = w;
-    full.height = h;
-    const fctx = full.getContext("2d");
+    // Face-relative 3:4 portrait crop with generous padding (forehead → chin +
+    // margin). cropW = 2.2× the face box, so the face fills ~45% of the output
+    // at ANY distance → interpupillary distance lands ~165px in the sent image,
+    // safely inside the engine gate's 90–260px band. Clamped to the frame.
+    const fcx = det.x + det.w / 2;
+    const fcy = det.y + det.h / 2;
+    let cropW = Math.min(det.w * 2.2, vw);
+    let cropH = Math.min(cropW * (4 / 3), vh);
+    // Keep the intended aspect if height got clamped by re-deriving width.
+    cropW = Math.min(cropW, cropH * (3 / 4));
+    cropH = cropW * (4 / 3);
+    let cropX = fcx - cropW / 2;
+    let cropY = fcy - cropH * 0.46; // face a touch above centre (more forehead)
+    cropX = Math.max(0, Math.min(cropX, vw - cropW));
+    cropY = Math.max(0, Math.min(cropY, vh - cropH));
+
+    const OUT_W = 768;
+    const OUT_H = Math.round(OUT_W * (cropH / cropW));
+    const out = document.createElement("canvas");
+    out.width = OUT_W;
+    out.height = OUT_H;
+    const octx = out.getContext("2d");
     const small = document.createElement("canvas");
     small.width = 200;
     small.height = 200;
     const sctx = small.getContext("2d", { willReadFrequently: true });
 
-    // Burst: over ~250ms grab several frames and KEEP THE SHARPEST — so a
-    // momentarily-soft frame (autofocus/hand shake) never gets captured.
+    // Burst: over ~250ms grab several cropped frames and KEEP THE SHARPEST.
     let bestUrl: string | null = null;
     let bestSharp = -1;
-    for (let i = 0; i < 5 && fctx && sctx; i++) {
-      fctx.drawImage(video, 0, 0, w, h); // un-mirrored: real orientation
-      sctx.drawImage(full, 0, 0, 200, 200);
+    for (let i = 0; i < 5 && octx && sctx; i++) {
+      // Crop + scale the real (un-mirrored) video straight into the output.
+      octx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, OUT_W, OUT_H);
+      sctx.drawImage(out, 0, 0, 200, 200);
       const { data } = sctx.getImageData(0, 0, 200, 200);
       const g = new Float32Array(200 * 200);
       for (let p = 0, k = 0; p < data.length; p += 4, k++) {
@@ -198,7 +230,7 @@ export function LiveCapture({
       const sharp = sq / n - (sum / n) ** 2;
       if (sharp > bestSharp) {
         bestSharp = sharp;
-        bestUrl = full.toDataURL("image/jpeg", 0.92);
+        bestUrl = out.toDataURL("image/jpeg", 0.92);
       }
       await new Promise((r) => setTimeout(r, 55));
     }
@@ -216,7 +248,7 @@ export function LiveCapture({
       return;
     }
 
-    const dataUrl = bestUrl ?? full.toDataURL("image/jpeg", 0.92);
+    const dataUrl = bestUrl ?? out.toDataURL("image/jpeg", 0.92);
     const bytes = Math.round((dataUrl.length - "data:image/jpeg;base64,".length) * 0.75);
     stop();
     onCapture(dataUrl, "image/jpeg", bytes);
@@ -258,55 +290,48 @@ export function LiveCapture({
     return { luma: lumaSum / (160 * 160), sharp: sumSq / n - mean * mean };
   }, []);
 
-  // Evaluate the current frame → one guidance hint + whether it's capture-ready.
+  // Evaluate the current frame → one guidance hint + whether it's capture-ready,
+  // plus the raw metrics (for the ?debug overlay). Because grab() CROPS to the
+  // face, the absolute interpupillary distance in the SENT image is fixed by the
+  // crop, so here we only need a sensible FACE-SIZE band (big enough to track
+  // reliably, small enough to leave padding room for the crop) — not an absolute
+  // IPD gate. Frontality is checked from real keypoints; the server gate (now
+  // recalibrated) is the final authority.
   const evaluate = React.useCallback(
-    (det: Detection | undefined, vw: number, vh: number): { ok: boolean; hint: string } => {
-      if (!det?.boundingBox) return { ok: false, hint: "Center your face in the ring" };
+    (det: Detection | undefined, vw: number, vh: number): Verdict => {
+      if (!det?.boundingBox) return { ok: false, hint: "Center your face in the frame", dbg: {} };
       const bb = det.boundingBox;
       const cx = (bb.originX + bb.width / 2) / vw;
       const cy = (bb.originY + bb.height / 2) / vh;
       const size = bb.width / vw;
       const kp = det.keypoints ?? [];
+      const { luma, sharp } = frameMetrics(videoRef.current!);
+      const dbg: Verdict["dbg"] = { size: +size.toFixed(2), luma: Math.round(luma), sharp: Math.round(sharp) };
 
-      // Distance via the ACTUAL interpupillary distance, measured in the pixels
-      // of the image we will actually send (after the capture-resolution cap).
-      // This mirrors the engine gate's own IPD check (90–260px) so the on-camera
-      // guidance and the server agree — no more surprise "Move back" 422s.
-      if (kp[0] && kp[1]) {
-        const capScale = Math.min(1, MAX_CAPTURE_LONG_EDGE / Math.max(vw, vh));
-        const ipdPx = Math.hypot(
-          (kp[0].x - kp[1].x) * vw * capScale,
-          (kp[0].y - kp[1].y) * vh * capScale,
-        );
-        if (ipdPx < 105) return { ok: false, hint: "Come a little closer" };
-        if (ipdPx > 235) return { ok: false, hint: "Move back a little" };
-      } else {
-        // No eye keypoints — fall back to a conservative box-size band.
-        if (size < 0.28) return { ok: false, hint: "Come a little closer" };
-        if (size > 0.52) return { ok: false, hint: "Move back a little" };
-      }
+      if (size < 0.20) return { ok: false, hint: "Come a little closer", dbg };
+      if (size > 0.42) return { ok: false, hint: "Move back a little", dbg };
+      if (Math.abs(cx - 0.5) > 0.16) return { ok: false, hint: cx < 0.5 ? "Move a bit right" : "Move a bit left", dbg };
+      if (Math.abs(cy - 0.5) > 0.18) return { ok: false, hint: cy < 0.5 ? "Move down a little" : "Move up a little", dbg };
 
-      if (Math.abs(cx - 0.5) > 0.14) return { ok: false, hint: cx < 0.5 ? "Move a bit right" : "Move a bit left" };
-      if (Math.abs(cy - 0.5) > 0.16) return { ok: false, hint: cy < 0.5 ? "Move down a little" : "Move up a little" };
-
-      // Straightness from the two eye keypoints (0=right eye, 1=left eye).
+      // Straightness / yaw from the two eye keypoints (0=right eye, 1=left eye,
+      // 2=nose). Loosened a touch so a natural selfie isn't over-gated here.
       if (kp[0] && kp[1] && kp[2]) {
         const dy = Math.abs(kp[0].y - kp[1].y);
         const dx = Math.abs(kp[0].x - kp[1].x) || 1e-3;
-        if (dy / dx > 0.18) return { ok: false, hint: "Straighten your head" };
-        // Yaw: nose should sit between the eyes.
+        dbg.roll = +(dy / dx).toFixed(2);
+        if (dy / dx > 0.22) return { ok: false, hint: "Keep your head straight", dbg };
         const mid = (kp[0].x + kp[1].x) / 2;
         const off = (kp[2].x - mid) / dx;
-        if (off > 0.35) return { ok: false, hint: "Turn slightly right" };
-        if (off < -0.35) return { ok: false, hint: "Turn slightly left" };
+        dbg.yaw = +off.toFixed(2);
+        if (off > 0.45) return { ok: false, hint: "Turn slightly right", dbg };
+        if (off < -0.45) return { ok: false, hint: "Turn slightly left", dbg };
       }
 
-      const { luma, sharp } = frameMetrics(videoRef.current!);
-      if (luma < 55) return { ok: false, hint: "Find brighter, even light" };
-      if (luma > 215) return { ok: false, hint: "Move out of direct glare" };
-      if (sharp < 12) return { ok: false, hint: "Hold still…" };
+      if (luma < 55) return { ok: false, hint: "Find brighter, even light", dbg };
+      if (luma > 215) return { ok: false, hint: "Move out of direct glare", dbg };
+      if (sharp < 12) return { ok: false, hint: "Hold still…", dbg };
 
-      return { ok: true, hint: "Perfect — hold it!" };
+      return { ok: true, hint: "Perfect — hold it!", dbg };
     },
     [frameMetrics],
   );
@@ -354,6 +379,11 @@ export function LiveCapture({
             const verdict = evaluate(det, v.videoWidth, v.videoHeight);
             setHint(verdict.hint);
             setGood(verdict.ok);
+            if (debugOn) setDbg({ ...verdict.dbg, hint: verdict.hint, ok: verdict.ok });
+            // Remember the face box (raw video px) so grab() can crop to it.
+            lastDetRef.current = det?.boundingBox
+              ? { x: det.boundingBox.originX, y: det.boundingBox.originY, w: det.boundingBox.width, h: det.boundingBox.height }
+              : null;
             // Aim the guide ring at the face (or ease back to centre when lost).
             targetRef.current = det?.boundingBox
               ? ringFromBox(det.boundingBox, v.videoWidth, v.videoHeight)
@@ -393,7 +423,7 @@ export function LiveCapture({
     } catch {
       setStatus("blocked");
     }
-  }, [evaluate, grab]);
+  }, [evaluate, grab, debugOn]);
 
   React.useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -485,6 +515,13 @@ export function LiveCapture({
               </p>
             </div>
 
+            {debugOn && (
+              <div className="absolute left-2 top-2 rounded-lg bg-black/70 px-2 py-1 font-mono text-[10px] leading-tight text-white">
+                <div>face:{dbg.size ?? "-"} luma:{dbg.luma ?? "-"} sharp:{dbg.sharp ?? "-"}</div>
+                <div>yaw:{dbg.yaw ?? "-"} roll:{dbg.roll ?? "-"} → {dbg.ok ? "READY" : dbg.hint}</div>
+              </div>
+            )}
+
             {flash && <div className="absolute inset-0 animate-[pulse_300ms_ease-out] bg-white" />}
           </>
         ) : (
@@ -500,7 +537,7 @@ export function LiveCapture({
 
       <div className="mt-5 flex flex-col gap-3">
         {status === "live" && (
-          <button type="button" onClick={grab} className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-ink px-6 py-3.5 font-semibold text-white transition active:scale-95">
+          <button type="button" onClick={() => grab(true)} className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-ink px-6 py-3.5 font-semibold text-white transition active:scale-95">
             <Camera aria-hidden="true" className="size-5" />
             Capture now
           </button>

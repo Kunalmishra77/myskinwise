@@ -31,14 +31,16 @@ clipping:
 
 pose:
   # Head orientation in degrees, from a solvePnP fit to facial landmarks.
-  # PROVISIONAL bounds: solvePnP with a generic 3D model carries a known
-  # systematic pitch bias (~10-15°), so the blueprint's tight 8° would reject
-  # ordinary phone selfies. These are loosened for a usable v1 and will be
-  # tightened once head-pose is calibrated against real ground-truth (Phase 9),
-  # ideally by switching to MediaPipe's canonical metric face model.
-  max_yaw_deg: 15.0
-  max_pitch_deg: 20.0
-  max_roll_deg: 12.0
+  # solvePnP with a generic 3D model carries a KNOWN systematic bias (~10-15°),
+  # so a genuinely frontal phone selfie routinely measures ~20° yaw and was being
+  # wrongly rejected ("Look straight at the camera") on every attempt. The client
+  # already enforces frontality from real eye/nose keypoints before capture, so
+  # the server gate only needs to catch gross profile shots. Bounds are widened
+  # to absorb the estimator bias; the proper fix (MediaPipe canonical metric face
+  # model) is tracked for calibration (Phase 9).
+  max_yaw_deg: 26.0
+  max_pitch_deg: 26.0
+  max_roll_deg: 18.0
 
 distance:
   # Interpupillary distance in pixels — a proxy for how close the face is.
@@ -47,7 +49,9 @@ distance:
 
 lighting_evenness:
   # Left-cheek vs right-cheek mean-L* difference. A big gap = side-lit face.
-  max_delta_l: 12.0
+  # 12 rejected ordinary indoor selfies (one side naturally nearer a window/lamp);
+  # 18 still catches genuinely harsh side-lighting while accepting normal rooms.
+  max_delta_l: 18.0
 
 # Most-severe-first. On failure the gate reports the FIRST failing check in this
 # order, so the user sees one actionable instruction, not a wall of errors.

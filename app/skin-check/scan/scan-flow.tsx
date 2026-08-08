@@ -21,6 +21,11 @@ import { getSession } from "@/lib/consultation/session";
 const MAX_BYTES = 8 * 1024 * 1024;
 type Stage = "lead" | "intro" | "preview" | "analyzing" | "result" | "quality" | "error";
 
+/** ?debug=1 surfaces the exact engine failing-check on a reject (dev/testing). */
+function isDebug(): boolean {
+  return typeof window !== "undefined" && new URLSearchParams(window.location.search).has("debug");
+}
+
 function toBase64(dataUrl: string): string {
   return dataUrl.split(",")[1] ?? "";
 }
@@ -88,15 +93,27 @@ export function ScanFlow() {
         // live camera with the engine's one specific instruction ("Move back a
         // little", "Look straight at the camera"…) so they just adjust and the
         // camera re-captures. No jarring "analysing → fail" screen.
+        let hint = data.failure?.user_message ?? "Let's retake that — hold steady and keep your whole face in the frame.";
+        // In ?debug mode, append the exact failing check(s) + measured values, so
+        // a reject is never a mystery during testing.
+        if (isDebug()) {
+          const failed = (data.failure?.quality?.checks ?? [])
+            .filter((c: { passed: boolean }) => !c.passed)
+            .map((c: { name: string; value: unknown; threshold: unknown }) => `${c.name}=${c.value}(need ${c.threshold})`)
+            .join(", ");
+          if (failed) hint += `  ·  [${data.failure?.reason_code}: ${failed}]`;
+        }
         setPreview(null);
         setConsent(false);
-        setRetryHint(data.failure?.user_message ?? "Let's retake that — hold steady and keep your whole face in the frame.");
+        setRetryHint(hint);
         setStage("intro");
       } else if (res.status === 429) {
         setMessage("You've scanned a lot just now — please wait a little while.");
         setStage("error");
       } else {
-        setMessage(data.failure?.user_message ?? "Something went wrong. Please try again.");
+        // A service/network problem — NOT the photo's fault. Keep the captured
+        // image so the user can just retry the analysis, not the whole camera.
+        setMessage(data.failure?.user_message ?? "We couldn't complete the analysis right now.");
         setStage("error");
       }
     } catch {
@@ -193,7 +210,12 @@ export function ScanFlow() {
             </h1>
             {message ? <p className="mt-3 text-ink-soft">{message}</p> : null}
             <div className="mt-8 flex flex-col gap-3">
-              <Button size="lg" onClick={reset}>Try another photo</Button>
+              {/* Service/network failure (not the photo's fault) — retry the
+                  SAME captured image instead of forcing a full re-capture. */}
+              {stage === "error" && preview && (
+                <Button size="lg" onClick={analyze}>Retry analysis</Button>
+              )}
+              <Button size="lg" variant="outline" onClick={reset}>Try another photo</Button>
               <Button size="lg" variant="outline" asChild>
                 <Link href="/skin-check">Continue with the Skin Check</Link>
               </Button>
