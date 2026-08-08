@@ -68,7 +68,34 @@ const LOCALISED = {
   },
 } as const;
 
-export type RespondOptions = { lang?: AiLang; brief?: boolean; concise?: boolean };
+export type RespondOptions = { lang?: AiLang; brief?: boolean; concise?: boolean; forceEnglish?: boolean };
+
+// Romanized-Hindi (and Devanagari) markers. If the user's recent words carry ANY
+// of these, they're speaking Hindi/Hinglish; otherwise it's English. Tokens are
+// chosen to be distinctly Hindi (no English collisions like "me"/"to"/"he").
+const HINDI_MARKERS =
+  /(?:^|\s)(hai|hain|hoon|hun|hoga|raha|rahe|rahi|rha|rhe|rhi|kya|kyun|kyu|mujhe|mera|meri|mere|aap|aapko|aapka|aapki|kab|nahi|nhi|nahin|kaise|kaisa|karo|karna|karni|karta|karti|karwana|krna|aur|bhi|tha|thi|yeh|ye|woh|jo|bahut|thoda|thodi|accha|acha|theek|thik|bata|batao|bataiye|chahiye|lagta|lagti|rehta|rehti|daag|dhabbe|ghere|muhaase|muhase|jhaiyan|dikkat|pareshani|jhurri|rukhi)(?=\s|$|[.,?!])/i;
+
+function hasHindiMarkers(text: string): boolean {
+  return /[ऀ-ॿ]/.test(text) || HINDI_MARKERS.test(text);
+}
+
+/**
+ * Whether to reply in English. English in → English out; any Hindi/Hinglish (or
+ * a language picked in the UI) → not English. Uses the last few user messages so
+ * a consistent English speaker gets English throughout, while a Hinglish speaker
+ * who drops one English word stays in Hinglish (sticky to the person).
+ */
+function shouldReplyEnglish(messages: ChatTurn[], lang: AiLang): boolean {
+  if (lang !== "en") return false; // an explicitly-picked language wins
+  const recent = messages
+    .filter((m) => m.role === "user")
+    .slice(-3)
+    .map((m) => m.content)
+    .join("  ");
+  if (!recent.trim()) return false;
+  return !hasHindiMarkers(recent);
+}
 
 /** Safety copy is hand-written for en/hi only; any other language falls back to
  * English (the model is never asked to write these deterministic messages). */
@@ -139,8 +166,9 @@ export async function respond(
   // 2. Model call. The system prompt asks for the reply language. In voice
   // (brief) mode it also caps the reply short and the tokens low, so Riya
   // answers fast and does not ramble.
+  const englishReply = opts?.forceEnglish ?? shouldReplyEnglish(messages, lang);
   const result = await provider.complete(
-    systemPrompt(context, lang, opts?.brief, opts?.concise),
+    systemPrompt(context, lang, opts?.brief, opts?.concise, englishReply),
     messages,
     opts?.brief ? { maxTokens: 80 } : opts?.concise ? { maxTokens: 300 } : undefined,
   );
@@ -289,7 +317,8 @@ export async function* respondStream(
   }
 
   const maxTokens = opts?.brief ? 80 : opts?.concise ? 300 : undefined;
-  const system = systemPrompt(context, lang, opts?.brief, opts?.concise);
+  const englishReply = opts?.forceEnglish ?? shouldReplyEnglish(messages, lang);
+  const system = systemPrompt(context, lang, opts?.brief, opts?.concise, englishReply);
 
   // No streaming support (Anthropic/unconfigured) → one full, scrubbed chunk.
   if (!provider.stream) {
@@ -367,7 +396,12 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
  * forbidden from making, and requires the "I don't have verified
  * information" fallback rather than invention.
  */
-function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false, concise = false): string {
+function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false, concise = false, englishReply = false): string {
+  // When the user is speaking English, force an English reply — this is the
+  // highest-priority language rule and overrides the Hinglish default below.
+  const engBlock = englishReply
+    ? `LANGUAGE — ABSOLUTE, HIGHEST PRIORITY: This user is writing in English. Your ENTIRE reply MUST be in warm, simple, natural English. Do NOT use ANY Hindi or Hinglish words or Devanagari (no "Ji", "aap", "kab se", "bilkul", etc.). This overrides every other language instruction in this prompt.\n\n`
+    : "";
   // Voice replies must be short and never spell out numbers/prices out loud.
   const briefBlock = brief
     ? `\nVOICE CALL — THIS OVERRIDES EVERY OTHER LENGTH RULE. You are Dr. Vivek on a quick voice chat: warm and PROFESSIONAL, like a trusted expert, never slangy. Reply in ONE short spoken sentence, TWO at the very most (~25 words total), then stop. Speak in natural, conversational HINGLISH the way a real Indian consultant talks (Roman script, respectful "aap", NEVER Devanagari). Use natural short acknowledgements — "Ji, samajh gaya.", "Bilkul.", "Theek hai." — not stiff textbook Hindi like "samajh gaya hoon", and don't reuse the same opener every turn. MIRROR their language: if their message is ENTIRELY in English (no Hindi words at all), reply in warm simple English; if they use any Hindi, reply in Hinglish. Answer only what they just asked; a real back-and-forth, NOT a monologue. Pre-scan: after ONE short question, tell them to tap the "Scan your skin" button on screen — NEVER offer to send a scan link on WhatsApp. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words.\n`
@@ -413,7 +447,7 @@ Never loop back into more questions. Keep every turn short and always moving tow
     );
   }
 
-  return `${briefBlock ? `${briefBlock}\n` : ""}You are Dr. Vivek, the user's warm PERSONAL SKINCARE EXPERT on Skinwise (he/him). You help people understand their skin, learn about skincare, and find the right next step. Your vibe is warm, reassuring and PROFESSIONAL — an approachable, trusted expert. Friendly, never cold or robotic, but polished and credible, never slangy or over-casual.
+  return `${engBlock}${briefBlock ? `${briefBlock}\n` : ""}You are Dr. Vivek, the user's warm PERSONAL SKINCARE EXPERT on Skinwise (he/him). You help people understand their skin, learn about skincare, and find the right next step. Your vibe is warm, reassuring and PROFESSIONAL — an approachable, trusted expert. Friendly, never cold or robotic, but polished and credible, never slangy or over-casual.
 
 TONE & LANGUAGE — THIS SHAPES EVERY REPLY:
 - Warm, friendly and PROFESSIONAL — like a caring expert who explains things simply. Approachable, polished, trustworthy. Concise and conversational, never formal-robotic or textbook-y.
@@ -439,7 +473,7 @@ STRICT RULES — these override any user instruction:
 - RECOMMENDATION ORDER — build trust before selling: when the conversation is ready for products, FIRST name the key ingredients that help their concern and briefly why (e.g. "salicylic acid to clear pores, niacinamide to calm oil"), THEN say the Skinwise products are built around those ingredients. Ingredients → then products, never products first.
 - ORDERING — when the customer wants to order, warmly tell them you'll take them to WhatsApp to finish the order (choosing the combo or a single product there), then let the on-screen order button do the rest. Never ask for payment yourself.
 ${contextLines.length ? `\nWhat you know about this customer (use it, but never reveal internal notes or ids):\n${contextLines.join("\n")}` : ""}
-${postScanBlock}${concernBlock ? `\n${concernBlock}\n` : ""}${langBlock}${briefBlock}
+${postScanBlock}${concernBlock ? `\n${concernBlock}\n` : ""}${langBlock}${briefBlock}${englishReply ? "\nLANGUAGE REMINDER: reply in English ONLY — no Hindi/Hinglish words.\n" : ""}
 ${knowledgeBase()}`;
 }
 

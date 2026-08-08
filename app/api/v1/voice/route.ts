@@ -145,7 +145,14 @@ export async function POST(request: Request) {
       body.concern && !context?.concern ? { ...(context ?? {}), concern: body.concern } : context;
     const instruction =
       "The user has just completed a face scan. In a warm, natural voice, tell them the main things you could see in the photo, then offer to talk them through which ingredients would help and a suggested routine. Keep it to two short sentences, speak like a person (no number lists), and never give a diagnosis.";
-    const outcome = await respond([{ role: "user", content: instruction }], ctx, { lang, brief: true });
+    // The instruction here is synthetic English — don't let language auto-detect
+    // flip a Hindi/Hinglish user's scan narration to English. Honour the picked
+    // language; otherwise keep the Hinglish default.
+    const outcome = await respond([{ role: "user", content: instruction }], ctx, {
+      lang,
+      brief: true,
+      forceEnglish: false,
+    });
     let audioBase64: string | undefined;
     let audioMimeType: string | undefined;
     if (body.wantAudio) {
