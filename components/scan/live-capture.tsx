@@ -20,6 +20,56 @@ import { ImageUp, Camera } from "lucide-react";
 const GREEN_FRAMES_TO_CAPTURE = 14; // ~0.9s of sustained "good" before the shutter
 const DETECT_EVERY_MS = 90; // throttle detection to ~11fps
 
+// Guide-ring geometry lives in the SVG's 100×133 viewBox. This is where the ring
+// rests before a face is found (and where it eases back to when one is lost).
+const VB_W = 100;
+const VB_H = 133;
+const CONTAINER_AR = 3 / 4; // the preview box is aspect-[3/4] (width / height)
+const DEFAULT_RING = { cx: 50, cy: 60, rx: 31, ry: 40 } as const;
+type Ring = { cx: number; cy: number; rx: number; ry: number };
+
+const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+
+/**
+ * Map a detector bounding box (normalised to the RAW video) to a guide ellipse in
+ * the overlay's viewBox — so the ring tracks the actual face. Accounts for two
+ * transforms the eye can't see: the video is CSS-mirrored (scaleX(-1)), and it is
+ * `object-cover` cropped to the 3:4 preview, so the visible region is a centre
+ * slice of the sensor frame. The ellipse is padded to a face-oval and clamped to
+ * stay fully inside the frame.
+ */
+function ringFromBox(bb: NonNullable<Detection["boundingBox"]>, vw: number, vh: number): Ring {
+  const nx = (bb.originX + bb.width / 2) / vw;
+  const ny = (bb.originY + bb.height / 2) / vh;
+  const nw = bb.width / vw;
+  const nh = bb.height / vh;
+  const vAspect = vw / vh;
+
+  let fx: number, fy: number, fw: number, fh: number;
+  if (vAspect > CONTAINER_AR) {
+    // Video is wider than the box → cropped left/right.
+    const visW = CONTAINER_AR / vAspect;
+    fx = (nx - (1 - visW) / 2) / visW;
+    fw = nw / visW;
+    fy = ny;
+    fh = nh;
+  } else {
+    // Video is taller than the box → cropped top/bottom.
+    const visH = vAspect / CONTAINER_AR;
+    fy = (ny - (1 - visH) / 2) / visH;
+    fh = nh / visH;
+    fx = nx;
+    fw = nw;
+  }
+  fx = 1 - fx; // undo the mirror for display
+
+  const rx = clamp((fw / 2) * VB_W * 1.18, 16, 44);
+  const ry = clamp((fh / 2) * VB_H * 1.5, 22, 56);
+  const cx = clamp(fx * VB_W, rx, VB_W - rx);
+  const cy = clamp(fy * VB_H, ry, VB_H - ry);
+  return { cx, cy, rx, ry };
+}
+
 type FaceDetectorLike = {
   detectForVideo: (v: HTMLVideoElement, ts: number) => { detections: Detection[] };
 };
@@ -44,12 +94,15 @@ export function LiveCapture({
   const lastDetect = React.useRef(0);
   const capturedRef = React.useRef(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
+  const ringRef = React.useRef<Ring>({ ...DEFAULT_RING });
+  const targetRef = React.useRef<Ring>({ ...DEFAULT_RING });
 
   const [status, setStatus] = React.useState<"starting" | "live" | "blocked">("starting");
   const [hint, setHint] = React.useState("Getting the camera ready…");
   const [good, setGood] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [flash, setFlash] = React.useState(false);
+  const [ring, setRing] = React.useState<Ring>({ ...DEFAULT_RING });
 
   const stop = React.useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -225,9 +278,14 @@ export function LiveCapture({
           lastDetect.current = now;
           try {
             const res = detectorRef.current.detectForVideo(v, now);
-            const verdict = evaluate(res.detections?.[0], v.videoWidth, v.videoHeight);
+            const det = res.detections?.[0];
+            const verdict = evaluate(det, v.videoWidth, v.videoHeight);
             setHint(verdict.hint);
             setGood(verdict.ok);
+            // Aim the guide ring at the face (or ease back to centre when lost).
+            targetRef.current = det?.boundingBox
+              ? ringFromBox(det.boundingBox, v.videoWidth, v.videoHeight)
+              : { ...DEFAULT_RING };
             greenFrames.current = verdict.ok ? greenFrames.current + 1 : 0;
             setProgress(Math.min(1, greenFrames.current / GREEN_FRAMES_TO_CAPTURE));
             if (greenFrames.current >= GREEN_FRAMES_TO_CAPTURE) {
@@ -238,6 +296,18 @@ export function LiveCapture({
             /* skip this frame */
           }
         }
+        // Ease the ring toward its target every frame for a smooth 60fps follow,
+        // independent of the throttled detection cadence.
+        const t = targetRef.current;
+        const r = ringRef.current;
+        const next: Ring = {
+          cx: r.cx + (t.cx - r.cx) * 0.25,
+          cy: r.cy + (t.cy - r.cy) * 0.25,
+          rx: r.rx + (t.rx - r.rx) * 0.25,
+          ry: r.ry + (t.ry - r.ry) * 0.25,
+        };
+        ringRef.current = next;
+        setRing(next);
         rafRef.current = requestAnimationFrame(loop);
       };
       rafRef.current = requestAnimationFrame(loop);
@@ -281,16 +351,16 @@ export function LiveCapture({
               <defs>
                 <mask id="lc-hole">
                   <rect width="100" height="133" fill="white" />
-                  <ellipse cx="50" cy="60" rx="31" ry="40" fill="black" />
+                  <ellipse cx={ring.cx} cy={ring.cy} rx={ring.rx} ry={ring.ry} fill="black" />
                 </mask>
               </defs>
               <rect width="100" height="133" fill="rgba(35,22,25,0.45)" mask="url(#lc-hole)" />
-              <ellipse cx="50" cy="60" rx="31" ry="40" fill="none" stroke={ringColor} strokeOpacity="0.5" strokeWidth="1.2" />
+              <ellipse cx={ring.cx} cy={ring.cy} rx={ring.rx} ry={ring.ry} fill="none" stroke={ringColor} strokeOpacity="0.5" strokeWidth="1.2" />
               <ellipse
-                cx="50"
-                cy="60"
-                rx="31"
-                ry="40"
+                cx={ring.cx}
+                cy={ring.cy}
+                rx={ring.rx}
+                ry={ring.ry}
                 fill="none"
                 stroke="#5bbf7b"
                 strokeWidth="2.4"
@@ -298,7 +368,7 @@ export function LiveCapture({
                 pathLength={100}
                 strokeDasharray={100}
                 strokeDashoffset={100 - progress * 100}
-                transform="rotate(-90 50 60)"
+                transform={`rotate(-90 ${ring.cx} ${ring.cy})`}
                 style={{ transition: "stroke-dashoffset 120ms linear" }}
               />
             </svg>
