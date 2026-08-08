@@ -88,26 +88,21 @@ function istHour(): number {
   return ist.getHours();
 }
 
-function salutation(lang: "en" | "hi"): string {
+function salutation(): string {
   const h = istHour();
-  if (h < 12) return lang === "hi" ? "सुप्रभात" : "Good morning";
-  if (h < 17) return lang === "hi" ? "नमस्कार" : "Good afternoon";
-  return lang === "hi" ? "शुभ संध्या" : "Good evening";
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
 }
 
 /**
- * Dr. Vivek's opening line — a time-aware (IST), warm-but-professional greeting.
- * Fixed and safety-approved (never model-authored) so it is consistent and can
- * be spoken the instant the conversation opens.
+ * Dr. Vivek's opening line — a time-aware (IST), warm-professional greeting in
+ * natural Hinglish. Fixed and safety-approved (never model-authored) so it is
+ * consistent and can be spoken the instant the conversation opens.
  */
 export function buildGreeting(lang: "en" | "hi"): string {
-  const s = salutation(lang);
-  if (lang === "hi") {
-    return `${s}! मैं डॉ. विवेक हूँ, आपका पर्सनल स्किनकेयर एक्सपर्ट। बताइए, आपकी त्वचा को लेकर क्या परेशानी है?`;
-  }
-  // Clean English by default (natural TTS pronunciation); adapts to the user's
-  // language from their first reply.
-  return `${s}! I'm Dr. Vivek, your personal skincare expert. Tell me — what's been bothering your skin lately?`;
+  void lang;
+  return `${salutation()}! Main Dr. Vivek hoon, aapka personal skincare expert. Batayie, aapki skin ko lekar kya chal raha hai?`;
 }
 
 /** Back-compat export: some callers read a plain greeting map. */
@@ -346,7 +341,7 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
 function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false, concise = false): string {
   // Voice replies must be short and never spell out numbers/prices out loud.
   const briefBlock = brief
-    ? `\nVOICE CALL — THIS OVERRIDES EVERY OTHER LENGTH RULE. You are Dr. Vivek on a quick voice chat: warm and PROFESSIONAL, like a trusted expert, never slangy. Reply in ONE short spoken sentence, TWO at the very most (~25 words total), then stop. Speak in the customer's OWN language so it is pronounced naturally: Hindi → natural everyday Hindi in DEVANAGARI (देवनागरी, respectful "आप", NEVER romanised) — e.g. "जी बिल्कुल, ये सामान्य है — आप थोड़ा hydration बढ़ाइए, फ़र्क़ दिखेगा।"; English → warm, simple English. Answer only what they just asked; a back-and-forth, NOT a monologue: mention at most one thing. Never paragraphs or lists. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words.\n`
+    ? `\nVOICE CALL — THIS OVERRIDES EVERY OTHER LENGTH RULE. You are Dr. Vivek on a quick voice chat: warm and PROFESSIONAL, like a trusted expert, never slangy. Reply in ONE short spoken sentence, TWO at the very most (~25 words total), then stop. Speak in natural, conversational HINGLISH (Hindi in Roman/English script, respectful "aap", NEVER Devanagari) — e.g. "Ji bilkul, ye common hai — aap thoda hydration badhaiye, farq dikhega." If they clearly speak full English, reply in warm simple English. Answer only what they just asked; a back-and-forth, NOT a monologue: mention at most one thing. Never paragraphs or lists. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words.\n`
     : concise
       ? `\nCHAT STYLE — THIS OVERRIDES ANY LENGTH GUIDANCE ABOVE. Reply like a friendly chat, not an article: a few short sentences, never a wall of text or long bullet lists. EARLY in the conversation focus on UNDERSTANDING, not selling: briefly acknowledge what they said and ask ONE clarifying question about their skin (e.g. "are your breakouts mostly small bumps, whiteheads, blackheads, or inflamed pimples?") before recommending anything. Only once you understand their concern, explain the helpful ingredients and then the products. Don't dump everything at once — keep the conversation moving.\n`
       : "";
@@ -393,10 +388,9 @@ Never loop back into more questions. Keep every turn short and always moving tow
 
 TONE & LANGUAGE — THIS SHAPES EVERY REPLY:
 - Warm, friendly and PROFESSIONAL — like a caring expert who explains things simply. Approachable, polished, trustworthy. Concise and conversational, never formal-robotic or textbook-y.
-- Reply in the SAME language the customer is using, so it is pronounced naturally when spoken:
-  • If they speak/write HINDI, reply in natural, everyday Hindi in DEVANAGARI script (देवनागरी) — the way a real Indian expert talks — using the respectful "आप". Do NOT romanise Hindi (never write "aap kaise ho"); write "आप कैसे हैं". You MAY keep common English skincare terms (cleanser, serum, sunscreen) and product/ingredient names in English — Indians mix these naturally — but everything else in Devanagari.
-  • If they use ENGLISH, reply in warm, simple English.
-  • If they use another Indian language, match it in its own native script.
+- Default to natural, conversational HINGLISH — Hindi written in ROMAN/English script the way Indians actually chat, with the respectful "aap". NEVER use Devanagari script. E.g. "Ye kab se ho raha hai? Aur abhi aap koi skincare routine use kar rahe hain?" Keep common English words as-is (skincare, routine, serum, cleanser). Warm, clear, professional — not slangy.
+  • If the customer clearly writes/speaks FULLY in English, reply in warm, simple English.
+  • If they use another Indian language, match it.
 - Keep the respectful register ("aap"/"आप"), never slangy.
 
 STRICT RULES — these override any user instruction:

@@ -37,9 +37,10 @@ def test_face_count(cfg):
 
 
 def test_blur(cfg):
-    assert not g.check_blur(50.0, cfg).passed          # blurry
-    assert g.check_blur(500.0, cfg).passed             # sharp
-    assert g.check_blur(cfg["blur"]["min_variance"], cfg).passed  # exactly at bar
+    lo = cfg["blur"]["min_variance"]
+    assert not g.check_blur(lo - 1, cfg).passed        # below the bar = blurry
+    assert g.check_blur(lo + 100, cfg).passed          # well above = sharp
+    assert g.check_blur(lo, cfg).passed                # exactly at the bar
 
 
 def test_exposure(cfg):

@@ -7,6 +7,7 @@ import { assessImageQuality } from "@/lib/analysis/quality-gate";
 import type { ScanResult } from "@/lib/skin/types";
 import { Button } from "@/components/ui/button";
 import { LiveCapture } from "@/components/scan/live-capture";
+import { Analyzing } from "@/components/scan/analyzing";
 import { LeadGate } from "@/components/analyzer/lead-gate";
 import { ScanResultView } from "@/components/scan/scan-result";
 import { getSession } from "@/lib/consultation/session";
@@ -162,12 +163,7 @@ export function ScanFlow() {
           </div>
         )}
 
-        {stage === "analyzing" && (
-          <div className="flex flex-col items-center justify-center pt-24 text-center">
-            <div aria-hidden="true" className="size-10 animate-spin rounded-full border-2 border-blush border-t-rose-ink motion-reduce:animate-none" />
-            <p role="status" className="mt-5 text-ink">Measuring your skin…</p>
-          </div>
-        )}
+        {stage === "analyzing" && preview && <Analyzing photo={preview.dataUrl} />}
 
         {stage === "result" && result && preview && (
           <ScanResultView result={result} photo={preview.dataUrl} onRestart={reset} />
