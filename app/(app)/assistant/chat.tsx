@@ -135,9 +135,12 @@ export function AssistantChat() {
           // Stream the reply so it types itself into the chat in real time
           // instead of appearing all at once after a few seconds.
           stream: true,
-          ...(activeConcern ? { concern: activeConcern } : {}),
-          // Carry the unified session's scan so chat stays grounded in it too.
+          // Carry the unified session's scan so chat stays grounded in it too —
+          // reference + the completed-scan summary, so Chat shares Voice's state
+          // and never restarts the journey after a scan.
           analysisReference: getSession().analysisReference,
+          analysis: getSession().scanAnalysis,
+          concern: activeConcern ?? getSession().concern,
           // Same conversation language the user picked in Voice, if any.
           lang: getSession().aiLang ?? locale,
         }),

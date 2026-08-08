@@ -276,6 +276,9 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
             langLocked: Boolean(getSession().aiLangPinned),
             analysisReference: getSession().analysisReference,
             concern: getSession().concern,
+            // Carry the completed scan on EVERY turn (not just the explain), so
+            // the AI always knows the scan is done and never re-asks for it.
+            analysis: getSession().scanAnalysis,
             ...body,
           }),
           signal: ac.signal,

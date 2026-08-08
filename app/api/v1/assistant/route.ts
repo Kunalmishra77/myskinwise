@@ -31,6 +31,16 @@ const bodySchema = z.object({
   // so its reference is the bearer token for its own (already customer-safe)
   // observation — the same model the customer used to view their result.
   analysisReference: z.string().regex(/^SW-[A-HJ-NP-Z2-9]{8}$/).optional(),
+  // Customer-safe completed-scan summary from the shared session (engine scans
+  // aren't in the legacy resolver store), so Chat knows the scan is done — the
+  // SAME state Voice uses. This is what makes Voice + Chat share continuity.
+  analysis: z
+    .object({
+      imageQuality: z.string().max(40),
+      features: z.array(z.object({ label: z.string().max(60), certainty: z.string().max(40) })).max(12),
+      limitations: z.string().max(200),
+    })
+    .optional(),
   // Optional chosen concern, so the chat can run a focused, concern-specific
   // conversation. Anonymous and safe — it only steers which questions and
   // content the assistant draws on, never anything private.
@@ -78,10 +88,16 @@ export async function POST(request: Request) {
 
   // A concern chosen in the chat steers the conversation, unless the customer's
   // own resolved data already carries one (their real concern wins).
-  const context =
+  const withConcern =
     parsed.data.concern && !resolved?.concern
       ? { ...(resolved ?? {}), concern: parsed.data.concern }
       : resolved;
+  // Carry the completed-scan summary so Chat knows the scan is done (shared with
+  // Voice), and follows the post-scan flow instead of re-asking for a scan.
+  const context =
+    parsed.data.analysis && !withConcern?.analysis
+      ? { ...(withConcern ?? {}), analysis: parsed.data.analysis }
+      : withConcern;
 
   void logEvent("assistant_used");
   const lang: AiLang = isAiLang(parsed.data.lang) ? parsed.data.lang : "en";

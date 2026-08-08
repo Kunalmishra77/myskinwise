@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { respond, respondStream, RIYA_GREETING, type ChatTurn } from "@/lib/ai/assistant";
+import { respond, respondStream, shouldReplyEnglish, RIYA_GREETING, type ChatTurn } from "@/lib/ai/assistant";
 import type { CustomerContext } from "@/lib/ai/assistant";
 import { isAiLang, type AiLang } from "@/lib/i18n/languages";
 import { resolveCustomerContext } from "@/lib/ai/context";
@@ -228,20 +228,37 @@ export async function POST(request: Request) {
   // A concern chosen in the voice UI steers the conversation, unless the
   // customer's own resolved data already carries one (their real concern wins)
   // — identical to the text assistant.
-  const context =
+  const withConcern =
     body.concern && !resolved?.concern
       ? { ...(resolved ?? {}), concern: body.concern }
       : resolved;
+  // Carry the client's completed-scan summary so EVERY post-scan turn knows the
+  // scan is done (the engine scan isn't in the legacy resolver store). This is
+  // what stops the AI re-asking the user to scan after they already have.
+  const context =
+    body.analysis && !withConcern?.analysis
+      ? { ...(withConcern ?? {}), analysis: body.analysis }
+      : withConcern;
 
   // 3. The SAME orchestrator as text: inbound safety -> grounded model ->
   // outbound safety -> CTA.
   const messages: ChatTurn[] = [...body.history, { role: "user", content: transcript }];
   void logEvent("voice_used");
 
+  // The TTS language: when the reply is Hindi (voice generates Devanagari), speak
+  // it with the Hindi voice so ElevenLabs uses Hindi phonetics — the fix for the
+  // "reads Hinglish with English pronunciation" problem. English stays English;
+  // an explicitly-picked language keeps its own voice.
+  const speakLang: AiLang = shouldReplyEnglish(messages, replyLang)
+    ? "en"
+    : replyLang === "en"
+      ? "hi"
+      : replyLang;
+
   // Streaming path: sentence-by-sentence NDJSON so the client speaks the first
   // sentence while the rest generates. Same brief/safety pipeline.
   if (body.stream) {
-    return streamVoice(messages, context, replyLang, transcript, body.wantAudio);
+    return streamVoice(messages, context, replyLang, transcript, body.wantAudio, speakLang);
   }
 
   const outcome = await respond(messages, context, { lang: replyLang, brief: true });
@@ -252,7 +269,7 @@ export async function POST(request: Request) {
   let audioBase64: string | undefined;
   let audioMimeType: string | undefined;
   if (body.wantAudio) {
-    const speech = await getTtsProvider().speak(outcome.text, replyLang);
+    const speech = await getTtsProvider().speak(outcome.text, speakLang);
     if (speech.ok) {
       audioBase64 = speech.audioBase64;
       audioMimeType = speech.mimeType;
@@ -285,6 +302,7 @@ function streamVoice(
   lang: AiLang,
   transcript: string,
   wantAudio: boolean,
+  speakLang: AiLang,
 ): Response {
   const encoder = new TextEncoder();
   const tts = getTtsProvider();
@@ -300,7 +318,7 @@ function streamVoice(
           let audioBase64: string | undefined;
           let audioMimeType: string | undefined;
           if (wantAudio && sentence.trim()) {
-            const speech = await tts.speak(sentence, lang);
+            const speech = await tts.speak(sentence, speakLang);
             if (speech.ok) {
               audioBase64 = speech.audioBase64;
               audioMimeType = speech.mimeType;

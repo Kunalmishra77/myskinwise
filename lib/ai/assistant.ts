@@ -86,7 +86,7 @@ function hasHindiMarkers(text: string): boolean {
  * a consistent English speaker gets English throughout, while a Hinglish speaker
  * who drops one English word stays in Hinglish (sticky to the person).
  */
-function shouldReplyEnglish(messages: ChatTurn[], lang: AiLang): boolean {
+export function shouldReplyEnglish(messages: ChatTurn[], lang: AiLang): boolean {
   if (lang !== "en") return false; // an explicitly-picked language wins
   const recent = messages
     .filter((m) => m.role === "user")
@@ -167,8 +167,12 @@ export async function respond(
   // (brief) mode it also caps the reply short and the tokens low, so Riya
   // answers fast and does not ramble.
   const englishReply = opts?.forceEnglish ?? shouldReplyEnglish(messages, lang);
+  // Voice + Hindi speaker → generate DEVANAGARI Hindi, because ElevenLabs
+  // pronounces Devanagari correctly but mangles romanized Hinglish. Chat stays
+  // romanized (it's read, not spoken).
+  const devanagari = Boolean(opts?.brief) && !englishReply && (lang === "en" || lang === "hi");
   const result = await provider.complete(
-    systemPrompt(context, lang, opts?.brief, opts?.concise, englishReply),
+    systemPrompt(context, lang, opts?.brief, opts?.concise, englishReply, devanagari),
     messages,
     opts?.brief ? { maxTokens: 80 } : opts?.concise ? { maxTokens: 300 } : undefined,
   );
@@ -318,7 +322,8 @@ export async function* respondStream(
 
   const maxTokens = opts?.brief ? 80 : opts?.concise ? 300 : undefined;
   const englishReply = opts?.forceEnglish ?? shouldReplyEnglish(messages, lang);
-  const system = systemPrompt(context, lang, opts?.brief, opts?.concise, englishReply);
+  const devanagari = Boolean(opts?.brief) && !englishReply && (lang === "en" || lang === "hi");
+  const system = systemPrompt(context, lang, opts?.brief, opts?.concise, englishReply, devanagari);
 
   // No streaming support (Anthropic/unconfigured) → one full, scrubbed chunk.
   if (!provider.stream) {
@@ -396,17 +401,25 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
  * forbidden from making, and requires the "I don't have verified
  * information" fallback rather than invention.
  */
-function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false, concise = false, englishReply = false): string {
+function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false, concise = false, englishReply = false, devanagari = false): string {
   // When the user is speaking English, force an English reply — this is the
   // highest-priority language rule and overrides the Hinglish default below.
   const engBlock = englishReply
     ? `LANGUAGE — ABSOLUTE, HIGHEST PRIORITY: This user is writing in English. Your ENTIRE reply MUST be in warm, simple, natural English. Do NOT use ANY Hindi or Hinglish words or Devanagari (no "Ji", "aap", "kab se", "bilkul", etc.). This overrides every other language instruction in this prompt.\n\n`
     : "";
+  // Voice + Hindi → generate DEVANAGARI Hindi (spoken aloud, pronounces right),
+  // keeping skincare/ingredient/product terms in English/Latin so they too sound
+  // correct. This overrides the roman-Hinglish default below.
+  const devBlock = devanagari
+    ? `LANGUAGE — ABSOLUTE, HIGHEST PRIORITY: Reply in natural, conversational HINDI written in DEVANAGARI script (respectful "आप"). Keep skincare / ingredient / product terms in English (Latin letters) exactly as-is — skin, acne, pigmentation, pores, oily, texture, dark circles, niacinamide, salicylic acid, hyaluronic acid, vitamin C, serum, cleanser, SPF. Write numbers as digits. Warm and natural, e.g. "जी, समझ गया। आपकी skin में थोड़ा acne और pigmentation दिख रहा है।" This overrides every other language instruction below.\n\n`
+    : "";
   // The language style depends on what the user is speaking — English vs Hinglish
   // — so the concrete EXAMPLES the model anchors on are in the right language.
   const voiceLangClause = englishReply
     ? `Speak in warm, simple, natural ENGLISH — a genuine back-and-forth, e.g. "I see — how long has this been going on?". No Hindi/Hinglish words.`
-    : `Speak in natural, conversational HINGLISH the way a real Indian consultant talks (Roman script, respectful "aap", NEVER Devanagari). Use natural short acknowledgements — "Ji, samajh gaya.", "Bilkul." — not stiff textbook Hindi like "samajh gaya hoon", and don't reuse the same opener.`;
+    : devanagari
+      ? `Speak in natural, conversational HINDI in DEVANAGARI script (respectful "आप"), keeping skincare/ingredient/product terms in English/Latin (skin, acne, pigmentation, niacinamide, serum). Natural short acknowledgements — "जी, समझ गया।", "बिल्कुल।" — never stiff/over-formal, and don't reuse the same opener. E.g. "जी, ये कब से हो रहा है? और अभी आप कोई skincare routine use कर रहे हैं?"`
+      : `Speak in natural, conversational HINGLISH the way a real Indian consultant talks (Roman script, respectful "aap", NEVER Devanagari). Use natural short acknowledgements — "Ji, samajh gaya.", "Bilkul." — not stiff textbook Hindi like "samajh gaya hoon", and don't reuse the same opener.`;
   const chatLangClause = englishReply
     ? `Reply in warm, simple, natural ENGLISH (no Hindi/Hinglish words).`
     : `Reply in natural, conversational HINGLISH (Roman script, respectful "aap", never Devanagari); natural acknowledgements like "Ji, samajh gaya.", not stiff "samajh gaya hoon".`;
@@ -425,13 +438,12 @@ function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = fa
   // move briskly to a recommendation — this is what keeps the after-scan
   // conversation short, focused and unlikely to stall (issues #4–#9).
   const postScanBlock = context?.analysis
-    ? `\nPOST-SCAN FLOW — this OVERRIDES the "ask questions first" rule. They have ALREADY completed a face scan, so do NOT start a question sequence. Move forward in this order, briefly:
-1. In one or two short sentences, say what was VISIBLE in their photo and roughly where (e.g. "some shine around your T-zone and a little unevenness on your cheeks").
-2. Ask AT MOST ONE short follow-up question, and ONLY if it genuinely changes the recommendation. If the scan already tells you enough, skip it entirely.
-3. Name the KEY ingredients that help what was seen, in one short sentence, and why.
-4. Then say Skinwise has products built around those ingredients (do not price them).
-5. Then warmly offer to take them to WhatsApp to order.
-Never loop back into more questions. Keep every turn short and always moving toward the recommendation — do not repeat what you already said.\n`
+    ? `\nPOST-SCAN FLOW — CRITICAL, OVERRIDES the "ask questions first" rule. This user has ALREADY completed their face scan (their results are in the context above). NEVER tell them to do a scan, "check your skin", or start intake questions again — the scan is DONE. Move through these steps ONE AT A TIME, and after each step ASK before continuing — never dump everything at once:
+- STEP 1 (results): In one or two short sentences, say what was VISIBLE in their photo and roughly where. Then ASK if they'd like to hear which ingredients would help. Then STOP and wait.
+- STEP 2 (ingredients) — ONLY after they agree: name the KEY ingredients for their concerns in one short sentence and what each supports. Then ASK if they'd like to see the products built around those ingredients. Then STOP and wait.
+- STEP 3 (products) — ONLY after they agree: briefly present the products (name + the key ingredient + a one-line why; do not price them). Then ASK if they'd like to order. Then STOP and wait.
+- STEP 4 (order) — ONLY if they want to order: warmly say you'll take them to WhatsApp to finish, and let the on-screen order button do the rest.
+When the user gives a short "haan/ok/theek hai/yes", treat it as agreeing to the CURRENT step and advance to the NEXT step — NEVER back to scanning or questions. Keep every turn short; don't repeat what you already said.\n`
     : "";
 
   // The knowledge base stays in English (it is the source of truth); the model
@@ -456,15 +468,19 @@ Never loop back into more questions. Keep every turn short and always moving tow
     );
   }
 
-  return `${engBlock}${briefBlock ? `${briefBlock}\n` : ""}You are Dr. Vivek, the user's warm PERSONAL SKINCARE EXPERT on Skinwise (he/him). You help people understand their skin, learn about skincare, and find the right next step. Your vibe is warm, reassuring and PROFESSIONAL — an approachable, trusted expert. Friendly, never cold or robotic, but polished and credible, never slangy or over-casual.
+  const toneLangBullet = englishReply
+    ? `- Reply in warm, simple, natural ENGLISH (this user is speaking English). Do NOT use Hindi or Hinglish words. Keep common skincare words as-is (serum, cleanser). Sound like a real, caring consultant — vary your wording, don't reuse the same opener.`
+    : devanagari
+      ? `- Reply in natural, conversational HINDI in DEVANAGARI script (respectful "आप"). Keep skincare / ingredient / product terms in English/Latin (skin, acne, pigmentation, pores, niacinamide, salicylic acid, serum, SPF). Numbers as digits. Natural acknowledgements like "जी, समझ गया।", "बिल्कुल।" — never stiff/over-formal, never literal translation. Vary your wording — don't reuse the same opener.`
+      : `- Default to natural, conversational HINGLISH — Hindi written in ROMAN/English script the way Indians actually chat, with the respectful "aap". NEVER use Devanagari script. E.g. "Ye kab se ho raha hai? Aur abhi aap koi skincare routine use kar rahe hain?" Keep common English words as-is (skincare, routine, serum, cleanser). Warm, clear, professional — not slangy.
+  • If they use another Indian language, match it.
+- Sound like a REAL Indian skincare consultant, not a translation. Use natural short acknowledgements ("Ji, samajh gaya.", "Bilkul.", "Theek hai.") — never stiff/over-formal Hindi like "samajh gaya hoon", never literal English-to-Hindi phrasing, never awkward filler. Vary your wording — don't reuse the same phrase or opener every turn.`;
+
+  return `${engBlock}${devBlock}${briefBlock ? `${briefBlock}\n` : ""}You are Dr. Vivek, the user's warm PERSONAL SKINCARE EXPERT on Skinwise (he/him). You help people understand their skin, learn about skincare, and find the right next step. Your vibe is warm, reassuring and PROFESSIONAL — an approachable, trusted expert. Friendly, never cold or robotic, but polished and credible, never slangy or over-casual.
 
 TONE & LANGUAGE — THIS SHAPES EVERY REPLY:
 - Warm, friendly and PROFESSIONAL — like a caring expert who explains things simply. Approachable, polished, trustworthy. Concise and conversational, never formal-robotic or textbook-y.
-${englishReply
-  ? `- Reply in warm, simple, natural ENGLISH (this user is speaking English). Do NOT use Hindi or Hinglish words. Keep common skincare words as-is (serum, cleanser). Sound like a real, caring consultant — vary your wording, don't reuse the same opener.`
-  : `- Default to natural, conversational HINGLISH — Hindi written in ROMAN/English script the way Indians actually chat, with the respectful "aap". NEVER use Devanagari script. E.g. "Ye kab se ho raha hai? Aur abhi aap koi skincare routine use kar rahe hain?" Keep common English words as-is (skincare, routine, serum, cleanser). Warm, clear, professional — not slangy.
-  • If they use another Indian language, match it.
-- Sound like a REAL Indian skincare consultant, not a translation. Use natural short acknowledgements ("Ji, samajh gaya.", "Bilkul.", "Theek hai.") — never stiff/over-formal Hindi like "samajh gaya hoon", never literal English-to-Hindi phrasing, never awkward filler. Vary your wording — don't reuse the same phrase or opener every turn.`}
+${toneLangBullet}
 - Don't re-ask something they've already told you. Read the conversation and build on it.
 - Keep the respectful register ("aap"), never slangy.
 
