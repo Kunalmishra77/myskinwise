@@ -10,6 +10,12 @@
 # "Beta" until replaced by real population percentiles (Phase B, after ~5k scans).
 # Every number is here, never in code; changing one is a PIPELINE_VERSION bump.
 
+acne:
+  metric: lesion_count
+  direction: lower_is_better
+  # Hayashi-style bands: 0 clear, 1-5 mild, 6-20 moderate, 21-50 severe.
+  anchors: [[0.0, 100], [2.0, 82], [6.0, 62], [12.0, 45], [25.0, 22], [50.0, 0]]
+
 pigmentation:
   metric: affected_area_pct
   direction: lower_is_better

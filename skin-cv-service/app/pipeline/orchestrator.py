@@ -131,11 +131,25 @@ def _measure(image_bgr, landmarks) -> dict[str, Any]:
             results[key] = {"score": None, "severity": None, "raw": {"error": f"{type(exc).__name__}: {exc}"}, "by_region": {}}
             evidence[key] = None
 
+    # Acne (M1, ML) — separate signature; returns None until the ONNX model is
+    # present, so this is a no-op before the model is trained.
+    try:
+        from app.pipeline import m1_acne
+
+        ac = m1_acne.detect(norm_bgr, masks["skin"], mmpp)
+        if ac is not None:
+            raw, value, by_region, mask = ac
+            sc = calibrate.score_for("acne", value)
+            results["acne"] = {"score": sc, "severity": calibrate.severity_for(sc), "raw": raw, "by_region": by_region}
+            evidence["acne"] = mask
+    except Exception:
+        pass
+
     concerns = []
     for concern in _CONCERNS:
-        if concern == "acne":
+        if concern == "acne" and "acne" not in results:
             concerns.append({"id": "acne", "score": None, "severity": None, "confidence": None,
-                             "raw": {"note": "ML model lands in Phase 5"}, "by_region": {}, "mask_url": None})
+                             "raw": {"note": "acne model not deployed yet"}, "by_region": {}, "mask_url": None})
             continue
         r = results.get(concern, {})
         concerns.append({
