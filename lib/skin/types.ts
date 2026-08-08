@@ -33,6 +33,9 @@ export type ScanConcern = {
    * (e.g. ["forehead", "left cheek"]). Derived by the engine from the same
    * evidence the overlay mask shows. Absent on older engine builds. */
   regions?: string[];
+  /** Per-lesion boxes (normalised [0,1], centre-based) for acne — the visual
+   * evidence for a concern that has no engine mask. */
+  boxes?: { cx: number; cy: number; w: number; h: number }[];
   mask_url: string | null;
 };
 

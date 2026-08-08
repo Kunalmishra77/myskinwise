@@ -49,7 +49,18 @@ export function acneConfigured(): boolean {
   return Boolean(process.env.ROBOFLOW_API_KEY && process.env.ROBOFLOW_MODEL);
 }
 
-export type AcneResult = { score: number; severity: string; confidence: number; raw: Record<string, unknown> };
+/** A detected lesion, normalised to [0,1] of the image so the UI can draw it on
+ * the displayed photo at any size. cx/cy are the box CENTRE. */
+export type AcneBox = { cx: number; cy: number; w: number; h: number };
+export type AcneResult = {
+  score: number;
+  severity: string;
+  confidence: number;
+  raw: Record<string, unknown>;
+  boxes: AcneBox[];
+};
+
+type RoboflowPred = { x?: number; y?: number; width?: number; height?: number; confidence?: number };
 
 export async function detectAcne(imageBase64: string): Promise<AcneResult | null> {
   const key = process.env.ROBOFLOW_API_KEY;
@@ -65,13 +76,21 @@ export async function detectAcne(imageBase64: string): Promise<AcneResult | null
     });
     if (!res.ok) return null;
     const data = await res.json();
-    const preds = (data?.predictions ?? []).filter((p: { confidence?: number }) => (p.confidence ?? 0) >= CONF_MIN);
+    const preds: RoboflowPred[] = (data?.predictions ?? []).filter((p: RoboflowPred) => (p.confidence ?? 0) >= CONF_MIN);
     const count = preds.length;
+    // Normalise each box to the image so the front-end can overlay it exactly.
+    const iw = Number(data?.image?.width) || 0;
+    const ih = Number(data?.image?.height) || 0;
+    const boxes: AcneBox[] =
+      iw > 0 && ih > 0
+        ? preds.map((p) => ({ cx: (p.x ?? 0) / iw, cy: (p.y ?? 0) / ih, w: (p.width ?? 0) / iw, h: (p.height ?? 0) / ih }))
+        : [];
     return {
       score: interp(count),
       severity: severity(count),
       confidence: 0.6, // Beta model — modest confidence
       raw: { lesion_count: count, source: "roboflow", model },
+      boxes,
     };
   } catch {
     return null;

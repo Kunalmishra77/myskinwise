@@ -59,6 +59,7 @@ export async function POST(request: Request) {
           c.severity = acne.severity;
           c.confidence = acne.confidence;
           c.raw = acne.raw;
+          c.boxes = acne.boxes; // per-lesion boxes for the on-face overlay
         }
       }
     }

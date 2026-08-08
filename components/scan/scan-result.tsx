@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Mic, ShieldCheck, Sparkles } from "lucide-react";
-import type { ScanResult } from "@/lib/skin/types";
+import type { ScanResult, ScanConcern } from "@/lib/skin/types";
 import { CONCERN_META, SEVERITY_LABEL, byConcernSeverity } from "@/lib/skin/concern-content";
 import { Button } from "@/components/ui/button";
 import { RecommendedCombo } from "@/components/products/recommended-combo";
@@ -34,9 +34,15 @@ function severityIndex(sev: string | null): number {
   return i < 0 ? 0 : i;
 }
 
-// Acne is intentionally hidden until the self-trained engine model ships — we
-// don't show a concern we can't yet measure trustworthily.
-const HIDDEN_CONCERNS = new Set(["acne"]);
+// Nothing hidden now — acne is live via the hosted detector (Beta), shown with
+// its real per-lesion boxes. Kept as a switch for any future concern to gate.
+const HIDDEN_CONCERNS = new Set<string>();
+
+/** A concern has on-photo evidence if the engine rendered a mask, or (for acne)
+ * the detector returned lesion boxes. */
+function hasEvidence(c: ScanConcern): boolean {
+  return Boolean(c.mask_url) || Boolean(c.boxes && c.boxes.length > 0);
+}
 
 /** "forehead, left cheek and nose" — a natural list of the display areas. */
 function formatRegions(regions: string[]): string {
@@ -63,11 +69,11 @@ export function ScanResultView({
   // so the photo shows something the moment results load (not a bare photo that
   // only lights up on tap).
   const [active, setActive] = React.useState<string | null>(() => {
-    const withMask = result.concerns
-      .filter((c) => c.score !== null && !HIDDEN_CONCERNS.has(c.id) && c.mask_url)
+    const withEvidence = result.concerns
+      .filter((c) => c.score !== null && !HIDDEN_CONCERNS.has(c.id) && hasEvidence(c))
       .slice()
       .sort(byConcernSeverity);
-    return withMask[0]?.id ?? null;
+    return withEvidence[0]?.id ?? null;
   });
   const [ratio, setRatio] = React.useState(3 / 4);
 
@@ -106,6 +112,7 @@ export function ScanResultView({
   const activeConcern = active ? result.concerns.find((c) => c.id === active) : null;
   const maskUrl =
     activeConcern?.mask_url ? `/api/v1/scan/${result.scan_id}/mask/${activeConcern.id}.png` : null;
+  const activeBoxes = activeConcern?.boxes && activeConcern.boxes.length > 0 ? activeConcern.boxes : null;
 
   return (
     <div>
@@ -139,6 +146,22 @@ export function ScanResultView({
             className="pointer-events-none absolute inset-0 h-full w-full object-cover"
           />
         )}
+        {/* Acne has no engine mask — draw the detector's real lesion boxes. */}
+        {activeBoxes?.map((b, i) => (
+          <div
+            key={i}
+            aria-hidden="true"
+            className="pointer-events-none absolute rounded-md border-2"
+            style={{
+              left: `${(b.cx - b.w / 2) * 100}%`,
+              top: `${(b.cy - b.h / 2) * 100}%`,
+              width: `${b.w * 100}%`,
+              height: `${b.h * 100}%`,
+              borderColor: rgba(CONCERN_META.acne?.rgb ?? [230, 90, 90], 0.95),
+              boxShadow: "0 0 8px rgba(230,90,90,0.5)",
+            }}
+          />
+        ))}
       </div>
       <p className="mt-2 text-center text-xs text-ink-soft">
         {active
@@ -255,7 +278,7 @@ export function ScanResultView({
                 onClick={() => setActive(isActive ? null : c.id)}
                 className="mb-3 mt-1 px-4 text-xs font-semibold text-rose-ink"
               >
-                {isActive ? "Hide on photo" : c.mask_url ? "Show on photo →" : ""}
+                {isActive ? "Hide on photo" : hasEvidence(c) ? "Show on photo →" : ""}
               </button>
             </li>
           );
@@ -277,7 +300,7 @@ export function ScanResultView({
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => c.mask_url && setActive(isActive ? null : c.id)}
+                  onClick={() => hasEvidence(c) && setActive(isActive ? null : c.id)}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition ${
                     isActive ? "bg-blush ring-rose-ink" : "bg-champagne/40 ring-ink/10"
                   }`}
