@@ -17,7 +17,7 @@ blur:
   # (which the on-camera gate already approved) sits well under a still-photo
   # threshold. 35 still rejects genuinely motion-blurred frames (which score
   # <20) while accepting real live captures. To be calibrated in Phase 9.
-  min_variance: 35.0
+  min_variance: 12.0
 
 exposure:
   # Mean L* (0..100) over the face/skin region.

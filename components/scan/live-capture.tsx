@@ -58,18 +58,56 @@ export function LiveCapture({
     streamRef.current = null;
   }, []);
 
-  const grab = React.useCallback(() => {
+  const grab = React.useCallback(async () => {
     const video = videoRef.current;
     if (!video || !video.videoWidth || capturedRef.current) return;
     capturedRef.current = true;
     setFlash(true);
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height); // un-mirrored: real orientation
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    const full = document.createElement("canvas");
+    full.width = w;
+    full.height = h;
+    const fctx = full.getContext("2d");
+    const small = document.createElement("canvas");
+    small.width = 200;
+    small.height = 200;
+    const sctx = small.getContext("2d", { willReadFrequently: true });
+
+    // Burst: over ~250ms grab several frames and KEEP THE SHARPEST — so a
+    // momentarily-soft frame (autofocus/hand shake) never gets captured.
+    let bestUrl: string | null = null;
+    let bestSharp = -1;
+    for (let i = 0; i < 5 && fctx && sctx; i++) {
+      fctx.drawImage(video, 0, 0, w, h); // un-mirrored: real orientation
+      sctx.drawImage(full, 0, 0, 200, 200);
+      const { data } = sctx.getImageData(0, 0, 200, 200);
+      const g = new Float32Array(200 * 200);
+      for (let p = 0, k = 0; p < data.length; p += 4, k++) {
+        g[k] = 0.299 * data[p]! + 0.587 * data[p + 1]! + 0.114 * data[p + 2]!;
+      }
+      let sum = 0;
+      let sq = 0;
+      let n = 0;
+      for (let y = 1; y < 199; y++) {
+        for (let x = 1; x < 199; x++) {
+          const idx = y * 200 + x;
+          const lap = 4 * g[idx]! - g[idx - 1]! - g[idx + 1]! - g[idx - 200]! - g[idx + 200]!;
+          sum += lap;
+          sq += lap * lap;
+          n++;
+        }
+      }
+      const sharp = sq / n - (sum / n) ** 2;
+      if (sharp > bestSharp) {
+        bestSharp = sharp;
+        bestUrl = full.toDataURL("image/jpeg", 0.92);
+      }
+      await new Promise((r) => setTimeout(r, 55));
+    }
+
+    const dataUrl = bestUrl ?? full.toDataURL("image/jpeg", 0.92);
     const bytes = Math.round((dataUrl.length - "data:image/jpeg;base64,".length) * 0.75);
     stop();
     onCapture(dataUrl, "image/jpeg", bytes);
