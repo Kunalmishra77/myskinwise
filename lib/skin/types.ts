@@ -29,6 +29,10 @@ export type ScanConcern = {
   confidence: number | null;
   raw: Record<string, unknown>;
   by_region: Record<string, number>;
+  /** Friendly display areas where this concern was seen, most-prominent first
+   * (e.g. ["forehead", "left cheek"]). Derived by the engine from the same
+   * evidence the overlay mask shows. Absent on older engine builds. */
+  regions?: string[];
   mask_url: string | null;
 };
 

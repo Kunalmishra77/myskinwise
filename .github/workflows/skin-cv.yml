@@ -41,4 +41,4 @@ jobs:
       # in CI. The full determinism harness (real cv2/mediapipe over fixtures) is
       # validated against the deployed engine, not here, to keep CI green.
       - name: Test (gate + scoring + store)
-        run: python -m pytest tests/test_gate_thresholds.py tests/test_scoring.py tests/test_store.py -q
+        run: python -m pytest tests/test_gate_thresholds.py tests/test_scoring.py tests/test_store.py tests/test_regions.py -q

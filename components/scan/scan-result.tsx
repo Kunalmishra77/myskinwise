@@ -38,6 +38,14 @@ function severityIndex(sev: string | null): number {
 // don't show a concern we can't yet measure trustworthily.
 const HIDDEN_CONCERNS = new Set(["acne"]);
 
+/** "forehead, left cheek and nose" — a natural list of the display areas. */
+function formatRegions(regions: string[]): string {
+  const r = regions.slice(0, 3);
+  if (r.length === 1) return `your ${r[0]}`;
+  if (r.length === 2) return `your ${r[0]} and ${r[1]}`;
+  return `your ${r.slice(0, -1).join(", ")} and ${r[r.length - 1]}`;
+}
+
 function rgba([r, g, b]: [number, number, number], a: number) {
   return `rgba(${r},${g},${b},${a})`;
 }
@@ -215,6 +223,12 @@ export function ScanResultView({
               </div>
 
               {meta?.blurb && <p className="mt-2.5 px-4 pb-1 text-sm text-ink-soft">{meta.blurb}</p>}
+
+              {c.regions && c.regions.length > 0 && (
+                <p className="px-4 pb-1 text-xs text-ink-soft">
+                  <span className="font-semibold text-ink">Seen mostly on:</span> {formatRegions(c.regions)}
+                </p>
+              )}
 
               <button
                 type="button"

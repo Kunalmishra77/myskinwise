@@ -49,6 +49,7 @@ def _empty_concerns() -> list[dict[str, Any]]:
             "confidence": None,
             "raw": {},
             "by_region": {},
+            "regions": [],
             "mask_url": None,
         }
         for concern in _CONCERNS
@@ -89,6 +90,53 @@ def _skin_type(tzone_shine: float, cheek_shine: float) -> str:
     if tzone_shine < 8 and cheek_shine < 8:
         return "dry"
     return "normal"
+
+
+# Fine region masks → the friendly, customer-facing area names we show on the
+# result ("seen mostly on your forehead & cheeks"). Several fine regions collapse
+# to one display area (glabella folds into forehead; both under-eyes into one).
+_REGION_DISPLAY = {
+    "forehead": "forehead",
+    "glabella": "forehead",
+    "nose": "nose",
+    "left_cheek": "left cheek",
+    "right_cheek": "right cheek",
+    "perioral": "around the mouth",
+    "chin": "chin",
+    "left_periorbital": "under the eyes",
+    "right_periorbital": "under the eyes",
+}
+
+
+def _dominant_regions(evidence, masks) -> list[str]:
+    """Which display areas a concern's evidence actually falls in, most first.
+
+    Uses the SAME evidence mask the overlay PNG is rendered from, intersected
+    with the region masks — so the words match the picture. Returns [] when
+    there isn't enough evidence to name an area honestly.
+    """
+    import numpy as np
+
+    if evidence is None:
+        return []
+    ev = evidence > 0
+    total = int(ev.sum())
+    if total < 20:
+        return []
+    shares: dict[str, float] = {}
+    for name, display in _REGION_DISPLAY.items():
+        rm = masks.get(name)
+        if rm is None:
+            continue
+        inter = int(np.logical_and(ev, rm > 0).sum())
+        if inter <= 0:
+            continue
+        shares[display] = shares.get(display, 0.0) + inter / total
+    if not shares:
+        return []
+    ordered = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
+    picked = [name for name, frac in ordered if frac >= 0.12][:3]
+    return picked or [ordered[0][0]]
 
 
 def _measure(image_bgr, landmarks) -> dict[str, Any]:
@@ -149,7 +197,7 @@ def _measure(image_bgr, landmarks) -> dict[str, Any]:
     for concern in _CONCERNS:
         if concern == "acne" and "acne" not in results:
             concerns.append({"id": "acne", "score": None, "severity": None, "confidence": None,
-                             "raw": {"note": "acne model not deployed yet"}, "by_region": {}, "mask_url": None})
+                             "raw": {"note": "acne model not deployed yet"}, "by_region": {}, "regions": [], "mask_url": None})
             continue
         r = results.get(concern, {})
         concerns.append({
@@ -159,6 +207,8 @@ def _measure(image_bgr, landmarks) -> dict[str, Any]:
             "confidence": None if r.get("score") is None else 0.7,
             "raw": r.get("raw", {}),
             "by_region": r.get("by_region", {}),
+            # Friendly area names, derived from the same evidence the mask shows.
+            "regions": _dominant_regions(evidence.get(concern), masks),
             "mask_url": None,  # overlay serving lands in Phase 6/7
         })
 
@@ -168,6 +218,10 @@ def _measure(image_bgr, landmarks) -> dict[str, Any]:
     oil = results.get("oiliness", {}).get("by_region", {})
     return {
         "_evidence": evidence,
+        # Original-image pixel size, so the client can align mask overlays
+        # robustly regardless of how the photo is displayed.
+        "image_width": int(shape[1]),
+        "image_height": int(shape[0]),
         "skin_tone": {
             "median_ita_deg": round(ita_med, 1),
             "fitzpatrick_estimate": _fitzpatrick_from_ita(ita_med),
