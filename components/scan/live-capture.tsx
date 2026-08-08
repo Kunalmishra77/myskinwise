@@ -17,7 +17,7 @@ import { ImageUp, Camera } from "lucide-react";
  * back to a manual capture button and a plain upload.
  */
 
-const GREEN_FRAMES_TO_CAPTURE = 8; // ~0.7s of sustained "good" before the shutter
+const GREEN_FRAMES_TO_CAPTURE = 12; // ~1.1s of sustained, STILL "good" before the shutter
 const DETECT_EVERY_MS = 90; // throttle detection to ~11fps
 
 // Absolute floor for the burst's sharpness (Laplacian variance on the 200px
@@ -133,6 +133,7 @@ export function LiveCapture({
   // Latest detected face box in RAW video pixels — the crop in grab() frames to
   // this, so the analysis image is always a face close-up, never the viewport.
   const lastDetRef = React.useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const lastCentreRef = React.useRef<{ x: number; y: number } | null>(null);
 
   const [status, setStatus] = React.useState<"starting" | "live" | "blocked">("starting");
   const [hint, setHint] = React.useState("Getting the camera ready…");
@@ -344,6 +345,7 @@ export function LiveCapture({
     setStatus("starting");
     capturedRef.current = false;
     greenFrames.current = 0;
+    lastCentreRef.current = null;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 1280 } },
@@ -398,7 +400,23 @@ export function LiveCapture({
                 ? det.keypoints.map((k) => projectPoint(k.x, k.y, v.videoWidth, v.videoHeight))
                 : [],
             );
-            greenFrames.current = verdict.ok ? greenFrames.current + 1 : 0;
+            // STABILITY GATE — only count "good" frames while the face is also
+            // HOLDING STILL. If it moved since the last frame, the shot isn't
+            // stable yet, so the hold restarts. This is what stops the scanner
+            // firing mid-movement; capture needs ~1s of steady, valid framing.
+            const centre = det?.boundingBox
+              ? { x: (det.boundingBox.originX + det.boundingBox.width / 2) / v.videoWidth, y: (det.boundingBox.originY + det.boundingBox.height / 2) / v.videoHeight }
+              : null;
+            const prev = lastCentreRef.current;
+            const moved = prev && centre ? Math.hypot(centre.x - prev.x, centre.y - prev.y) : 1;
+            lastCentreRef.current = centre;
+            const stable = moved < 0.018; // < ~1.8% of the frame between detections
+            if (verdict.ok && stable) {
+              greenFrames.current += 1;
+            } else {
+              greenFrames.current = 0;
+              if (verdict.ok && !stable) setHint("Almost there — hold still");
+            }
             setProgress(Math.min(1, greenFrames.current / GREEN_FRAMES_TO_CAPTURE));
             if (greenFrames.current >= GREEN_FRAMES_TO_CAPTURE) {
               grab();
@@ -447,8 +465,9 @@ export function LiveCapture({
     onUpload(dataUrl, file.type || "image/jpeg", file.size);
   }
 
-  // Progress-ring geometry (an ellipse with pathLength normalised to 100).
-  const ringColor = good ? "#5bbf7b" : "#ffffff";
+  // RED until every check passes and the face is held still; GREEN = validated
+  // and ready. So the colour is an honest readiness signal, not "a face exists".
+  const ringColor = good ? "#5bbf7b" : "#e0687a";
 
   return (
     <div>
