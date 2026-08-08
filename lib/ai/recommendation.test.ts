@@ -35,8 +35,9 @@ describe("recommendationConcern gating (ask first, recommend later)", () => {
     expect(recommendationConcern(convo, scanned)).toBe("acne");
   });
 
-  it("recommends after enough conversation even without a scan", () => {
-    expect(recommendationConcern(deep(user("I keep getting pimples and breakouts")))).toBe("acne");
+  it("never recommends a product before a scan, however long the chat", () => {
+    // Spec: no ingredient/product recommendation until the skin analysis is done.
+    expect(recommendationConcern(deep(user("I keep getting pimples and breakouts")))).toBeUndefined();
   });
 });
 
