@@ -10,7 +10,40 @@ import { LiveCapture } from "@/components/scan/live-capture";
 import { Analyzing } from "@/components/scan/analyzing";
 import { LeadGate } from "@/components/analyzer/lead-gate";
 import { ScanResultView } from "@/components/scan/scan-result";
-import { getSession } from "@/lib/consultation/session";
+import { getSession, patchSession } from "@/lib/consultation/session";
+import { CONCERN_META } from "@/lib/skin/concern-content";
+
+// Engine concern id → the consultation concern slug used for product combos.
+const ENGINE_TO_CONSULT: Record<string, string> = {
+  oiliness: "oily-skin",
+  dark_circles: "dark-circles",
+  pigmentation: "pigmentation",
+  acne: "acne",
+  wrinkles: "other-issues",
+  pores: "other-issues",
+  redness: "other-issues",
+  texture: "other-issues",
+};
+
+/** Build the customer-safe scan summary the voice/chat handoff explains from. */
+function buildScanSummary(result: ScanResult) {
+  const notable = result.concerns
+    .filter((c) => c.score !== null && c.id !== "acne" && c.severity && c.severity !== "clear")
+    .slice()
+    .sort((a, b) => (a.score ?? 999) - (b.score ?? 999));
+  const features = notable.map((c) => ({
+    label: CONCERN_META[c.id]?.label ?? c.id,
+    certainty: c.severity === "significant" ? "clearly visible" : c.severity === "moderate" ? "visible" : "mild",
+  }));
+  return {
+    top: notable[0]?.id,
+    analysis: {
+      imageQuality: "good",
+      features: features.length ? features : [{ label: "clear, balanced skin", certainty: "overall" }],
+      limitations: "This is a cosmetic read of the photo, not a medical diagnosis.",
+    },
+  };
+}
 
 /**
  * The NEW scan experience, powered by the deterministic engine on the VPS. It
@@ -86,6 +119,16 @@ export function ScanFlow() {
       });
       const data = await res.json();
       if (res.status === 201 && data.status === "completed") {
+        // Carry the scan into the session so the voice/chat handoff can EXPLAIN
+        // it (concern + reference + customer-safe summary), instead of opening a
+        // fresh greeting.
+        const summary = buildScanSummary(data.result as ScanResult);
+        patchSession({
+          analysisReference: typeof data.reference === "string" ? data.reference : undefined,
+          explainedRef: undefined, // a new scan should be explained afresh
+          concern: summary.top ? ENGINE_TO_CONSULT[summary.top] : getSession().concern,
+          scanAnalysis: summary.analysis,
+        });
         setResult(data.result);
         setStage("result");
       } else if (res.status === 422) {

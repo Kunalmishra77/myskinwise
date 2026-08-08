@@ -568,6 +568,10 @@ export function useVoiceConversation(opts: { autoListen?: boolean } = {}) {
           history: [],
           analysisReference: s.analysisReference,
           concern: s.concern,
+          // The customer-safe scan summary, so the explanation is grounded in
+          // THIS person's actual findings (the engine scan isn't in the server's
+          // legacy analysis store).
+          analysis: s.scanAnalysis,
         }),
       });
       const data = await res.json().catch(() => null);

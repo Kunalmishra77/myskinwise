@@ -17,7 +17,7 @@ import { ImageUp, Camera } from "lucide-react";
  * back to a manual capture button and a plain upload.
  */
 
-const GREEN_FRAMES_TO_CAPTURE = 14; // ~0.9s of sustained "good" before the shutter
+const GREEN_FRAMES_TO_CAPTURE = 8; // ~0.7s of sustained "good" before the shutter
 const DETECT_EVERY_MS = 90; // throttle detection to ~11fps
 
 // Absolute floor for the burst's sharpness (Laplacian variance on the 200px
@@ -308,28 +308,32 @@ export function LiveCapture({
       const { luma, sharp } = frameMetrics(videoRef.current!);
       const dbg: Verdict["dbg"] = { size: +size.toFixed(2), luma: Math.round(luma), sharp: Math.round(sharp) };
 
-      if (size < 0.20) return { ok: false, hint: "Come a little closer", dbg };
-      if (size > 0.42) return { ok: false, hint: "Move back a little", dbg };
-      if (Math.abs(cx - 0.5) > 0.16) return { ok: false, hint: cx < 0.5 ? "Move a bit right" : "Move a bit left", dbg };
-      if (Math.abs(cy - 0.5) > 0.18) return { ok: false, hint: cy < 0.5 ? "Move down a little" : "Move up a little", dbg };
+      // NOTE: the guide oval is object-cover-zoomed, so a face that visually
+      // fills it is a SMALLER fraction of the raw video frame — hence a low floor.
+      // The crop normalises framing and the server gate is the real authority, so
+      // this only needs to catch a roughly-good frontal face and fire.
+      if (size < 0.16) return { ok: false, hint: "Come a little closer", dbg };
+      if (size > 0.5) return { ok: false, hint: "Move back a little", dbg };
+      if (Math.abs(cx - 0.5) > 0.2) return { ok: false, hint: cx < 0.5 ? "Move a bit right" : "Move a bit left", dbg };
+      if (Math.abs(cy - 0.5) > 0.22) return { ok: false, hint: cy < 0.5 ? "Move down a little" : "Move up a little", dbg };
 
       // Straightness / yaw from the two eye keypoints (0=right eye, 1=left eye,
-      // 2=nose). Loosened a touch so a natural selfie isn't over-gated here.
+      // 2=nose). Kept loose so a natural selfie isn't over-gated here.
       if (kp[0] && kp[1] && kp[2]) {
         const dy = Math.abs(kp[0].y - kp[1].y);
         const dx = Math.abs(kp[0].x - kp[1].x) || 1e-3;
         dbg.roll = +(dy / dx).toFixed(2);
-        if (dy / dx > 0.22) return { ok: false, hint: "Keep your head straight", dbg };
+        if (dy / dx > 0.28) return { ok: false, hint: "Keep your head straight", dbg };
         const mid = (kp[0].x + kp[1].x) / 2;
         const off = (kp[2].x - mid) / dx;
         dbg.yaw = +off.toFixed(2);
-        if (off > 0.45) return { ok: false, hint: "Turn slightly right", dbg };
-        if (off < -0.45) return { ok: false, hint: "Turn slightly left", dbg };
+        if (off > 0.55) return { ok: false, hint: "Turn slightly right", dbg };
+        if (off < -0.55) return { ok: false, hint: "Turn slightly left", dbg };
       }
 
-      if (luma < 55) return { ok: false, hint: "Find brighter, even light", dbg };
-      if (luma > 215) return { ok: false, hint: "Move out of direct glare", dbg };
-      if (sharp < 12) return { ok: false, hint: "Hold still…", dbg };
+      if (luma < 50) return { ok: false, hint: "Find brighter, even light", dbg };
+      if (luma > 220) return { ok: false, hint: "Move out of direct glare", dbg };
+      if (sharp < 10) return { ok: false, hint: "Hold still…", dbg };
 
       return { ok: true, hint: "Perfect — hold it!", dbg };
     },

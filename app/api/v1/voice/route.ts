@@ -44,6 +44,16 @@ const bodySchema = z.object({
   reference: z.string().regex(/^SW-[A-HJ-NP-Z2-9]{8}$/).optional(),
   phone: z.string().optional(),
   analysisReference: z.string().regex(/^SW-[A-HJ-NP-Z2-9]{8}$/).optional(),
+  // Customer-safe scan summary from the client (engine scans aren't in the
+  // server's legacy analysis store), so the explain handoff is grounded in the
+  // real findings. Only concern labels + certainty — never image data.
+  analysis: z
+    .object({
+      imageQuality: z.string().max(40),
+      features: z.array(z.object({ label: z.string().max(60), certainty: z.string().max(40) })).max(12),
+      limitations: z.string().max(200),
+    })
+    .optional(),
   // The client may decline audio (e.g. it will use browser TTS itself).
   wantAudio: z.boolean().default(true),
   // Optional chosen concern, so voice runs a focused, concern-specific
@@ -141,8 +151,14 @@ export async function POST(request: Request) {
       phone: body.phone,
       analysisReference: body.analysisReference,
     });
-    const ctx =
+    // Prefer the client's scan summary (engine scans aren't in the legacy store),
+    // falling back to whatever the resolver found.
+    const withConcern =
       body.concern && !context?.concern ? { ...(context ?? {}), concern: body.concern } : context;
+    const ctx =
+      body.analysis && !withConcern?.analysis
+        ? { ...(withConcern ?? {}), analysis: body.analysis }
+        : withConcern;
     const instruction =
       "The user has just completed a face scan. In a warm, natural voice, tell them the main things you could see in the photo, then offer to talk them through which ingredients would help and a suggested routine. Keep it to two short sentences, speak like a person (no number lists), and never give a diagnosis.";
     // The instruction here is synthetic English — don't let language auto-detect

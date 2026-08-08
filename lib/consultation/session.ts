@@ -47,6 +47,18 @@ export type ConsultSession = {
    */
   leadId?: string;
   leadName?: string;
+  /**
+   * A customer-safe summary of the just-completed engine scan — the same concern
+   * labels + severities the user just saw on screen. Carried so the voice/chat
+   * handoff can EXPLAIN the results directly, without a server round-trip to a
+   * store that doesn't hold engine scans. Never contains image data or a
+   * diagnosis.
+   */
+  scanAnalysis?: {
+    imageQuality: string;
+    features: { label: string; certainty: string }[];
+    limitations: string;
+  };
 };
 
 export function getSession(): ConsultSession {

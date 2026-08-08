@@ -59,7 +59,16 @@ export function ScanResultView({
   photo: string;
   onRestart: () => void;
 }) {
-  const [active, setActive] = React.useState<string | null>(null);
+  // Default to showing the MOST-NOTICEABLE concern's evidence mask right away,
+  // so the photo shows something the moment results load (not a bare photo that
+  // only lights up on tap).
+  const [active, setActive] = React.useState<string | null>(() => {
+    const withMask = result.concerns
+      .filter((c) => c.score !== null && !HIDDEN_CONCERNS.has(c.id) && c.mask_url)
+      .slice()
+      .sort(byConcernSeverity);
+    return withMask[0]?.id ?? null;
+  });
   const [ratio, setRatio] = React.useState(3 / 4);
 
   // Phase 8 — the narrative report + matched routine, generated from the SCORES
@@ -83,10 +92,14 @@ export function ScanResultView({
     };
   }, [result]);
 
-  const shown = result.concerns
+  const scored = result.concerns
     .filter((c) => c.score !== null && !HIDDEN_CONCERNS.has(c.id))
     .slice()
     .sort(byConcernSeverity);
+  // Only what actually needs attention gets a full card; everything that's fine
+  // collapses into one compact "looking good" row — so the page stays short.
+  const attention = scored.filter((c) => c.severity === "significant" || c.severity === "moderate");
+  const minor = scored.filter((c) => c.severity !== "significant" && c.severity !== "moderate");
   const tone = result.skin_tone;
   const warnings = (result.quality.checks ?? []).filter((c) => !c.passed);
 
@@ -168,9 +181,16 @@ export function ScanResultView({
         </div>
       )}
 
-      {/* Concern cards, most-noticeable first. */}
+      {attention.length === 0 && (
+        <div className="mt-6 flex items-start gap-2.5 rounded-2xl bg-sage/25 p-4">
+          <Sparkles aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-ink" />
+          <p className="text-sm text-ink">Great news — nothing stood out as a strong concern. Here&apos;s the full read.</p>
+        </div>
+      )}
+
+      {/* Full cards ONLY for what needs attention. */}
       <ul className="mt-6 flex flex-col gap-3">
-        {shown.map((c) => {
+        {attention.map((c) => {
           const meta = CONCERN_META[c.id];
           const isActive = active === c.id;
           const sev = c.severity ?? "";
@@ -242,6 +262,36 @@ export function ScanResultView({
         })}
       </ul>
 
+      {/* Everything that's fine — one compact row, tap a chip to see it on the
+          photo. Keeps the page short instead of a wall of "Clear" cards. */}
+      {minor.length > 0 && (
+        <div className="mt-3 rounded-2xl bg-surface p-4 shadow-soft">
+          <p className="text-sm font-semibold text-ink">
+            {attention.length ? "Also looking good" : "Your full read"}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {minor.map((c) => {
+              const meta = CONCERN_META[c.id];
+              const isActive = active === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => c.mask_url && setActive(isActive ? null : c.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition ${
+                    isActive ? "bg-blush ring-rose-ink" : "bg-champagne/40 ring-ink/10"
+                  }`}
+                >
+                  <span aria-hidden="true" className="size-2 rounded-full" style={{ backgroundColor: rgba(meta?.rgb ?? [180, 60, 100], 1) }} />
+                  {meta?.label ?? c.id}
+                  <span className="text-ink-soft">· {SEVERITY_LABEL[c.severity ?? "clear"] ?? c.severity}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Phase 8 — personalised narrative + matched routine. */}
       <div className="mt-8">
         <h2 className="font-display text-2xl font-semibold text-ink">Your personalised read</h2>
@@ -269,7 +319,7 @@ export function ScanResultView({
         <Button size="lg" asChild>
           <Link href="/voice">
             <Mic aria-hidden="true" className="size-4" />
-            Talk through my results with Dr. Vivek
+            Talk about your results with our expert
           </Link>
         </Button>
         <Button size="lg" variant="outline" asChild>
