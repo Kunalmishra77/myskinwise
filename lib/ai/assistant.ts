@@ -102,7 +102,7 @@ function salutation(): string {
  */
 export function buildGreeting(lang: "en" | "hi"): string {
   void lang;
-  return `${salutation()}! Main Dr. Vivek hoon, aapka personal skincare expert. Batayie, aapki skin ko lekar kya chal raha hai?`;
+  return `${salutation()}! Main Dr. Vivek hoon, aapka personal skincare expert. Bataiye, aapki skin ko lekar kya dikkat ho rahi hai?`;
 }
 
 /** Back-compat export: some callers read a plain greeting map. */
