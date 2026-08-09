@@ -115,21 +115,30 @@ function istHour(): number {
   return ist.getHours();
 }
 
-function salutation(): string {
+function salutationEn(): string {
   const h = istHour();
   if (h < 12) return "Good morning";
   if (h < 17) return "Good afternoon";
   return "Good evening";
 }
+function salutationHi(): string {
+  const h = istHour();
+  if (h < 12) return "सुप्रभात";
+  return "नमस्ते";
+}
 
 /**
- * Dr. Vivek's opening line — a time-aware (IST), warm-professional greeting in
- * natural Hinglish. Fixed and safety-approved (never model-authored) so it is
- * consistent and can be spoken the instant the conversation opens.
+ * Dr. Vivek's opening line, time-aware (IST). For Hindi it is written in
+ * DEVANAGARI (spoken with the Hindi voice), because romanized Hindi like "Main"
+ * gets read as the English word "MAIN". English keeps English. Fixed and
+ * safety-approved (never model-authored) so it can be spoken the instant the
+ * conversation opens.
  */
 export function buildGreeting(lang: "en" | "hi"): string {
-  void lang;
-  return `${salutation()}! Main Dr. Vivek hoon, aapka personal skincare expert. Bataiye, aapki skin ko lekar kya dikkat ho rahi hai?`;
+  if (lang === "en") {
+    return `${salutationEn()}! I'm Dr. Vivek, your personal skincare expert. Tell me — what's going on with your skin?`;
+  }
+  return `${salutationHi()}! मैं Dr. Vivek हूँ, आपका personal skincare expert। बताइए, आपकी skin को लेकर क्या दिक्कत हो रही है?`;
 }
 
 /** Back-compat export: some callers read a plain greeting map. */
@@ -473,7 +482,7 @@ function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = fa
 - STEP 1 (results): In one or two short sentences, say what was VISIBLE in their photo and roughly where. Then ASK if they'd like to hear which ingredients would help. Then STOP and wait.
 - STEP 2 (ingredients) — ONLY after they agree: name the KEY ingredients for their concerns in one short sentence and what each supports. Then ASK if they'd like to see the products built around those ingredients. Then STOP and wait.
 - STEP 3 (products) — ONLY after they agree: briefly present the products (name + the key ingredient + a one-line why; do not price them). Then ASK if they'd like to order. Then STOP and wait.
-- STEP 4 (order) — ONLY if they want to order: tell them to tap the "Order" button on screen to finish — e.g. "Order karne ke liye neeche diye gaye button par tap kar dijiye." Do NOT say you will take them to WhatsApp or anywhere. Then STOP — say nothing more after that.
+- STEP 4 (order) — ONLY if they want to order: tell them to tap the "Order Now" button on screen to finish — in Hindi say it in Devanagari, e.g. "ऑर्डर करने के लिए नीचे दिए गए Order Now button पर tap कीजिए।" Do NOT say you will take them to WhatsApp or anywhere. Then STOP — say nothing more after that.
 When the user gives a short "haan/ok/theek hai/yes", treat it as agreeing to the CURRENT step and advance to the NEXT step — NEVER back to scanning or questions. Keep every turn short (1–3 short sentences); don't repeat what you already said.\n`
     : "";
 

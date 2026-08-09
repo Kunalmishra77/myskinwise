@@ -128,10 +128,16 @@ export async function POST(request: Request) {
   // intro verbatim; in any other language the model writes an equivalent short
   // greeting in that language (still just an intro — no advice).
   if (body.greeting) {
+    // Default to the Hindi (Devanagari) greeting spoken with the Hindi voice —
+    // the primary audience — unless English is explicitly picked. This is what
+    // fixes romanized "Main" being read as the English word "MAIN".
+    const greetLang: "en" | "hi" = body.langLocked && lang === "en" ? "en" : "hi";
     let text: string;
+    let greetSpeak: AiLang = greetLang;
     if (lang === "en" || lang === "hi") {
-      text = RIYA_GREETING[lang];
+      text = RIYA_GREETING[greetLang];
     } else {
+      // Another picked Indian language — let the model write the intro in it.
       const outcome = await respond(
         [
           {
@@ -144,11 +150,12 @@ export async function POST(request: Request) {
         { lang, brief: true },
       );
       text = outcome.text;
+      greetSpeak = lang;
     }
     let audioBase64: string | undefined;
     let audioMimeType: string | undefined;
     if (body.wantAudio) {
-      const speech = await getTtsProvider().speak(text, lang);
+      const speech = await getTtsProvider().speak(text, greetSpeak);
       if (speech.ok) {
         audioBase64 = speech.audioBase64;
         audioMimeType = speech.mimeType;

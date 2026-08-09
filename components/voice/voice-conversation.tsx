@@ -81,11 +81,13 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
   // we show the actual product combo + WhatsApp order (the end of the journey).
   const [pendingScan, setPendingScan] = React.useState(false);
   const [hasScanned, setHasScanned] = React.useState(false);
+  const [productsUnlocked, setProductsUnlocked] = React.useState(false);
   React.useEffect(() => {
     const s = getSession();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPendingScan(Boolean(s.analysisReference && s.analysisReference !== s.explainedRef));
     setHasScanned(Boolean(s.analysisReference));
+    setProductsUnlocked(Boolean(s.productsUnlocked));
   }, [turns]);
 
   // Part 5 — arriving from a fresh scan ("Hear your results"), the expert starts
@@ -189,7 +191,7 @@ export function VoiceConversation({ onClose }: { onClose?: () => void }) {
             </Link>
           </div>
         )}
-        {lastRecommend && hasScanned && getSession().productsUnlocked && (
+        {lastRecommend && hasScanned && productsUnlocked && (
           <div className="mt-3">
             <RecommendedCombo concern={lastRecommend} />
           </div>
