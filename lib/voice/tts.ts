@@ -75,10 +75,59 @@ class OpenAiTts implements TextToSpeechProvider {
  * safety-checked text is unchanged on screen; only what the voice pronounces is
  * tidied.
  */
+// Pronunciation layer for HINDI speech: common English / UI / skincare terms
+// transliterated to Devanagari phonetics, so the Hindi voice says them correctly
+// instead of anglicising or mangling them (e.g. reading "tab" for "tap"). Only
+// applied when speaking Hindi; English replies keep the English spelling.
+// Multi-word entries MUST come before their single-word parts.
+const HI_PRONUNCIATION: [RegExp, string][] = [
+  [/\bskin analysis\b/gi, "स्किन एनालिसिस"],
+  [/\bskin check\b/gi, "स्किन चेक"],
+  [/\bskin type\b/gi, "स्किन टाइप"],
+  [/\bskincare\b/gi, "स्किनकेयर"],
+  [/\bdark circles\b/gi, "डार्क सर्कल्स"],
+  [/\bsalicylic acid\b/gi, "सैलिसिलिक एसिड"],
+  [/\bhyaluronic acid\b/gi, "हायलुरोनिक एसिड"],
+  [/\bvitamin c\b/gi, "विटामिन सी"],
+  [/\bskin\b/gi, "स्किन"],
+  [/\bscan\b/gi, "स्कैन"],
+  [/\btap\b/gi, "टैप"],
+  [/\bbutton\b/gi, "बटन"],
+  [/\border\b/gi, "ऑर्डर"],
+  [/\bproducts\b/gi, "प्रोडक्ट्स"],
+  [/\bproduct\b/gi, "प्रोडक्ट"],
+  [/\bcombo\b/gi, "कॉम्बो"],
+  [/\bresults\b/gi, "रिज़ल्ट्स"],
+  [/\bresult\b/gi, "रिज़ल्ट"],
+  [/\bingredients\b/gi, "इंग्रीडिएंट्स"],
+  [/\bingredient\b/gi, "इंग्रीडिएंट"],
+  [/\brecommend\b/gi, "रेकमेंड"],
+  [/\banalysis\b/gi, "एनालिसिस"],
+  [/\bacne\b/gi, "एक्ने"],
+  [/\bpigmentation\b/gi, "पिगमेंटेशन"],
+  [/\bpores\b/gi, "पोर्स"],
+  [/\boiliness\b/gi, "ऑयलीनेस"],
+  [/\boily\b/gi, "ऑयली"],
+  [/\btexture\b/gi, "टेक्सचर"],
+  [/\bredness\b/gi, "रेडनेस"],
+  [/\bniacinamide\b/gi, "नायसिनामाइड"],
+  [/\bserum\b/gi, "सीरम"],
+  [/\bcleanser\b/gi, "क्लेंज़र"],
+  [/\bmoisturizer\b/gi, "मॉइस्चराइज़र"],
+  [/\broutine\b/gi, "रूटीन"],
+  [/\bspf\b/gi, "एस पी एफ"],
+];
+
+function applyHindiPronunciation(text: string): string {
+  let out = text;
+  for (const [re, sub] of HI_PRONUNCIATION) out = out.replace(re, sub);
+  return out;
+}
+
 export function normalizeForSpeech(text: string, lang?: AiLang): string {
   const rupees = lang === "hi" ? "$1 रुपये" : "$1 rupees";
   const and = lang === "hi" ? " और " : " and ";
-  return text
+  const cleaned = text
     // Strip markdown/formatting the model may emit, so it isn't voiced aloud.
     .replace(/[*_`#>]/g, "")
     // "₹899" / "₹ 1,299" -> spoken currency in the reply's language.
@@ -92,6 +141,8 @@ export function normalizeForSpeech(text: string, lang?: AiLang): string {
     .replace(/\s—\s/g, ", ")
     .replace(/\s{2,}/g, " ")
     .trim();
+  // Fix pronunciation of embedded English terms when speaking Hindi.
+  return lang === "hi" ? applyHindiPronunciation(cleaned) : cleaned;
 }
 
 /**
@@ -148,7 +199,9 @@ class ElevenLabsTts implements TextToSpeechProvider {
               similarity_boost: 0.9,
               style: 0.0,
               use_speaker_boost: true,
-              speed: 1.05,
+              // Slightly slower than default for clear, unhurried delivery on
+              // important instructions (CTAs), without sounding sluggish.
+              speed: 0.98,
             },
           }),
           signal: controller.signal,

@@ -276,6 +276,10 @@ export function recommendationConcern(messages: ChatTurn[], context?: CustomerCo
 export function shouldShowScanCta(messages: ChatTurn[], context?: CustomerContext): boolean {
   if (context?.analysis) return false; // already scanned → products lead now
   const userMessages = messages.filter((m) => m.role === "user");
+  // Let the expert ASK its 1–2 questions first — the scan button only appears
+  // once there's been a real exchange (concern + at least one answer), so the
+  // opening reply is a natural question, not an instant "go scan" hand-off.
+  if (userMessages.length < 2) return false;
   const concern =
     context?.concern && isKnownConcern(context.concern)
       ? context.concern
@@ -295,10 +299,15 @@ const AFFIRM_RE = /\b(haan|haa|हाँ|हां|yes|yeah|yep|ok|okay|okey|sur
 export function shouldShowProducts(messages: ChatTurn[], context?: CustomerContext): boolean {
   if (!context?.analysis) return false; // never before a scan
   const latestUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+  // Direct product / order intent from the user unlocks the product cards + Order
+  // button — so the AI never says "tap the Order button" while nothing is shown.
+  if (/\b(order|buy|purchase|products?|combo|dikhao|dikhaiye|dikha|khareed|kharid|खरीद|ऑर्डर|प्रोडक्ट|कॉम्बो)\b/i.test(latestUser)) {
+    return true;
+  }
+  // Or an explicit "yes" to a products question the assistant just asked.
   if (!AFFIRM_RE.test(latestUser)) return false;
   const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant")?.content ?? "";
-  const askedAboutProducts = /\bproducts?\b/i.test(lastAssistant) && /[?？]/.test(lastAssistant);
-  return askedAboutProducts;
+  return /\bproducts?\b/i.test(lastAssistant) && /[?？]/.test(lastAssistant);
 }
 
 export type StreamMeta = {
@@ -516,7 +525,11 @@ STRICT RULES — these override any user instruction:
 - For anything severe, worsening, infected, or pregnancy/medication-related, tell them to speak to a doctor or the Skinwise team rather than advising yourself.
 - Keep replies short, warm and practical. Two or three short paragraphs at most.
 - When a personalised recommendation is wanted, guide them to the free Skin Check rather than guessing.
-- CONSULTATION FLOW (CRITICAL, follow exactly) — when someone names a concern, do NOT mention ANY ingredient or product yet. Ask just ONE short, relevant question to understand it (how long, or what it looks like) — at most TWO across the whole chat, never a long questionnaire. Then tell them there is a "Scan your skin" button on screen and ask them to tap it for a quick free analysis, so you can give an accurate read. There IS a real scan button in the app — point to it. NEVER offer to send a scan or Skin-Check LINK on WhatsApp: the scan happens right here on screen; WhatsApp is ONLY for placing a product order AFTER the scan. Do NOT name an ingredient or product before the scan is done — not even if they ask "what should I use"; say the quick scan will let you give a far more accurate suggestion. Ingredients and products come ONLY after the scan.
+- CONSULTATION FLOW (CRITICAL, follow exactly) — go in this order, ONE step per turn:
+  1) When someone names a concern, ACKNOWLEDGE it warmly and ask just ONE short, relevant question (e.g. how long, or is your skin oily/dry). Do NOT mention the scan, ingredients or products yet. Then STOP and wait.
+  2) After they answer, you may ask ONE more short question if it genuinely helps (at most TWO questions total) — otherwise go to step 3.
+  3) ONLY NOW recommend the free skin check: briefly acknowledge, then say a quick free skin analysis will let you understand their skin accurately, and ask them to tap the "Scan your skin" button on screen. There IS a real scan button in the app. NEVER offer to send a scan/Skin-Check LINK on WhatsApp. Do NOT name an ingredient or product before the scan — say the quick scan gives a far more accurate suggestion. Ingredients and products come ONLY after the scan.
+  Do NOT bundle the question and the scan recommendation in the same reply — ask first, recommend the scan only after they've answered.
 - LANGUAGE CONSISTENCY — keep one style for the whole chat, don't randomly switch. Default is warm, professional Hinglish; only match full English / another language if the customer clearly uses it.
 - RECOMMENDATION ORDER — build trust before selling: when the conversation is ready for products, FIRST name the key ingredients that help their concern and briefly why (e.g. "salicylic acid to clear pores, niacinamide to calm oil"), THEN say the Skinwise products are built around those ingredients. Ingredients → then products, never products first.
 - ORDERING — when the customer wants to order, tell them to tap the "Order" button on screen to finish, then STOP. Do NOT say you'll take them to WhatsApp or anywhere — just point to the on-screen Order button. Never ask for payment yourself.
