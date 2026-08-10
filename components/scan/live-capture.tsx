@@ -44,6 +44,21 @@ const CONTAINER_AR = 3 / 4; // the preview box is aspect-[3/4] (width / height)
 const DEFAULT_RING = { cx: 50, cy: 62, rx: 39, ry: 39 } as const;
 type Ring = { cx: number; cy: number; rx: number; ry: number };
 
+/** Mean luma (0..255) of the central region of the captured canvas — where the
+ * face is — used to decide whether to auto-brighten a dark capture. */
+function centralMeanLuma(ctx: CanvasRenderingContext2D, size: number): number {
+  const s = Math.round(size * 0.5);
+  const off = Math.round((size - s) / 2);
+  const { data } = ctx.getImageData(off, off, s, s);
+  let sum = 0;
+  let n = 0;
+  for (let p = 0; p < data.length; p += 4) {
+    sum += 0.299 * data[p]! + 0.587 * data[p + 1]! + 0.114 * data[p + 2]!;
+    n++;
+  }
+  return n > 0 ? sum / n : 0;
+}
+
 /** Laplacian-variance focus measure on the central region of the captured canvas
  * (inside the circle, all face — away from the masked edge). */
 function circleSharpness(ctx: CanvasRenderingContext2D, size: number): number {
@@ -194,6 +209,26 @@ export function LiveCapture({
     // every measurement to the face skin-region, so background is never analysed,
     // and a plain crop is the most reliable input for the server's face detector.
     octx.drawImage(video, cropX, cropY, side, side, 0, 0, OUT, OUT); // real orientation
+
+    // AUTO-BRIGHTEN a dark capture. Darker skin tones (and dim rooms) read below
+    // the engine's exposure floor and get wrongly rejected as "too dark". If the
+    // face region is dark, lift the whole frame toward a well-exposed target so a
+    // valid photo always passes — never a false "too dark" retake.
+    const faceLuma = centralMeanLuma(octx, OUT);
+    if (faceLuma > 0 && faceLuma < 132) {
+      const factor = Math.min(1.9, 132 / faceLuma);
+      const tmp = document.createElement("canvas");
+      tmp.width = OUT;
+      tmp.height = OUT;
+      const tctx = tmp.getContext("2d");
+      if (tctx) {
+        tctx.drawImage(out, 0, 0);
+        octx.clearRect(0, 0, OUT, OUT);
+        octx.filter = `brightness(${factor.toFixed(2)})`;
+        octx.drawImage(tmp, 0, 0);
+        octx.filter = "none";
+      }
+    }
 
     // Sharpness floor on the captured frame — a genuinely soft shot resumes the
     // guided scan instead of shipping a frame the server would reject for blur.
