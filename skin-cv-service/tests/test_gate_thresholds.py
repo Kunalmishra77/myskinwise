@@ -44,39 +44,39 @@ def test_blur(cfg):
 
 
 def test_exposure(cfg):
-    assert g.check_exposure(20.0, cfg).code == "TOO_DARK"
+    assert g.check_exposure(8.0, cfg).code == "TOO_DARK"
     assert g.check_exposure(60.0, cfg).passed
-    assert g.check_exposure(90.0, cfg).code == "TOO_BRIGHT"
+    assert g.check_exposure(99.0, cfg).code == "TOO_BRIGHT"
 
 
 def test_clipping(cfg):
     assert g.check_clipping(0.5, cfg).passed
-    assert g.check_clipping(10.0, cfg).code == "CLIPPING"
+    assert g.check_clipping(40.0, cfg).code == "CLIPPING"
 
 
 def test_pose(cfg):
     ok = g.check_pose(2.0, -1.0, 0.5, cfg)
     assert all(c.passed for c in ok)
-    # A frontal phone selfie reads ~20° yaw under the biased estimator — it must
-    # PASS now (this was the "Look straight at the camera" false-reject loop).
-    assert all(c.passed for c in g.check_pose(20.0, 10.0, 8.0, cfg))
-    # A genuine profile still fails.
-    yaw, pitch, roll = g.check_pose(35.0, 35.0, 30.0, cfg)
+    # An ordinary phone selfie (even ~30° under the biased estimator) must PASS —
+    # this was the "Look straight at the camera" false-reject loop.
+    assert all(c.passed for c in g.check_pose(30.0, 30.0, 20.0, cfg))
+    # Only a true side profile fails.
+    yaw, pitch, roll = g.check_pose(60.0, 60.0, 45.0, cfg)
     assert yaw.code == "POSE_YAW" and not yaw.passed
     assert pitch.code == "POSE_PITCH" and not pitch.passed
     assert roll.code == "POSE_ROLL" and not roll.passed
 
 
 def test_distance(cfg):
-    assert g.check_distance(50.0, cfg).code == "TOO_FAR"
+    assert g.check_distance(30.0, cfg).code == "TOO_FAR"
     assert g.check_distance(168.0, cfg).passed
-    assert g.check_distance(400.0, cfg).code == "TOO_CLOSE"
+    assert g.check_distance(700.0, cfg).code == "TOO_CLOSE"
 
 
 def test_evenness(cfg):
     assert g.check_evenness(4.0, cfg).passed
-    assert g.check_evenness(15.0, cfg).passed  # ordinary indoor selfie — now OK
-    assert g.check_evenness(30.0, cfg).code == "UNEVEN_LIGHTING"
+    assert g.check_evenness(30.0, cfg).passed  # ordinary indoor selfie — now OK
+    assert g.check_evenness(60.0, cfg).code == "UNEVEN_LIGHTING"
 
 
 def test_pick_reason_respects_priority():

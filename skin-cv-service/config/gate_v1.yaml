@@ -1,9 +1,13 @@
-# Capture-quality gate thresholds (blueprint §4.1). Every number the gate uses
-# lives here, never in code. Changing any value is a PIPELINE_VERSION bump.
+# Capture-quality gate thresholds (blueprint §4.1).
 #
-# The gate is the single highest-leverage component: ~80% of "the AI gave me a
-# wrong result" complaints trace to a photo that should never have been
-# accepted. Reject strictly, with ONE clear reason at a time.
+# PHILOSOPHY (v0.6.0): the ON-CAMERA client already validates framing, distance,
+# pose, lighting, sharpness and stability, and captures a cropped, verified,
+# stable frame. So this server gate is a light SANITY check, not a strict
+# rejector — its job is to reject only genuinely un-analysable images (no face /
+# multiple faces / extreme problems), never to send a user who did everything
+# right back to the camera. Thresholds are deliberately WIDE. Real population
+# calibration (Phase B) can tighten them later once we have data; until then,
+# "a real face always goes through" beats "perfect quality".
 
 face:
   # MediaPipe FaceMesh detection confidence, and exactly one face in frame.
@@ -11,47 +15,40 @@ face:
   max_faces: 1
 
 blur:
-  # Variance of the Laplacian on the L channel (0..255). Low variance = few
-  # edges = blur. Set LOW (35) on purpose: frames grabbed from a live camera
-  # feed are softer/more compressed than a still photo, so a good live capture
-  # (which the on-camera gate already approved) sits well under a still-photo
-  # threshold. 35 still rejects genuinely motion-blurred frames (which score
-  # <20) while accepting real live captures. To be calibrated in Phase 9.
-  min_variance: 12.0
+  # Variance of the Laplacian on the L channel (0..255). Low = blurry. Kept very
+  # low: the client already rejects soft frames before capture, so this only
+  # catches a catastrophically smeared image.
+  min_variance: 5.0
 
 exposure:
-  # Mean L* (0..100) over the face/skin region.
-  min_mean_l: 40.0
-  max_mean_l: 78.0
+  # Mean L* (0..100) over the face skin region. Wide band — accepts dim indoor
+  # light through to bright daylight.
+  min_mean_l: 12.0
+  max_mean_l: 96.0
 
 clipping:
-  # Percentage of skin pixels with ANY channel >= channel_value (blown highlights).
-  channel_value: 250
-  max_percent: 2.0
+  # Percentage of skin pixels with ANY channel blown out. Generous.
+  channel_value: 252
+  max_percent: 25.0
 
 pose:
-  # Head orientation in degrees, from a solvePnP fit to facial landmarks.
-  # solvePnP with a generic 3D model carries a KNOWN systematic bias (~10-15°),
-  # so a genuinely frontal phone selfie routinely measures ~20° yaw and was being
-  # wrongly rejected ("Look straight at the camera") on every attempt. The client
-  # already enforces frontality from real eye/nose keypoints before capture, so
-  # the server gate only needs to catch gross profile shots. Bounds are widened
-  # to absorb the estimator bias; the proper fix (MediaPipe canonical metric face
-  # model) is tracked for calibration (Phase 9).
-  max_yaw_deg: 26.0
-  max_pitch_deg: 26.0
-  max_roll_deg: 18.0
+  # Head orientation (deg) via solvePnP on a generic 3D model, which carries a
+  # large systematic bias (~10-20°). Bounds are wide so an ordinary phone selfie
+  # is never rejected as "not straight"; only a true side profile fails.
+  max_yaw_deg: 45.0
+  max_pitch_deg: 45.0
+  max_roll_deg: 35.0
 
 distance:
-  # Interpupillary distance in pixels — a proxy for how close the face is.
-  min_ipd_px: 90.0
-  max_ipd_px: 260.0
+  # Interpupillary distance in px. Very wide — the client already frames the
+  # face, so this only rejects a face that's a tiny speck or fills the whole frame.
+  min_ipd_px: 40.0
+  max_ipd_px: 600.0
 
 lighting_evenness:
-  # Left-cheek vs right-cheek mean-L* difference. A big gap = side-lit face.
-  # 12 rejected ordinary indoor selfies (one side naturally nearer a window/lamp);
-  # 18 still catches genuinely harsh side-lighting while accepting normal rooms.
-  max_delta_l: 18.0
+  # Left-cheek vs right-cheek mean-L* difference. Wide — ordinary room lighting
+  # (one side nearer a window) passes; only harsh single-side lighting fails.
+  max_delta_l: 45.0
 
 # Most-severe-first. On failure the gate reports the FIRST failing check in this
 # order, so the user sees one actionable instruction, not a wall of errors.
@@ -73,7 +70,7 @@ priority:
 # One clear, non-technical instruction per reason code.
 messages:
   MEASUREMENT_ERROR: "We couldn't read that photo properly — please try again."
-  NO_FACE: "Move your face into the frame."
+  NO_FACE: "Move your face into the circle."
   MULTIPLE_FACES: "Make sure only your face is in the photo."
   BLUR_TOO_HIGH: "Photo is blurry — hold your phone steady and try again."
   TOO_DARK: "It's too dark — face a window or turn on a light."

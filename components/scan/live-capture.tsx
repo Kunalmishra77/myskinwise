@@ -189,21 +189,11 @@ export function LiveCapture({
 
     // Capture the VERIFIED, stable frame IMMEDIATELY — no long burst that could
     // grab a later, moved/blurred frame and cause a "green then retake" mismatch.
-    // The stability gate already confirmed the face is held still.
+    // The stability gate already confirmed the face is held still. We send the
+    // SQUARE face crop (no hard black circle mask): the engine already restricts
+    // every measurement to the face skin-region, so background is never analysed,
+    // and a plain crop is the most reliable input for the server's face detector.
     octx.drawImage(video, cropX, cropY, side, side, 0, 0, OUT, OUT); // real orientation
-
-    // CIRCLE mask: keep only the circular scan area, black out everything
-    // outside it — so the analysis image contains the face circle, never the
-    // background/room/clothes. (destination-in keeps existing pixels only inside
-    // the circle; we then flatten onto black for JPEG.)
-    octx.globalCompositeOperation = "destination-in";
-    octx.beginPath();
-    octx.arc(OUT / 2, OUT / 2, OUT / 2, 0, Math.PI * 2);
-    octx.fill();
-    octx.globalCompositeOperation = "destination-over";
-    octx.fillStyle = "#000";
-    octx.fillRect(0, 0, OUT, OUT);
-    octx.globalCompositeOperation = "source-over";
 
     // Sharpness floor on the captured frame — a genuinely soft shot resumes the
     // guided scan instead of shipping a frame the server would reject for blur.

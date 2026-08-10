@@ -8,8 +8,9 @@ import { logEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 
-// The deterministic engine is CPU-bound; keep the ceiling modest per IP.
-const scanLimiter = new MemoryRateLimiter(8, 15 * 60 * 1000);
+// Generous per-IP ceiling so repeated captures/retries never lock a genuine
+// user out ("try again later"). Still bounded so a script can't hammer it.
+const scanLimiter = new MemoryRateLimiter(40, 15 * 60 * 1000);
 const MAX_BODY_BYTES = 16 * 1024 * 1024;
 
 const bodySchema = z.object({
