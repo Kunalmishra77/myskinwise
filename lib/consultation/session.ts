@@ -67,6 +67,12 @@ export type ConsultSession = {
    * Voice and Chat never disagree about whether products were approved.
    */
   productsUnlocked?: boolean;
+  /** Skin type from the scan (oily/dry/normal/combination) — drives which real
+   * product the recommendation engine picks for the concern. */
+  skinType?: string;
+  /** A second concern the user mentioned. The primary concern keeps priority;
+   * this only influences the third recommended product. */
+  secondaryConcern?: string;
 };
 
 export function getSession(): ConsultSession {

@@ -128,6 +128,9 @@ export function ScanFlow() {
           explainedRef: undefined, // a new scan should be explained afresh
           concern: summary.top ? ENGINE_TO_CONSULT[summary.top] : getSession().concern,
           scanAnalysis: summary.analysis,
+          // Skin type from the engine → the recommendation engine uses it to pick
+          // the right real product for the concern.
+          skinType: (data.result as ScanResult).derived?.skin_type ?? undefined,
         });
         setResult(data.result);
         setStage("result");

@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, Plus, MessageCircle } from "lucide-react";
+import { Check, Plus, MessageCircle, AlertTriangle } from "lucide-react";
 import { comboForConcern } from "@/content/products/combos";
 import { primaryProductImage } from "@/content/products";
+import { recommendProducts, type SkinType } from "@/lib/recommend/engine";
+import { getSession } from "@/lib/consultation/session";
 import { useCart, formatPrice, buildOrderMessage } from "@/lib/cart/use-cart";
 import { SITE, waHref } from "@/config/site";
 import { COMBO } from "@/content/i18n/checkout";
@@ -19,11 +21,22 @@ import { T } from "@/components/i18n/t";
  * and the whole-combo line never sums an incomplete set into a fake total.
  */
 export function RecommendedCombo({ concern }: { concern: string }) {
-  const combo = comboForConcern(concern);
   const { has, add, remove, addMany } = useCart();
+  // Deterministic, knowledge-base-driven selection: concern + secondary concern
+  // + skin type (from the scan) → the right REAL products. Falls back to the
+  // catalogue combo if the session has no extra context.
+  const s = getSession();
+  const rec = recommendProducts({
+    primaryConcern: concern,
+    secondaryConcern: s.secondaryConcern,
+    skinType: s.skinType as SkinType | undefined,
+  });
+  const combo = rec ?? comboForConcern(concern);
   if (!combo) return null;
 
   const slugs = combo.products.map((p) => p.slug);
+  // Per-product reason (only the engine provides these).
+  const reasons: string[] = "reasons" in combo ? combo.reasons : [];
   const allIn = slugs.every((s) => has(s));
   // A one-tap order: opens WhatsApp pre-filled with this combo. No account, no
   // checkout page needed — the team confirms price/quantity/address there.
@@ -60,6 +73,7 @@ export function RecommendedCombo({ concern }: { concern: string }) {
                 <p className="text-xs capitalize text-ink-soft">
                   {p.step} · {formatPrice(p.mrp)}
                 </p>
+                {reasons[i] ? <p className="mt-0.5 text-xs text-rose-ink">{reasons[i]}</p> : null}
               </div>
               <button
                 type="button"
@@ -76,6 +90,16 @@ export function RecommendedCombo({ concern }: { concern: string }) {
           );
         })}
       </ul>
+
+      {/* Safety caution — prominent, red, always visible (not voice-only). */}
+      <div className="mt-5 flex gap-2.5 rounded-2xl border border-rose-deep/30 bg-rose-ink/5 p-4">
+        <AlertTriangle aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-rose-deep" />
+        <div className="text-sm text-ink">
+          <p className="font-semibold text-rose-deep"><T>Caution</T></p>
+          <p className="mt-1"><T>Do not use any other brand&apos;s products during this customised treatment.</T></p>
+          <p className="mt-1"><T>After you receive the product, please do a patch test before first use.</T></p>
+        </div>
+      </div>
 
       {/* Primary: order this combo now — redirects straight to WhatsApp. */}
       <a
