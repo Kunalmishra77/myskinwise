@@ -22,6 +22,27 @@ describe("recommendProducts", () => {
     expect(new Set(r.products.map((p) => p.step)).size).toBe(r.products.length);
   });
 
+  it("acne / normal → Acne Gel; acne / sensitive → Acne Lightening Gel (skin-type rule)", () => {
+    const normal = recommendProducts({ primaryConcern: "acne", skinType: "normal" })!;
+    expect(normal.products.map((p) => p.slug)).toContain("acne-gel");
+    const sensitive = recommendProducts({ primaryConcern: "acne", skinType: "sensitive" })!;
+    expect(sensitive.products.map((p) => p.slug)).toContain("acne-lightening-gel");
+  });
+
+  it("pigmentation / oily → Skin Lightening Gel; pigmentation / dry → depigmentation cream", () => {
+    const oily = recommendProducts({ primaryConcern: "pigmentation", skinType: "oily" })!;
+    expect(oily.products.map((p) => p.slug)).toContain("skin-lightening-gel");
+  });
+
+  it("other-issues → a coherent set, every product addresses the concern", () => {
+    const r = recommendProducts({ primaryConcern: "other-issues" })!;
+    expect(r.products.length).toBeGreaterThanOrEqual(2);
+    for (const p of r.products) {
+      const ok = (p.concerns as string[]).includes("other-issues") || p.step === "protect";
+      expect(ok).toBe(true);
+    }
+  });
+
   it("pigmentation / dry → depigmentation cleanser + depigmentation cream", () => {
     const r = recommendProducts({ primaryConcern: "pigmentation", skinType: "dry" })!;
     const slugs = r.products.map((p) => p.slug);

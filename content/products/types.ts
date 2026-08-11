@@ -9,7 +9,14 @@ export type ProductSlug =
   | "day-care-cream"
   | "spf-30"
   | "d-tan-pack"
-  | "eye-lyte-cream";
+  | "eye-lyte-cream"
+  // Added on the owner's instruction (front image supplied; price + full INCI
+  // confirmed at consultation, so mrp/ingredients stay unstated, never invented).
+  | "acne-gel"
+  | "acne-lightening-gel"
+  | "pigmentation-serum"
+  | "skin-lightening-gel"
+  | "rejuvten-face-mask";
 
 /** Where a product sits in a routine. Drives ordering in a regimen. */
 export type ProductStep = "cleanse" | "treat" | "moisturise" | "protect" | "mask" | "eye";

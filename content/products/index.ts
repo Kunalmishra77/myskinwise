@@ -190,6 +190,88 @@ export const PRODUCTS: Product[] = [
     concerns: ["other-issues", "dark-circles"],
     imageCount: 3,
   },
+  // ---------------------------------------------------------------------------
+  // Added on the owner's instruction. The front image is the supplied Skinwise
+  // jar; the product NAME, CONCERN and SKIN-TYPE suitability come from the owner.
+  // Price and the full ingredient (INCI) list were NOT supplied, so they stay
+  // unstated ("confirmed at consultation") rather than invented — the same
+  // integrity rule the rest of the catalogue follows.
+  // ---------------------------------------------------------------------------
+  {
+    slug: "acne-gel",
+    name: "Customised Acne Gel",
+    tagline: "Acne Treatment Gel",
+    step: "treat",
+    description:
+      "Your customised Acne Gel is a lightweight treatment made for your skin's needs, formulated to help manage active breakouts. Typically suited to normal skin.",
+    directions: null,
+    ingredients: [],
+    ingredientsPartial: true,
+    mrp: null,
+    netQuantity: null,
+    concerns: ["acne"],
+    imageCount: 1,
+  },
+  {
+    slug: "acne-lightening-gel",
+    name: "Customised Acne Lightening Gel",
+    tagline: "Acne Treatment & Mark-Lightening Gel",
+    step: "treat",
+    description:
+      "Your customised Acne Lightening Gel is a gentle treatment gel to help manage breakouts and the marks they leave behind. Typically suited to sensitive skin.",
+    directions: null,
+    ingredients: [],
+    ingredientsPartial: true,
+    mrp: null,
+    netQuantity: null,
+    concerns: ["acne", "acne-scars"],
+    imageCount: 1,
+  },
+  {
+    slug: "skin-lightening-gel",
+    name: "Customised Skin Lightening Gel",
+    tagline: "Dark Spots & Pigmentation Gel",
+    step: "treat",
+    description:
+      "Your customised Skin Lightening Gel is a lightweight treatment to help even tone and reduce the look of pigmentation. Typically suited to oily or sensitive skin.",
+    directions: null,
+    ingredients: [],
+    ingredientsPartial: true,
+    mrp: null,
+    netQuantity: null,
+    concerns: ["pigmentation"],
+    imageCount: 1,
+  },
+  {
+    slug: "pigmentation-serum",
+    name: "Customised Pigmentation Serum",
+    tagline: "Advanced Pigmentation Correction Serum",
+    step: "treat",
+    description:
+      "Your customised Pigmentation Serum is a concentrated treatment for stubborn pigmentation, typically recommended when a cream or gel alone has not given the desired result.",
+    directions: null,
+    ingredients: [],
+    ingredientsPartial: true,
+    mrp: null,
+    netQuantity: null,
+    concerns: ["pigmentation", "acne-scars"],
+    imageCount: 1,
+  },
+  {
+    slug: "rejuvten-face-mask",
+    name: "Customised Rejuvten Face Mask",
+    tagline: "Rejuvenating & Firming Face Mask",
+    step: "mask",
+    description:
+      "Your customised Rejuvten Face Mask is a rejuvenating mask that supports firmer, smoother-looking skin — suited to concerns like fine lines, loose skin and signs of ageing.",
+    directions: null,
+    ingredients: [],
+    ingredientsPartial: true,
+    mrp: null,
+    netQuantity: null,
+    concerns: ["other-issues"],
+    imageCount: 1,
+  },
 ];
 
 /**

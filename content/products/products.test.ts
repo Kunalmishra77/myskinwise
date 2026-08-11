@@ -50,9 +50,11 @@ describe("product imagery", () => {
     }
   });
 
-  it("gives every product multiple shots, not one image reused", () => {
+  it("gives every product at least a front image, none reused within a product", () => {
     for (const product of PRODUCTS) {
-      expect(product.imageCount, `${product.slug} has only ${product.imageCount} shot`).toBeGreaterThan(1);
+      // Label-photographed products carry several shots; owner-added products
+      // carry the single supplied front image. Either way, at least one.
+      expect(product.imageCount, `${product.slug} has ${product.imageCount} shots`).toBeGreaterThan(0);
       const sources = productImages(product).map((i) => i.src);
       expect(new Set(sources).size).toBe(sources.length);
     }
@@ -101,10 +103,15 @@ describe("no invented product data", () => {
     }
   });
 
-  it("every product has a description and at least one ingredient", () => {
+  it("every product has a description; a full INCI list or an honest 'abridged' flag", () => {
     for (const product of PRODUCTS) {
       expect(product.description.length).toBeGreaterThan(40);
-      expect(product.ingredients.length).toBeGreaterThan(0);
+      // Label-transcribed products list their ingredients. Owner-added products
+      // whose INCI wasn't supplied MUST declare the list abridged rather than
+      // present an empty list as complete (an allergy-safety rule).
+      if (product.ingredients.length === 0) {
+        expect(product.ingredientsPartial, `${product.slug} has no ingredients but isn't flagged abridged`).toBe(true);
+      }
     }
   });
 
