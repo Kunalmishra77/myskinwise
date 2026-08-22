@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.vercel
+.env*
+npm-debug.log*
+Assets
+skin-cv-service
+*.md
+coverage
+playwright-report
+test-results

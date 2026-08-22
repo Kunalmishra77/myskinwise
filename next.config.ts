@@ -96,6 +96,10 @@ const LEGACY_REDIRECTS: { source: string; destination: string }[] = [
 ];
 
 const nextConfig: NextConfig = {
+  // Self-host build: emits a minimal standalone server (`.next/standalone`) with
+  // only the files needed to run, so it can be containerised and deployed on our
+  // own VPS (Coolify) instead of Vercel. No effect on the Vercel deployment.
+  output: "standalone",
   async redirects() {
     /*
      * `statusCode: 301` rather than `permanent: true`, which emits a 308.
