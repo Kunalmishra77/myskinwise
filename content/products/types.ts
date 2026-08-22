@@ -10,13 +10,13 @@ export type ProductSlug =
   | "spf-30"
   | "d-tan-pack"
   | "eye-lyte-cream"
-  // Added on the owner's instruction (front image supplied; price + full INCI
-  // confirmed at consultation, so mrp/ingredients stay unstated, never invented).
+  // Owner-supplied products (real front/back images in Assets/Product-Assets).
+  // Price + full INCI confirmed at consultation, so mrp/ingredients stay
+  // unstated, never invented.
   | "acne-gel"
-  | "acne-lightening-gel"
   | "pigmentation-serum"
   | "skin-lightening-gel"
-  | "rejuvten-face-mask";
+  | "pigmentation-lotion";
 
 /** Where a product sits in a routine. Drives ordering in a regimen. */
 export type ProductStep = "cleanse" | "treat" | "moisturise" | "protect" | "mask" | "eye";

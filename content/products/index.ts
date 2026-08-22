@@ -31,7 +31,7 @@ export const PRODUCTS: Product[] = [
     mrp: 1299,
     netQuantity: "50ml",
     concerns: ["acne", "oily-skin"],
-    imageCount: 3,
+    imageCount: 1,
   },
   {
     slug: "depigmentation-cleanser",
@@ -51,7 +51,7 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["pigmentation", "acne-scars"],
-    imageCount: 4,
+    imageCount: 1,
   },
   {
     slug: "glowing-cleanser",
@@ -71,7 +71,7 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["other-issues", "dry-skin", "dark-circles"],
-    imageCount: 4,
+    imageCount: 2,
   },
   {
     slug: "depigmentation-cream",
@@ -92,7 +92,7 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["pigmentation", "acne-scars"],
-    imageCount: 3,
+    imageCount: 1,
   },
   {
     slug: "glowing-gel",
@@ -108,7 +108,7 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["other-issues", "dry-skin"],
-    imageCount: 4,
+    imageCount: 2,
   },
   {
     slug: "day-care-cream",
@@ -126,7 +126,7 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["pigmentation", "acne", "other-issues", "oily-skin", "dry-skin"],
-    imageCount: 4,
+    imageCount: 2,
   },
   {
     slug: "spf-30",
@@ -147,7 +147,7 @@ export const PRODUCTS: Product[] = [
     mrp: 899,
     netQuantity: "50g",
     concerns: ["pigmentation", "acne", "other-issues", "oily-skin", "dry-skin", "dark-circles", "acne-scars"],
-    imageCount: 4,
+    imageCount: 2,
   },
   {
     slug: "d-tan-pack",
@@ -188,13 +188,13 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["other-issues", "dark-circles"],
-    imageCount: 3,
+    imageCount: 1,
   },
   // ---------------------------------------------------------------------------
-  // Added on the owner's instruction. The front image is the supplied Skinwise
-  // jar; the product NAME, CONCERN and SKIN-TYPE suitability come from the owner.
-  // Price and the full ingredient (INCI) list were NOT supplied, so they stay
-  // unstated ("confirmed at consultation") rather than invented — the same
+  // Owner-supplied products — real front/back photos in Assets/Product-Assets.
+  // The NAME, CONCERN and SKIN-TYPE come from the owner. Price and the full INCI
+  // list were NOT supplied, so they stay unstated ("confirmed at consultation")
+  // and the ingredient list is flagged abridged rather than invented — the same
   // integrity rule the rest of the catalogue follows.
   // ---------------------------------------------------------------------------
   {
@@ -203,29 +203,14 @@ export const PRODUCTS: Product[] = [
     tagline: "Acne Treatment Gel",
     step: "treat",
     description:
-      "Your customised Acne Gel is a lightweight treatment made for your skin's needs, formulated to help manage active breakouts. Typically suited to normal skin.",
+      "Your customised Acne Gel is a lightweight treatment made for your skin's needs, formulated to help manage active breakouts and support clearer skin over time.",
     directions: null,
     ingredients: [],
     ingredientsPartial: true,
     mrp: null,
     netQuantity: null,
     concerns: ["acne"],
-    imageCount: 1,
-  },
-  {
-    slug: "acne-lightening-gel",
-    name: "Customised Acne Lightening Gel",
-    tagline: "Acne Treatment & Mark-Lightening Gel",
-    step: "treat",
-    description:
-      "Your customised Acne Lightening Gel is a gentle treatment gel to help manage breakouts and the marks they leave behind. Typically suited to sensitive skin.",
-    directions: null,
-    ingredients: [],
-    ingredientsPartial: true,
-    mrp: null,
-    netQuantity: null,
-    concerns: ["acne", "acne-scars"],
-    imageCount: 1,
+    imageCount: 2,
   },
   {
     slug: "skin-lightening-gel",
@@ -234,6 +219,21 @@ export const PRODUCTS: Product[] = [
     step: "treat",
     description:
       "Your customised Skin Lightening Gel is a lightweight treatment to help even tone and reduce the look of pigmentation. Typically suited to oily or sensitive skin.",
+    directions: null,
+    ingredients: [],
+    ingredientsPartial: true,
+    mrp: null,
+    netQuantity: null,
+    concerns: ["pigmentation"],
+    imageCount: 1,
+  },
+  {
+    slug: "pigmentation-lotion",
+    name: "Customised Pigmentation Lotion",
+    tagline: "Dark Spots Correction Lotion",
+    step: "treat",
+    description:
+      "Your customised Pigmentation Lotion is a lightweight lotion to help fade dark spots and even out skin tone. Typically suited to normal or combination skin.",
     directions: null,
     ingredients: [],
     ingredientsPartial: true,
@@ -255,21 +255,6 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["pigmentation", "acne-scars"],
-    imageCount: 1,
-  },
-  {
-    slug: "rejuvten-face-mask",
-    name: "Customised Rejuvten Face Mask",
-    tagline: "Rejuvenating & Firming Face Mask",
-    step: "mask",
-    description:
-      "Your customised Rejuvten Face Mask is a rejuvenating mask that supports firmer, smoother-looking skin — suited to concerns like fine lines, loose skin and signs of ageing.",
-    directions: null,
-    ingredients: [],
-    ingredientsPartial: true,
-    mrp: null,
-    netQuantity: null,
-    concerns: ["other-issues"],
     imageCount: 1,
   },
 ];

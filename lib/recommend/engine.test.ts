@@ -22,11 +22,13 @@ describe("recommendProducts", () => {
     expect(new Set(r.products.map((p) => p.step)).size).toBe(r.products.length);
   });
 
-  it("acne / normal → Acne Gel; acne / sensitive → Acne Lightening Gel (skin-type rule)", () => {
-    const normal = recommendProducts({ primaryConcern: "acne", skinType: "normal" })!;
-    expect(normal.products.map((p) => p.slug)).toContain("acne-gel");
-    const sensitive = recommendProducts({ primaryConcern: "acne", skinType: "sensitive" })!;
-    expect(sensitive.products.map((p) => p.slug)).toContain("acne-lightening-gel");
+  it("acne (any skin type) → Anti-Acne Cleanser + Acne Gel", () => {
+    for (const skinType of ["normal", "oily", "sensitive"] as const) {
+      const r = recommendProducts({ primaryConcern: "acne", skinType })!;
+      const slugs = r.products.map((p) => p.slug);
+      expect(slugs).toContain("anti-acne-cleanser");
+      expect(slugs).toContain("acne-gel");
+    }
   });
 
   it("pigmentation / oily → Skin Lightening Gel; pigmentation / dry → depigmentation cream", () => {

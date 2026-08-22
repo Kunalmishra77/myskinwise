@@ -31,11 +31,11 @@ const SKIN_FIT: Partial<Record<ProductSlug, SkinType[]>> = {
   "depigmentation-cream": ["dry", "normal", "sensitive"], // richer night cream
   "glowing-gel": ["oily", "combination", "normal"], // lightweight gel
   "day-care-cream": ["dry", "normal", "sensitive"],
-  // Owner-added treatments, per the product brief's skin-type rules:
-  "acne-gel": ["normal", "combination"], // acne, normal skin
-  "acne-lightening-gel": ["sensitive", "dry"], // acne, sensitive skin
+  // Owner products, per the brief's skin-type rules for pigmentation:
   "skin-lightening-gel": ["oily", "combination", "sensitive"], // pigmentation, oily/sensitive
-  // pigmentation-serum & rejuvten-face-mask suit all skin types (no fit entry).
+  "pigmentation-lotion": ["normal", "combination"], // pigmentation, normal/combination
+  // acne-gel (only acne treatment) and pigmentation-serum (escalation) suit all
+  // skin types — no fit entry.
 };
 
 function suitsSkin(p: Product, skin?: SkinType): boolean {
