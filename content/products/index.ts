@@ -31,7 +31,7 @@ export const PRODUCTS: Product[] = [
     mrp: 1299,
     netQuantity: "50ml",
     concerns: ["acne", "oily-skin"],
-    imageCount: 1,
+    imageCount: 2,
   },
   {
     slug: "depigmentation-cleanser",
@@ -51,7 +51,7 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["pigmentation", "acne-scars"],
-    imageCount: 1,
+    imageCount: 2,
   },
   {
     slug: "glowing-cleanser",
@@ -225,7 +225,7 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["pigmentation"],
-    imageCount: 1,
+    imageCount: 2,
   },
   {
     slug: "pigmentation-lotion",
@@ -240,7 +240,7 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["pigmentation"],
-    imageCount: 1,
+    imageCount: 3,
   },
   {
     slug: "pigmentation-serum",
@@ -255,7 +255,7 @@ export const PRODUCTS: Product[] = [
     mrp: null,
     netQuantity: null,
     concerns: ["pigmentation", "acne-scars"],
-    imageCount: 1,
+    imageCount: 3,
   },
 ];
 
