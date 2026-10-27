@@ -21,10 +21,27 @@ import type { NextConfig } from "next";
  * both are genuinely used (Skin Analyzer capture, Voice Agent) and would
  * break if denied outright — while switching off features we never use.
  */
-const securityHeaders = [
-  { key: "X-Content-Type-Options", value: "nosniff" },
+/*
+ * Framing: public content pages may be framed by the AI Agentix portfolio;
+ * admin, API, cart, checkout, consultation and the "me" account area keep
+ * `frame-ancestors 'none'` plus X-Frame-Options DENY.
+ */
+const PORTFOLIO_FRAME_ANCESTORS =
+  process.env.PORTFOLIO_FRAME_ANCESTORS ??
+  "https://agentix-portfolio.vercel.app https://ai-agentix.com https://*.ai-agentix.com";
+const PUBLIC_PAGES =
+  "about-us|acne|acne-scars|contact-us|dark-circles|dry-skin|oily-skin|other-issues|pigmentation|privacy-policy|refund-and-cancellation|terms-and-conditions|assistant|concerns|ingredients|learn|products|skin-types|quiz|skin-check|voice";
+
+const publicFrameHeaders = [
+  { key: "Content-Security-Policy", value: `frame-ancestors 'self' ${PORTFOLIO_FRAME_ANCESTORS}` },
+];
+const lockedFrameHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+];
+
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
@@ -124,6 +141,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      { source: "/", headers: [...securityHeaders, ...publicFrameHeaders] },
+      { source: `/:page(${PUBLIC_PAGES})/:rest*`, headers: publicFrameHeaders },
+      { source: `/((?!(?:${PUBLIC_PAGES})(?:/|$)).+)`, headers: lockedFrameHeaders },
       // robots.txt already disallows these, but robots.txt is advisory and
       // does not stop a page that gets linked from being indexed. The header
       // is the enforcing half.
