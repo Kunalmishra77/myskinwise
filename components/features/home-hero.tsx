@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Mic, MessageCircle, ArrowRight } from "lucide-react";
+import { MessageCircle, ArrowRight } from "lucide-react";
 import { IMAGES } from "@/content/assets";
 import { HOME } from "@/content/i18n/home";
 import { T } from "@/components/i18n/t";
@@ -100,13 +100,6 @@ export function HomeHero() {
           </p>
 
           <div className="mx-auto mt-7 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link
-              href="/voice"
-              className="inline-flex flex-1 items-center justify-center gap-2.5 rounded-full bg-rose-ink px-7 py-4 font-semibold text-white shadow-lift transition hover:bg-rose-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
-            >
-              <Mic aria-hidden="true" className="size-5" />
-              <T>{HOME.aiHeroTalk}</T>
-            </Link>
             <Link
               href="/assistant"
               className="inline-flex flex-1 items-center justify-center gap-2.5 rounded-full border border-rose-ink/25 bg-surface px-7 py-4 font-semibold text-ink transition hover:border-rose-ink/50 hover:bg-blush focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"

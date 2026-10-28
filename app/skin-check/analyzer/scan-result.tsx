@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Mic, ShieldCheck, Sparkles } from "lucide-react";
+import { ShieldCheck, Sparkles } from "lucide-react";
 import { type Observation, clampProminence, prominenceLabel } from "@/lib/ai/vision-schema";
 import {
   RESULT,
@@ -64,7 +64,7 @@ export function ScanResult({
   onRestart: () => void;
 }) {
   const tc = useTContent();
-  // If the user arrived here from a Voice/Chat conversation, prefer the concern
+  // If the user arrived here from a chat conversation, prefer the concern
   // they told us over the one inferred from the photo — the combo then reflects
   // the whole consultation, not just the scan.
   const [sessionConcern, setSessionConcern] = React.useState<string | undefined>();
@@ -254,20 +254,11 @@ export function ScanResult({
         single "Get a personalised Skin Check", which funnelled everyone into
         the questionnaire and is a large part of why the Scanner and the Skin
         Check read as the same feature. Asking the AI about your own results
-        is the most natural next thing to want, so it is offered directly, by
-        text or by voice.
+        is the most natural next thing to want, so it is offered directly.
       */}
       <h2 className="mt-10 font-display text-2xl font-semibold text-ink"><T>{RESULT.whatNext}</T></h2>
       <div className="mt-4 flex flex-col gap-3">
-        {/* Primary next step: Riya reads the scan back by voice (she picks up
-            the analysis from the shared session). */}
         <Button size="lg" asChild>
-          <Link href="/voice">
-            <Mic aria-hidden="true" className="size-4" />
-            <T>{RESULT.ctaVoice}</T>
-          </Link>
-        </Button>
-        <Button size="lg" variant="outline" asChild>
           <Link href="/assistant"><T>{RESULT.ctaAssistant}</T></Link>
         </Button>
         <Button size="lg" variant="outline" asChild>

@@ -4,7 +4,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
-  Camera, ClipboardList, FlaskConical, Home, Layers, LifeBuoy, Mic,
+  Camera, ClipboardList, FlaskConical, Home, Layers, LifeBuoy,
   MessageCircle, Package, Sparkles, User, X,
 } from "lucide-react";
 import { SITE, waHref } from "@/config/site";
@@ -118,7 +118,7 @@ export function Drawer({
         className="flex-1 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-4"
       >
         {/*
-          The four product actions lead, as a grid of real targets rather
+          The three product actions lead, as a grid of real targets rather
           than a text list. On a phone this is the whole reason someone opens
           the menu, and it used to be buried under marketing links.
         */}
@@ -207,11 +207,10 @@ export function Drawer({
   return createPortal(panel, document.body);
 }
 
-/** The four product actions, surfaced first. */
+/** The three product actions, surfaced first. */
 const PRIMARY = [
   { href: "/skin-check/analyzer", label: "Skin Scanner", sub: "AI reads your photo", Icon: Camera, accent: true },
   { href: "/skin-check", label: "Skin Check", sub: "Guided questions", Icon: ClipboardList, accent: false },
-  { href: "/voice", label: "Talk to Skinwise", sub: "Voice assistant", Icon: Mic, accent: false },
   { href: "/assistant", label: "Ask Skinwise", sub: "Text assistant", Icon: MessageCircle, accent: false },
 ] as const;
 

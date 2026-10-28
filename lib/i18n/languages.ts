@@ -1,15 +1,12 @@
 /**
- * The languages Riya (Voice + Chat) can converse in.
+ * The languages Riya (chat) can converse in.
  *
  * This is the AI *conversation* language layer, distinct from the static-UI
  * locale (which is English/Hindi). The website chrome stays EN/HI; this lets
- * the LLM understand and reply, and the TTS speak, in the customer's own Indian
+ * the LLM understand and reply in the customer's own Indian
  * language at runtime — no page needs re-translating for a new language.
  *
- * Coverage is "wherever the providers allow it": the LLM handles all of these;
- * ElevenLabs' multilingual voice covers a subset well (Hindi, Tamil, English,
- * …) and does its best on the rest, with the browser voice as a fallback so a
- * reply is always spoken or shown. `nativeLabel` is what the picker displays,
+ * `nativeLabel` is what the picker displays,
  * `englishName` is what the model is told to reply in.
  */
 export const AI_LANGUAGES = [

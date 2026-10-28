@@ -17,7 +17,6 @@ const routes = [
   "skin-check",
   "learn",
   "assistant",
-  "voice",
   "concerns",
   "ingredients",
   "skin-types",

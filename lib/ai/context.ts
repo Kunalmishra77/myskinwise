@@ -14,9 +14,8 @@ export type ContextRefs = {
  * Resolves the customer-safe context for the AI, from the same reference +
  * phone / analysis-reference model the whole funnel uses.
  *
- * Extracted so the text assistant and the voice agent share ONE
- * implementation of the privacy boundary — voice can never be handed
- * anything the text assistant wouldn't be. Everything returned here is
+ * Extracted so the assistant surfaces share ONE
+ * implementation of the privacy boundary. Everything returned here is
  * already customer-safe: consultation status, whether a regimen is
  * published, and the analyzer's visible-feature summary. Nothing internal
  * (expert notes, verdicts, audit, storage paths, signed URLs, image ids)

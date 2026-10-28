@@ -18,11 +18,9 @@ export const HOME = {
   aiHeroEyebrow: "Skinwise AI",
   aiHeroTitle: "How can I help you?",
   aiHeroBody:
-    "Tell Dr. Vivek about your skin — by voice or chat — and get personalised guidance in minutes. Every recommendation is reviewed by a real Skinwise expert.",
-  aiHeroTalk: "Talk to AI",
+    "Tell Dr. Vivek about your skin — by chat — and get personalised guidance in minutes. Every recommendation is reviewed by a real Skinwise expert.",
   aiHeroChat: "Chat with AI",
   aiHeroScan: "Or scan your skin instead",
-  aiHeroTalkHint: "Speak naturally, hands-free",
   aiHeroChatHint: "Prefer to type? Chat with Dr. Vivek",
 
   // Hero.
@@ -130,9 +128,6 @@ export const START_PATHS = {
   heading: "Three ways to start.",
   intro:
     "Use whichever suits you — or all three. Every route ends with a qualified expert reading your skin before anything is recommended.",
-  preferToSpeak: "Prefer to speak?",
-  voiceLink: "Talk to Skinwise AI out loud",
-  handsFree: "— hands-free, in your own words.",
   // Each entry is zipped by index with { href, Icon, primary } in the .tsx.
   paths: [
     {
@@ -150,7 +145,7 @@ export const START_PATHS = {
     {
       eyebrow: "Type or talk",
       title: "Ask Skinwise AI",
-      body: "Ask anything about ingredients, routines or your own regimen. Type your question, or talk to it out loud.",
+      body: "Ask anything about ingredients, routines or your own regimen. Type your question and get an answer.",
       action: "Ask a question",
     },
   ],

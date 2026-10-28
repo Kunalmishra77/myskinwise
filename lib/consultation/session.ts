@@ -1,20 +1,18 @@
 "use client";
 
 /**
- * The unified consultation session — the thread that ties Voice, Chat and the
- * Skin Analyzer into ONE journey instead of three separate tools.
+ * The unified consultation session — the thread that ties Chat and the
+ * Skin Analyzer into ONE journey instead of separate tools.
  *
  * It is deliberately tiny and sessionStorage-backed: the Analyzer lives on its
  * own full-screen route outside the app shell, so React state cannot survive
- * the navigation between "talking to Riya" and "scanning your face". This
+ * the navigation between "chatting with Riya" and "scanning your face". This
  * carries the few things that must cross that boundary:
  *
- *   concern           — what the user told Voice/Chat they want help with, so a
+ *   concern           — what the user told the chat they want help with, so a
  *                        scan started from a conversation stays on-topic.
  *   analysisReference  — the Skin Analyzer result id (SW-XXXXXXXX), so Riya can
- *                        read the scan back and explain it by voice afterwards.
- *   explainedRef       — which analysis Riya has already narrated, so she
- *                        explains a scan once, not every time the overlay opens.
+ *                        read the scan back and explain it afterwards.
  *
  * It holds NO personal data — just a concern slug and an opaque reference — and
  * clears with the browser session.
@@ -25,16 +23,15 @@ const KEY = "sw_consult";
 export type ConsultSession = {
   concern?: string;
   analysisReference?: string;
-  explainedRef?: string;
   /**
-   * The language Riya converses in (voice + chat). It TRACKS the language the
-   * user is actually speaking — updated from speech detection every turn — so
+   * The language Riya converses in (chat). It TRACKS the language the
+   * user is actually writing — updated from language detection every turn — so
    * it stays correct across the whole session, including after the face scan.
    */
   aiLang?: string;
   /**
    * True only when the user EXPLICITLY picked a language from the picker. Then
-   * `aiLang` is a hard lock and speech detection must not override it. When
+   * `aiLang` is a hard lock and language detection must not override it. When
    * false/absent, `aiLang` is a soft, auto-detected value that each turn may
    * refine — which is what keeps a Hindi conversation in Hindi even if the very
    * first word was mis-detected as English.
@@ -49,7 +46,7 @@ export type ConsultSession = {
   leadName?: string;
   /**
    * A customer-safe summary of the just-completed engine scan — the same concern
-   * labels + severities the user just saw on screen. Carried so the voice/chat
+   * labels + severities the user just saw on screen. Carried so the chat
    * handoff can EXPLAIN the results directly, without a server round-trip to a
    * store that doesn't hold engine scans. Never contains image data or a
    * diagnosis.
@@ -62,9 +59,8 @@ export type ConsultSession = {
   /**
    * Products are strictly gated: this flips true only once the user has
    * explicitly agreed to see products in the guided post-scan conversation.
-   * Until then, no combo/product card is shown anywhere (voice or chat), and it
-   * persists so the combo stays visible through the order step. Shared state, so
-   * Voice and Chat never disagree about whether products were approved.
+   * Until then, no combo/product card is shown anywhere in chat, and it
+   * persists so the combo stays visible through the order step. 
    */
   productsUnlocked?: boolean;
   /** Skin type from the scan (oily/dry/normal/combination) — drives which real

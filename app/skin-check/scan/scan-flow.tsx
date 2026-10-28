@@ -25,7 +25,7 @@ const ENGINE_TO_CONSULT: Record<string, string> = {
   texture: "other-issues",
 };
 
-/** Build the customer-safe scan summary the voice/chat handoff explains from. */
+/** Build the customer-safe scan summary the chat handoff explains from. */
 function buildScanSummary(result: ScanResult) {
   const notable = result.concerns
     .filter((c) => c.score !== null && c.id !== "acne" && c.severity && c.severity !== "clear")
@@ -119,13 +119,12 @@ export function ScanFlow() {
       });
       const data = await res.json();
       if (res.status === 201 && data.status === "completed") {
-        // Carry the scan into the session so the voice/chat handoff can EXPLAIN
+        // Carry the scan into the session so the chat handoff can EXPLAIN
         // it (concern + reference + customer-safe summary), instead of opening a
         // fresh greeting.
         const summary = buildScanSummary(data.result as ScanResult);
         patchSession({
           analysisReference: typeof data.reference === "string" ? data.reference : undefined,
-          explainedRef: undefined, // a new scan should be explained afresh
           concern: summary.top ? ENGINE_TO_CONSULT[summary.top] : getSession().concern,
           scanAnalysis: summary.analysis,
           // Skin type from the engine → the recommendation engine uses it to pick

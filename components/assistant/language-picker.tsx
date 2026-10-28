@@ -8,11 +8,11 @@ import { useLocale } from "@/lib/i18n/provider";
 
 /**
  * Picks the language Riya converses in — she listens, understands, and replies
- * in the chosen Indian language (the LLM + voice do the work at runtime; the
+ * in the chosen Indian language (the LLM does the work at runtime; the
  * website chrome stays as-is). The choice is stored on the consultation session
- * so it carries across Voice and Chat.
+ * so it carries across the conversation.
  *
- * Changing it calls `onChange`, which the voice UI uses to restart the
+ * Changing it calls `onChange`, which the caller can use to restart the
  * conversation so the next thing Riya says is in the new language.
  */
 export function LanguagePicker({ onChange }: { onChange?: (code: string) => void }) {
@@ -33,7 +33,7 @@ export function LanguagePicker({ onChange }: { onChange?: (code: string) => void
         onChange={(e) => {
           const code = e.target.value;
           setValue(code);
-          // An explicit pick is a HARD lock: pin it so speech detection can't
+          // An explicit pick is a HARD lock: pin it so language detection can't
           // override it on later turns.
           patchSession({ aiLang: code, aiLangPinned: true });
           onChange?.(code);

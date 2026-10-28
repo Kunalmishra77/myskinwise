@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Mic, ShieldCheck, Sparkles } from "lucide-react";
+import { ShieldCheck, Sparkles } from "lucide-react";
 import type { ScanResult, ScanConcern } from "@/lib/skin/types";
 import { CONCERN_META, SEVERITY_LABEL, byConcernSeverity } from "@/lib/skin/concern-content";
 import { Button } from "@/components/ui/button";
@@ -344,12 +344,6 @@ export function ScanResultView({
       <h2 className="mt-10 font-display text-2xl font-semibold text-ink">What next?</h2>
       <div className="mt-4 flex flex-col gap-3">
         <Button size="lg" asChild>
-          <Link href="/voice">
-            <Mic aria-hidden="true" className="size-4" />
-            Talk about your results with our expert
-          </Link>
-        </Button>
-        <Button size="lg" variant="outline" asChild>
           <Link href="/assistant">Ask about my results</Link>
         </Button>
         <Button size="lg" variant="outline" onClick={onRestart}>

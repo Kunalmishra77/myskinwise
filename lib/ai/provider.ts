@@ -6,8 +6,8 @@ export type CompletionResult =
 
 /**
  * The seam between the assistant's orchestration and whichever LLM answers.
- * A future voice agent reuses everything above this interface — grounding,
- * safety, context — and only swaps what sits below it.
+ * Everything above this interface — grounding, safety, context — is
+ * provider-independent; only what sits below it swaps.
  */
 export type CompleteOptions = { maxTokens?: number };
 
@@ -15,8 +15,8 @@ export interface AiProvider {
   isConfigured(): boolean;
   complete(system: string, messages: ChatTurn[], opts?: CompleteOptions): Promise<CompletionResult>;
   /**
-   * Streams the reply as text deltas, for the voice pipeline (so TTS can start
-   * on the first sentence instead of waiting for the whole reply). Optional:
+   * Streams the reply as text deltas, for the chat UI (so text appears as it is
+   * generated instead of waiting for the whole reply). Optional:
    * providers without it fall back to complete().
    */
   stream?(system: string, messages: ChatTurn[], opts?: CompleteOptions): AsyncGenerator<string, void, unknown>;

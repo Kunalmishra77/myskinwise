@@ -85,17 +85,12 @@ export const ASSISTANT = {
     "Questions about ingredients, concerns or routines — I'll help, and point you to a real expert when it matters.",
   textTitle: "Text",
   textBody: "Ask your skincare questions by typing. Start below.",
-  voiceTitle: "Voice",
-  voiceBody: "Talk naturally with Skinwise AI, hands-free.",
-  voiceStart: "Start talking",
   concernPrompt: "What would you like help with?",
   askAnything: "Or just ask anything:",
 
   // Composer + live-region chrome.
   inputLabel: "Ask Skinwise a question",
   inputPlaceholder: "Ask about your skin…",
-  voiceSwitchLabel: "Switch to talking with Skinwise AI",
-  voiceSwitchTitle: "Talk instead",
   sendLabel: "Send",
   conversationLabel: "Conversation",
   typingLabel: "Skinwise is typing",

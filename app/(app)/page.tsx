@@ -51,8 +51,8 @@ export default function HomePage() {
 
       {/* 2 — WHAT YOU CAN DO HERE. Immediately below the hero, because an
           audit found the Skin Analyzer had no inbound links anywhere on the
-          site and the voice agent had one. A visitor could not discover two of
-          the four primary features without guessing a URL. */}
+          site. A visitor could not discover one of
+          the primary features without guessing a URL. */}
       <StartPaths />
 
       {/* 3 — SKIN ANALYSIS showcase. The differentiator gets a section of its

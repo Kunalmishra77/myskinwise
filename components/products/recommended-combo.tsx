@@ -91,7 +91,7 @@ export function RecommendedCombo({ concern }: { concern: string }) {
         })}
       </ul>
 
-      {/* Safety caution — prominent, red, always visible (not voice-only). */}
+      {/* Safety caution — prominent, red, always visible. */}
       <div className="mt-5 flex gap-2.5 rounded-2xl border border-rose-deep/30 bg-rose-ink/5 p-4">
         <AlertTriangle aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-rose-deep" />
         <div className="text-sm text-ink">

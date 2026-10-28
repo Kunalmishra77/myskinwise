@@ -93,10 +93,9 @@ export function Analyzer() {
       const data = await res.json();
       if (res.status === 201 && data.status === "completed") {
         setObservation(data.observation);
-        // Record the result in the unified session so Riya can read it back by
-        // voice afterwards. A NEW scan clears any previous "already explained"
-        // marker so the fresh result gets narrated.
-        patchSession({ analysisReference: data.reference, explainedRef: undefined });
+        // Record the result in the unified session so Riya can read it back
+        // afterwards.
+        patchSession({ analysisReference: data.reference });
         setStage("result");
       } else if (res.status === 422) {
         setMessage(data.message);

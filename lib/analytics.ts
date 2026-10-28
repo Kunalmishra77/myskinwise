@@ -23,7 +23,6 @@ export type AnalyticsEvent =
   | "analyzer_failed"
   | "lead_captured"
   | "assistant_used"
-  | "voice_used"
   | "consultation_requested"
   | "whatsapp_handoff"
   | "regimen_viewed"
@@ -50,6 +49,5 @@ export const CLIENT_EVENTS = new Set<AnalyticsEvent>([
   "skin_check_started",
   "analyzer_started",
   "assistant_used",
-  "voice_used",
   "regimen_viewed",
 ]);

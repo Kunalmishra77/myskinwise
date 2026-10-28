@@ -28,13 +28,6 @@ export type BottomNavItem = {
  * the product — it is one tap from the Scanner screen, the home page and the
  * menu — it simply no longer impersonates the Scanner.
  *
- * There is deliberately NO Voice tab here. Voice already has a single, clear
- * home: the floating mic launcher that sits above this bar on every page (see
- * FloatingActions / VoiceOverlay). A Voice tab here as well gave the mobile UI
- * two competing voice entry points stacked on top of each other. The freed
- * slot goes to Shop, which the recommendation → cart → checkout journey needs
- * to be reachable in one tap.
- *
  * Five tabs at 320px is 64px each, comfortably past the 44px minimum.
  */
 export const BOTTOM_NAV: BottomNavItem[] = [

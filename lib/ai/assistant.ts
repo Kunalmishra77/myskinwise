@@ -38,8 +38,6 @@ export type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
 
 /**
  * The assistant orchestrator. This is the reusable boundary the spec asks
- * for: a future voice agent calls `respond()` with the same grounding,
- * safety and context, and only the transport (text vs audio) differs.
  *
  * Order of operations matters and is deliberate:
  *   1. Inbound safety FIRST — a high-risk message never reaches the model.
@@ -68,7 +66,7 @@ const LOCALISED = {
   },
 } as const;
 
-export type RespondOptions = { lang?: AiLang; brief?: boolean; concise?: boolean; forceEnglish?: boolean };
+export type RespondOptions = { lang?: AiLang; concise?: boolean; forceEnglish?: boolean };
 
 // Romanized-Hindi (and Devanagari) markers. If the user's recent words carry ANY
 // of these, they're speaking Hindi/Hinglish; otherwise it's English. Tokens are
@@ -103,54 +101,6 @@ function safeLang(lang: AiLang): "en" | "hi" {
   return lang === "hi" ? "hi" : "en";
 }
 
-/**
- * Riya's opening line. A fixed, safety-approved greeting (never model-authored)
- * so the voice agent introduces herself the same warm way every time and can be
- * spoken the instant the conversation opens.
- */
-/** Current hour in India (IST = UTC+5:30), 0..23. */
-function istHour(): number {
-  const now = new Date();
-  const ist = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 5.5 * 3600000);
-  return ist.getHours();
-}
-
-function salutationEn(): string {
-  const h = istHour();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
-function salutationHi(): string {
-  const h = istHour();
-  if (h < 12) return "सुप्रभात";
-  return "नमस्ते";
-}
-
-/**
- * Dr. Vivek's opening line, time-aware (IST). For Hindi it is written in
- * DEVANAGARI (spoken with the Hindi voice), because romanized Hindi like "Main"
- * gets read as the English word "MAIN". English keeps English. Fixed and
- * safety-approved (never model-authored) so it can be spoken the instant the
- * conversation opens.
- */
-export function buildGreeting(lang: "en" | "hi"): string {
-  if (lang === "en") {
-    return `${salutationEn()}! I'm Dr. Vivek, your personal skincare expert. Tell me — what's going on with your skin?`;
-  }
-  return `${salutationHi()}! मैं Dr. Vivek हूँ, आपका personal skincare expert। बताइए, आपकी skin को लेकर क्या दिक्कत हो रही है?`;
-}
-
-/** Back-compat export: some callers read a plain greeting map. */
-export const RIYA_GREETING = {
-  get en() {
-    return buildGreeting("en");
-  },
-  get hi() {
-    return buildGreeting("hi");
-  },
-} as const;
-
 export async function respond(
   messages: ChatTurn[],
   context?: CustomerContext,
@@ -172,18 +122,13 @@ export async function respond(
     return { kind: "unavailable", text: LOCALISED.unavailable[sl], cta: "whatsapp" };
   }
 
-  // 2. Model call. The system prompt asks for the reply language. In voice
-  // (brief) mode it also caps the reply short and the tokens low, so Riya
-  // answers fast and does not ramble.
+  // 2. Model call. The system prompt asks for the reply language. In concise
+  // mode it also caps the reply short and the tokens low.
   const englishReply = opts?.forceEnglish ?? shouldReplyEnglish(messages, lang);
-  // Voice + Hindi speaker → generate DEVANAGARI Hindi, because ElevenLabs
-  // pronounces Devanagari correctly but mangles romanized Hinglish. Chat stays
-  // romanized (it's read, not spoken).
-  const devanagari = Boolean(opts?.brief) && !englishReply && (lang === "en" || lang === "hi");
   const result = await provider.complete(
-    systemPrompt(context, lang, opts?.brief, opts?.concise, englishReply, devanagari),
+    systemPrompt(context, lang, opts?.concise, englishReply),
     messages,
-    opts?.brief ? { maxTokens: 80 } : opts?.concise ? { maxTokens: 300 } : undefined,
+    opts?.concise ? { maxTokens: 300 } : undefined,
   );
   if (!result.ok) {
     return { kind: "unavailable", text: LOCALISED.error[sl], cta: "whatsapp" };
@@ -330,7 +275,7 @@ export type StreamMeta = {
 
 /**
  * Streaming twin of respond(): yields the reply SENTENCE BY SENTENCE (each one
- * already claim-scrubbed) so the voice pipeline can speak the first sentence
+ * already claim-scrubbed) so the chat UI can render the first sentence
  * while the rest is still being generated. Same safety guarantees — inbound
  * risk is checked before any model call, and every sentence is scrubbed before
  * it leaves here, so a streamed token can never carry a banned claim. Returns
@@ -358,10 +303,9 @@ export async function* respondStream(
     return { cta: "whatsapp", fullText: text, kind: "unavailable" };
   }
 
-  const maxTokens = opts?.brief ? 80 : opts?.concise ? 300 : undefined;
+  const maxTokens = opts?.concise ? 300 : undefined;
   const englishReply = opts?.forceEnglish ?? shouldReplyEnglish(messages, lang);
-  const devanagari = Boolean(opts?.brief) && !englishReply && (lang === "en" || lang === "hi");
-  const system = systemPrompt(context, lang, opts?.brief, opts?.concise, englishReply, devanagari);
+  const system = systemPrompt(context, lang, opts?.concise, englishReply);
 
   // No streaming support (Anthropic/unconfigured) → one full, scrubbed chunk.
   if (!provider.stream) {
@@ -441,33 +385,17 @@ function chooseCta(message: string, context?: CustomerContext): CtaKind | null {
  * forbidden from making, and requires the "I don't have verified
  * information" fallback rather than invention.
  */
-function systemPrompt(context?: CustomerContext, lang: AiLang = "en", brief = false, concise = false, englishReply = false, devanagari = false): string {
+function systemPrompt(context?: CustomerContext, lang: AiLang = "en", concise = false, englishReply = false): string {
   // When the user is speaking English, force an English reply — this is the
   // highest-priority language rule and overrides the Hinglish default below.
   const engBlock = englishReply
     ? `LANGUAGE — ABSOLUTE, HIGHEST PRIORITY: This user is writing in English. Your ENTIRE reply MUST be in warm, simple, natural English. Do NOT use ANY Hindi or Hinglish words or Devanagari (no "Ji", "aap", "kab se", "bilkul", etc.). This overrides every other language instruction in this prompt.\n\n`
     : "";
-  // Voice + Hindi → generate DEVANAGARI Hindi (spoken aloud, pronounces right),
-  // keeping skincare/ingredient/product terms in English/Latin so they too sound
-  // correct. This overrides the roman-Hinglish default below.
-  const devBlock = devanagari
-    ? `LANGUAGE — ABSOLUTE, HIGHEST PRIORITY: Reply in natural, conversational HINDI written in DEVANAGARI script (respectful "आप"). Keep skincare / ingredient / product terms in English (Latin letters) exactly as-is — skin, acne, pigmentation, pores, oily, texture, dark circles, niacinamide, salicylic acid, hyaluronic acid, vitamin C, serum, cleanser, SPF. Write numbers as digits. Warm and natural, e.g. "जी, समझ गया। आपकी skin में थोड़ा acne और pigmentation दिख रहा है।" This overrides every other language instruction below.\n\n`
-    : "";
-  // The language style depends on what the user is speaking — English vs Hinglish
-  // — so the concrete EXAMPLES the model anchors on are in the right language.
-  const voiceLangClause = englishReply
-    ? `Speak in warm, simple, natural ENGLISH — a genuine back-and-forth, e.g. "I see — how long has this been going on?". No Hindi/Hinglish words.`
-    : devanagari
-      ? `Speak in natural, conversational HINDI in DEVANAGARI script (respectful "आप"), keeping skincare/ingredient/product terms in English/Latin (skin, acne, pigmentation, niacinamide, serum). Natural short acknowledgements — "जी, समझ गया।", "बिल्कुल।" — never stiff/over-formal, and don't reuse the same opener. E.g. "जी, ये कब से हो रहा है? और अभी आप कोई skincare routine use कर रहे हैं?"`
-      : `Speak in natural, conversational HINGLISH the way a real Indian consultant talks (Roman script, respectful "aap", NEVER Devanagari). Use natural short acknowledgements — "Ji, samajh gaya.", "Bilkul." — not stiff textbook Hindi like "samajh gaya hoon", and don't reuse the same opener.`;
   const chatLangClause = englishReply
     ? `Reply in warm, simple, natural ENGLISH (no Hindi/Hinglish words).`
     : `Reply in natural, conversational HINGLISH (Roman script, respectful "aap", never Devanagari); natural acknowledgements like "Ji, samajh gaya.", not stiff "samajh gaya hoon".`;
 
-  // Voice replies must be short and never spell out numbers/prices out loud.
-  const briefBlock = brief
-    ? `\nVOICE CALL — THIS OVERRIDES EVERY OTHER LENGTH RULE. You are Dr. Vivek on a quick voice chat: warm and PROFESSIONAL, like a trusted expert, never slangy. Reply in ONE short spoken sentence, TWO at the very most (~25 words total), then stop. ${voiceLangClause} Answer only what they just asked; a real back-and-forth, NOT a monologue. Pre-scan: after ONE short question, tell them to tap the "Scan your skin" button on screen — NEVER offer to send a scan link on WhatsApp. Do NOT read numbers, prices, percentages, references or codes out loud — say them in words.\n`
-    : concise
+  const briefBlock = concise
       ? `\nCHAT STYLE — THIS OVERRIDES ANY LENGTH GUIDANCE ABOVE. Reply like a friendly chat, not an article: a few short sentences, never a wall of text or long bullet lists. ${chatLangClause} EARLY in the conversation focus on UNDERSTANDING, not selling: briefly acknowledge what they said and ask ONE clarifying question about their skin (e.g. "are your breakouts mostly small bumps, whiteheads, blackheads, or inflamed pimples?") before recommending anything. Only once you understand their concern, explain the helpful ingredients and then the products. Don't dump everything at once — keep the conversation moving.\n`
       : "";
   // When a concern is known, steer a focused, concern-specific conversation
@@ -510,13 +438,11 @@ When the user gives a short "haan/ok/theek hai/yes", treat it as agreeing to the
 
   const toneLangBullet = englishReply
     ? `- Reply in warm, simple, natural ENGLISH (this user is speaking English). Do NOT use Hindi or Hinglish words. Keep common skincare words as-is (serum, cleanser). Sound like a real, caring consultant — vary your wording, don't reuse the same opener.`
-    : devanagari
-      ? `- Reply in natural, conversational HINDI in DEVANAGARI script (respectful "आप"). Keep skincare / ingredient / product terms in English/Latin (skin, acne, pigmentation, pores, niacinamide, salicylic acid, serum, SPF). Numbers as digits. Natural acknowledgements like "जी, समझ गया।", "बिल्कुल।" — never stiff/over-formal, never literal translation. Vary your wording — don't reuse the same opener.`
-      : `- Default to natural, conversational HINGLISH — Hindi written in ROMAN/English script the way Indians actually chat, with the respectful "aap". NEVER use Devanagari script. E.g. "Ye kab se ho raha hai? Aur abhi aap koi skincare routine use kar rahe hain?" Keep common English words as-is (skincare, routine, serum, cleanser). Warm, clear, professional — not slangy.
+    : `- Default to natural, conversational HINGLISH — Hindi written in ROMAN/English script the way Indians actually chat, with the respectful "aap". NEVER use Devanagari script. E.g. "Ye kab se ho raha hai? Aur abhi aap koi skincare routine use kar rahe hain?" Keep common English words as-is (skincare, routine, serum, cleanser). Warm, clear, professional — not slangy.
   • If they use another Indian language, match it.
 - Sound like a REAL Indian skincare consultant, not a translation. Use natural short acknowledgements ("Ji, samajh gaya.", "Bilkul.", "Theek hai.") — never stiff/over-formal Hindi like "samajh gaya hoon", never literal English-to-Hindi phrasing, never awkward filler. Vary your wording — don't reuse the same phrase or opener every turn.`;
 
-  return `${engBlock}${devBlock}${briefBlock ? `${briefBlock}\n` : ""}You are Dr. Vivek, the user's warm PERSONAL SKINCARE EXPERT on Skinwise (he/him). You help people understand their skin, learn about skincare, and find the right next step. Your vibe is warm, reassuring and PROFESSIONAL — an approachable, trusted expert. Friendly, never cold or robotic, but polished and credible, never slangy or over-casual.
+  return `${engBlock}${briefBlock ? `${briefBlock}\n` : ""}You are Dr. Vivek, the user's warm PERSONAL SKINCARE EXPERT on Skinwise (he/him). You help people understand their skin, learn about skincare, and find the right next step. Your vibe is warm, reassuring and PROFESSIONAL — an approachable, trusted expert. Friendly, never cold or robotic, but polished and credible, never slangy or over-casual.
 
 TONE & LANGUAGE — THIS SHAPES EVERY REPLY:
 - Warm, friendly and PROFESSIONAL — like a caring expert who explains things simply. Approachable, polished, trustworthy. Concise and conversational, never formal-robotic or textbook-y.

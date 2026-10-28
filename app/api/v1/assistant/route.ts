@@ -33,7 +33,7 @@ const bodySchema = z.object({
   analysisReference: z.string().regex(/^SW-[A-HJ-NP-Z2-9]{8}$/).optional(),
   // Customer-safe completed-scan summary from the shared session (engine scans
   // aren't in the legacy resolver store), so Chat knows the scan is done — the
-  // SAME state Voice uses. This is what makes Voice + Chat share continuity.
+  // session state the rest of the funnel uses.
   analysis: z
     .object({
       imageQuality: z.string().max(40),
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   }
 
   // Customer-safe context via the shared resolver — the SAME privacy
-  // boundary the voice agent uses. A guessed reference or wrong phone yields
+  // boundary used everywhere. A guessed reference or wrong phone yields
   // nothing; nothing internal (notes, verdict, storage paths, ids) can reach
   // the model.
   const resolved = await resolveCustomerContext({
@@ -92,8 +92,7 @@ export async function POST(request: Request) {
     parsed.data.concern && !resolved?.concern
       ? { ...(resolved ?? {}), concern: parsed.data.concern }
       : resolved;
-  // Carry the completed-scan summary so Chat knows the scan is done (shared with
-  // Voice), and follows the post-scan flow instead of re-asking for a scan.
+  // Carry the completed-scan summary so Chat knows the scan is done and follows the post-scan flow instead of re-asking for a scan.
   const context =
     parsed.data.analysis && !withConcern?.analysis
       ? { ...(withConcern ?? {}), analysis: parsed.data.analysis }

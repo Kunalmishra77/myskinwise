@@ -17,9 +17,9 @@ import type { NextConfig } from "next";
  * with `unsafe-inline` would look like protection while providing none, so
  * the scope is kept to what actually holds.
  *
- * Permissions-Policy allows camera and microphone on our own origin only —
- * both are genuinely used (Skin Analyzer capture, Voice Agent) and would
- * break if denied outright — while switching off features we never use.
+ * Permissions-Policy allows the camera on our own origin only (Skin
+ * Analyzer capture) and would break if denied outright, while switching off
+ * features we never use, including the microphone.
  */
 /*
  * Framing: public content pages may be framed by the AI Agentix portfolio;
@@ -45,7 +45,7 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(self), microphone=(self), geolocation=(), payment=(), usb=()",
+    value: "camera=(self), microphone=(), geolocation=(), payment=(), usb=()",
   },
 ];
 
@@ -110,6 +110,8 @@ const LEGACY_REDIRECTS: { source: string; destination: string }[] = [
   // noisily once the domain moves.
   { source: "/wp-admin/:path*", destination: "/" },
   { source: "/wp-login.php", destination: "/" },
+  // The voice agent was removed; keep old links and ads working.
+  { source: "/voice", destination: "/assistant" },
 ];
 
 const nextConfig: NextConfig = {

@@ -10,24 +10,19 @@ import { useT } from "@/lib/i18n/provider";
 /**
  * The site's floating corner actions, organised so nothing overlaps.
  *
- * There are three floating controls a visitor can meet on a page:
- *   - the voice mic launcher  → bottom-RIGHT, owned by VoiceOverlay (size-14)
+ * There are two floating controls a visitor can meet on a page:
  *   - WhatsApp                → bottom-LEFT (this file)
- *   - back-to-top             → bottom-RIGHT, stacked ABOVE the mic (this file)
+ *   - back-to-top             → bottom-RIGHT (this file)
  *
- * Splitting WhatsApp to the left keeps the right column to just two controls
- * (mic + an on-demand back-to-top) instead of a three-high tower, and keeps
- * every one of them clear of the mobile bottom nav, which sits below them.
- *
- * Portalled to <body> for the same reason VoiceOverlay is: the sticky header's
+ * Portalled to <body> so the sticky header's
  * backdrop-filter creates a containing block that would otherwise clip a fixed
  * descendant.
  *
- * Hidden on /voice (its own full-screen surface) and on /assistant (whose
+ * Hidden on /assistant (whose
  * sticky chat composer these would overlap) and never rendered inside the
  * immersive Skin Check / Analyzer flows, which live outside this shell.
  */
-const HIDE_ON = new Set(["/voice", "/assistant"]);
+const HIDE_ON = new Set(["/assistant"]);
 
 export function FloatingActions() {
   const pathname = usePathname();
@@ -54,7 +49,7 @@ export function FloatingActions() {
 
   return createPortal(
     <>
-      {/* WhatsApp — bottom-left, brand green, clear of the mic on the right. */}
+      {/* WhatsApp — bottom-left, brand green, clear of the back-to-top on the right. */}
       <a
         href={waHref(SITE.whatsapp.e164)}
         target="_blank"
@@ -65,14 +60,13 @@ export function FloatingActions() {
         <WhatsAppGlyph className="size-7" />
       </a>
 
-      {/* Back-to-top — bottom-right, stacked above the voice mic (which sits at
-          bottom 5rem / size-14), revealed on scroll. */}
+      {/* Back-to-top — bottom-right, revealed on scroll. */}
       {showTop && (
         <button
           type="button"
           onClick={scrollTop}
           aria-label={t("action.backToTop")}
-          className="fixed right-4 bottom-[calc(9.25rem+env(safe-area-inset-bottom))] z-[60] inline-flex size-12 items-center justify-center rounded-full border border-ink/10 bg-surface text-ink shadow-lift transition-transform active:scale-95 lg:right-6 lg:bottom-[6.25rem]"
+          className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[60] inline-flex size-12 items-center justify-center rounded-full border border-ink/10 bg-surface text-ink shadow-lift transition-transform active:scale-95 lg:right-6 lg:bottom-6"
         >
           <ArrowUp aria-hidden="true" className="size-5" />
         </button>

@@ -10,7 +10,7 @@ import { patchSession } from "@/lib/consultation/session";
 
 /**
  * A small, informative gate shown ONCE before the first face scan of a session
- * — for both the direct website scan and the voice → scan handoff, since both
+ * — for both the direct website scan and the chat → scan handoff, since both
  * land on the analyzer. It collects a name + mobile number so the scan becomes
  * a real lead the Skinwise team can follow up on, then unlocks the scan. A
  * returning scanner in the same session (leadId already stored) skips it.

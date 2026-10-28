@@ -4,7 +4,7 @@ import type { Product, ProductSlug } from "@/content/products/types";
 /**
  * Deterministic, knowledge-base-driven product recommendation.
  *
- * The Voice/Chat agent must NEVER pick products from generic AI knowledge — it
+ * The chat agent must NEVER pick products from generic AI knowledge — it
  * asks this engine, which selects from the REAL Skinwise catalogue using
  * explicit rules over the customer's concern + skin type. Every product it
  * returns has a traceable reason (concern match + skin-type suitability), so
@@ -54,7 +54,7 @@ function forConcern(concern: string, skin?: SkinType): Product[] {
 
 export type Recommendation = {
   products: Product[];
-  /** One short reason per product, parallel to `products` — for the UI + voice. */
+  /** One short reason per product, parallel to `products` — for the UI. */
   reasons: string[];
   primaryConcern: string;
   secondaryConcern?: string;

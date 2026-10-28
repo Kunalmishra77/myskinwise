@@ -84,11 +84,11 @@ test.describe("app shell", () => {
 
     await expect(dialog.getByRole("link", { name: "Home" })).toBeVisible();
 
-    // The four product actions are the reason the menu exists on a phone.
+    // The product actions are the reason the menu exists on a phone.
     // Matched by href rather than by name: each tile's accessible name is the
     // label plus its description ("Skin Scanner AI reads your photo"), so an
     // exact name match is brittle in a way the destination is not.
-    for (const href of ["/skin-check/analyzer", "/skin-check", "/voice", "/assistant"]) {
+    for (const href of ["/skin-check/analyzer", "/skin-check", "/assistant"]) {
       await expect(dialog.locator(`a[href="${href}"]`).first()).toBeVisible();
     }
 
@@ -121,11 +121,11 @@ test.describe("app shell", () => {
     // Every tab must clear the 44px minimum touch target. `exact` matters:
     // an inexact "Me" also matches "Home".
     //
-    // Five tabs, with Scan centred as the primary action and Voice second.
+    // Five tabs, with Scan centred as the primary action.
     // The centre slot used to be the Skin Check, which meant the most
     // prominent button on a phone led to the questionnaire — the main reason
     // the Scanner and the Skin Check read as one feature. See nav-items.ts.
-    for (const name of ["Home", "Voice", "Scan", "Ask", "Me"]) {
+    for (const name of ["Home", "Shop", "Scan", "Ask", "Me"]) {
       const box = await bottomNav.getByRole("link", { name, exact: true }).boundingBox();
       expect(box, `${name} tab has no box`).not.toBeNull();
       expect(box!.height, `${name} tab is under 44px tall`).toBeGreaterThanOrEqual(44);

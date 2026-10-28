@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Send, Sparkles, Mic, ScanFace } from "lucide-react";
+import { Send, Sparkles, ScanFace } from "lucide-react";
 import { SITE, waHref } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useLocale, useT } from "@/lib/i18n/provider";
@@ -11,7 +11,7 @@ import { useTContent } from "@/lib/i18n/use-content";
 import { T } from "@/components/i18n/t";
 import { RecommendedCombo } from "@/components/products/recommended-combo";
 import { getSession, patchSession } from "@/lib/consultation/session";
-import { LanguagePicker } from "@/components/voice/language-picker";
+import { LanguagePicker } from "@/components/assistant/language-picker";
 
 type CtaKind = "skin_check" | "consultation" | "whatsapp" | "regimen";
 type Msg = {
@@ -136,12 +136,12 @@ export function AssistantChat() {
           // instead of appearing all at once after a few seconds.
           stream: true,
           // Carry the unified session's scan so chat stays grounded in it too —
-          // reference + the completed-scan summary, so Chat shares Voice's state
+          // reference + the completed-scan summary, so chat stays in sync with the scan state
           // and never restarts the journey after a scan.
           analysisReference: getSession().analysisReference,
           analysis: getSession().scanAnalysis,
           concern: activeConcern ?? getSession().concern,
-          // Same conversation language the user picked in Voice, if any.
+          // Same conversation language the user picked, if any.
           lang: getSession().aiLang ?? locale,
         }),
       });
@@ -243,15 +243,7 @@ export function AssistantChat() {
               <LanguagePicker />
             </div>
 
-            {/*
-              Text and voice presented as two peer choices rather than a chat
-              box with a link buried under it. The voice agent previously had
-              exactly one entry point on the entire site — a small text link
-              here, which also disappeared the moment a conversation started.
-              Someone who prefers speaking had no way to discover that they
-              could.
-            */}
-            <div className="mt-7 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="mt-7 grid w-full grid-cols-1 gap-3">
               <div className="flex flex-col items-start rounded-3xl border-2 border-rose-ink/25 bg-surface p-5 text-left">
                 <span className="flex size-10 items-center justify-center rounded-xl bg-blush text-rose-ink">
                   <Send aria-hidden="true" className="size-5" />
@@ -261,22 +253,6 @@ export function AssistantChat() {
                   <T>{ASSISTANT.textBody}</T>
                 </p>
               </div>
-
-              <Link
-                href="/voice"
-                className="group flex flex-col items-start rounded-3xl bg-rose-ink p-5 text-left text-white shadow-soft transition-shadow hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink focus-visible:ring-offset-2"
-              >
-                <span className="flex size-10 items-center justify-center rounded-xl bg-white/15">
-                  <Mic aria-hidden="true" className="size-5" />
-                </span>
-                <h2 className="mt-3 font-display text-lg font-semibold"><T>{ASSISTANT.voiceTitle}</T></h2>
-                <p className="mt-1 text-sm text-white">
-                  <T>{ASSISTANT.voiceBody}</T>
-                </p>
-                <span className="mt-3 text-sm font-semibold underline underline-offset-4 group-hover:no-underline">
-                  <T>{ASSISTANT.voiceStart}</T>
-                </span>
-              </Link>
             </div>
 
             {/* Concern picker — the heart of the condition-specific chat.
@@ -355,7 +331,7 @@ export function AssistantChat() {
               className="flex items-center justify-center gap-2 rounded-full border border-rose-ink/30 bg-blush px-5 py-3 text-sm font-semibold text-rose-ink transition hover:bg-blush/70"
             >
               <ScanFace aria-hidden="true" className="size-4" />
-              {t("voice.scanCta")}
+              {t("chat.scanCta")}
             </Link>
           </div>
         )}
@@ -397,19 +373,6 @@ export function AssistantChat() {
             placeholder={tc(ASSISTANT.inputPlaceholder)}
             className="max-h-32 flex-1 resize-none rounded-2xl border border-ink/15 bg-surface px-4 py-3 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink"
           />
-          {/*
-            Switching to voice has to stay reachable mid-conversation, not
-            only from the empty state. Someone who starts typing on the move
-            is exactly the person who then wants to speak instead.
-          */}
-          <Link
-            href="/voice"
-            aria-label={tc(ASSISTANT.voiceSwitchLabel)}
-            title={tc(ASSISTANT.voiceSwitchTitle)}
-            className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-ink/15 bg-surface text-rose-ink transition hover:border-rose-ink/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-ink"
-          >
-            <Mic aria-hidden="true" className="size-5" />
-          </Link>
           <button
             type="submit"
             disabled={busy || !input.trim()}
